@@ -1,0 +1,158 @@
+/** Map pack data: everything that differs between countries and game types. */
+
+export type GameType = "parliamentary" | "presidential";
+
+export interface RulesConfig {
+  /** Steps on each region meter: 15 in Parliamentary, 10 in Presidential. */
+  steps: number;
+  /** A region is in contention once any player has at least this many steps. */
+  contentionAt: number;
+  /** Most steps allowed on a player's first investment in a region. */
+  firstEntryMax: number;
+  /** Each step costs this many times the previous one (1.1 in Parliamentary, 1 in Presidential). */
+  costGrowth: number;
+  /** Modifiers move step costs to this range of the base cost, as fractions (0.5 to 1.5). */
+  costClampMin: number;
+  costClampMax: number;
+  /** Base money given every turn, including turn 1. */
+  baseIncome: number;
+  /** A party member pick on every Nth turn (Parliamentary). 0 turns picks off. */
+  memberPickEvery: number;
+  /** Share of a member's modifiers that counts, in percent. */
+  memberSharePct: number;
+  /** An assigned member adds a free pip every Nth turn after assignment. */
+  freePipEvery: number;
+  /** Pips every player loses in every region when a second round starts. */
+  secondRoundPipLoss: number;
+  /** Safety cap: the campaign goes to the election after this turn even if not every region is in contention. */
+  turnCap: number;
+}
+
+export interface RegionDef {
+  id: string;
+  name: string;
+  /** Seats (Parliamentary) or electoral votes (Presidential). */
+  seats: number;
+  /** Campaign cost of the first step, in whole currency units. */
+  baseCost: number;
+}
+
+export interface GroupDef {
+  id: string;
+  name: string;
+  /** State groups are sets of regions; national groups are nationwide meters. */
+  kind: "state" | "national";
+  /** Regions in a state group. Empty for national groups. */
+  regions: string[];
+  /** Income per turn for the player who controls the group, in whole currency units. */
+  income: number;
+}
+
+export interface CandidateDef {
+  id: string;
+  name: string;
+  /** Real party shown as the candidate's affiliation; never a competitor on the board. */
+  affiliation: string;
+  /** Bonuses (positive) and penalties (negative) in percent, keyed by group id. */
+  modifiers: Record<string, number>;
+  /** Short reason for each modifier, shown on the candidate card. */
+  notes?: Record<string, string>;
+}
+
+export interface MapPack {
+  id: string;
+  name: string;
+  gameType: GameType;
+  /** Currency symbol shown in the UI, for example "£". */
+  currency: string;
+  rules: RulesConfig;
+  regions: RegionDef[];
+  groups: GroupDef[];
+  candidates: CandidateDef[];
+  /** Comical made-up party names for AI players. Never a parody of a real party, religion or community. */
+  aiPartyNames: string[];
+}
+
+/** Match state. Plain JSON so it can be saved, sent over the network and replayed. */
+
+export interface PartyIdentity {
+  name: string;
+  color: string;
+  emblem: string;
+}
+
+export interface PlayerSetup {
+  id: string;
+  leaderId: string;
+  party: PartyIdentity;
+}
+
+export interface Member {
+  candidateId: string;
+  /** Region the member works in, or null while waiting to be assigned. */
+  regionId: string | null;
+  /** Turn the member was assigned on; free pips count from here. */
+  assignedTurn: number | null;
+}
+
+export interface PlayerState {
+  id: string;
+  leaderId: string;
+  party: PartyIdentity;
+  members: Member[];
+  money: number;
+  /** Total money spent so far, including money lost in conflicts. Used for tiebreaks. */
+  spent: number;
+}
+
+/**
+ * A moment in the match, used to decide who reached a step first.
+ * Paid moves land at turn * 2, free pips at turn * 2 + 1, so free pips always come after paid moves of the same turn.
+ */
+export type Stamp = number;
+
+export interface Meter {
+  steps: number;
+  /** reached[i] is when this player reached step i + 1. */
+  reached: Stamp[];
+  /** True once the player has invested here, including a first entry lost to a conflict. */
+  entered: boolean;
+}
+
+export type Phase = "campaign" | "final" | "election" | "finished";
+
+export interface GameState {
+  packId: string;
+  turn: number;
+  /** 1 for the first campaign, 2 or more after a tie for most seats. */
+  round: number;
+  phase: Phase;
+  players: PlayerState[];
+  /** meters[regionId][playerId] */
+  meters: Record<string, Record<string, Meter>>;
+  /** Player who filled the region's meter, or absent while open. */
+  locked: Record<string, string>;
+  /** Seeded random state, for AI and anything else that needs randomness. */
+  rng: number;
+}
+
+/** What a player submits for one turn. */
+export interface Plan {
+  /** Target step per region (the step the player wants to reach, not how many to add). */
+  steps?: Record<string, number>;
+  /** Candidate picked as a new party member on a pick turn. */
+  pick?: string;
+  /** Member candidate id to region id. */
+  assign?: Record<string, string>;
+}
+
+export type TurnEvent =
+  | { type: "moved"; regionId: string; playerId: string; from: number; to: number; cost: number }
+  | { type: "conflict"; regionId: string; step: number; playerIds: string[]; costs: Record<string, number> }
+  | { type: "picked"; playerId: string; candidateId: string }
+  | { type: "assigned"; playerId: string; candidateId: string; regionId: string }
+  | { type: "free_pip"; regionId: string; playerId: string; candidateId: string; to: number }
+  | { type: "locked"; regionId: string; playerId: string }
+  | { type: "contention"; regionId: string }
+  | { type: "final_turn" }
+  | { type: "election" };

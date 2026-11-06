@@ -1,0 +1,14 @@
+{
+  "name": "@majority-map/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic rules engine shared by every platform.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}
