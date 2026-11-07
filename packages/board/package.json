@@ -1,0 +1,16 @@
+{
+  "name": "@majority-map/board",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tabletop board renderer (PixiJS): raised pieces, seat badges, enlarged small regions, selection lift, pip bars.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "pixi.js": "8.22.0"
+  }
+}
