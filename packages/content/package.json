@@ -1,0 +1,14 @@
+{
+  "name": "@majority-map/content",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Map packs and candidate data. Values are draft sample numbers for tuning.",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@majority-map/core": "workspace:*"
+  }
+}

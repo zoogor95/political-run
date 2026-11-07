@@ -1,0 +1,451 @@
+{
+  "id": "uk",
+  "name": "United Kingdom",
+  "gameType": "parliamentary",
+  "currency": "£",
+  "rules": {
+    "steps": 15,
+    "contentionAt": 3,
+    "firstEntryMax": 2,
+    "costGrowth": 1.1,
+    "costClampMin": 0.5,
+    "costClampMax": 1.5,
+    "baseIncome": 250000,
+    "memberPickEvery": 5,
+    "memberSharePct": 20,
+    "freePipEvery": 3,
+    "secondRoundPipLoss": 5,
+    "turnCap": 40
+  },
+  "regions": [
+    {
+      "id": "sco",
+      "name": "Scotland",
+      "seats": 57,
+      "baseCost": 16400
+    },
+    {
+      "id": "wal",
+      "name": "Wales",
+      "seats": 32,
+      "baseCost": 11400
+    },
+    {
+      "id": "ni",
+      "name": "Northern Ireland",
+      "seats": 18,
+      "baseCost": 8600
+    },
+    {
+      "id": "ne",
+      "name": "North East",
+      "seats": 27,
+      "baseCost": 10400
+    },
+    {
+      "id": "nw",
+      "name": "North West",
+      "seats": 73,
+      "baseCost": 19600
+    },
+    {
+      "id": "yh",
+      "name": "Yorkshire and the Humber",
+      "seats": 54,
+      "baseCost": 15800
+    },
+    {
+      "id": "em",
+      "name": "East Midlands",
+      "seats": 47,
+      "baseCost": 14400
+    },
+    {
+      "id": "wm",
+      "name": "West Midlands",
+      "seats": 57,
+      "baseCost": 16400
+    },
+    {
+      "id": "ee",
+      "name": "East of England",
+      "seats": 61,
+      "baseCost": 17200
+    },
+    {
+      "id": "lon",
+      "name": "London",
+      "seats": 75,
+      "baseCost": 20000
+    },
+    {
+      "id": "se",
+      "name": "South East",
+      "seats": 91,
+      "baseCost": 23200
+    },
+    {
+      "id": "sw",
+      "name": "South West",
+      "seats": 58,
+      "baseCost": 16600
+    }
+  ],
+  "groups": [
+    {
+      "id": "north",
+      "name": "The North",
+      "kind": "state",
+      "regions": [
+        "ne",
+        "nw",
+        "yh"
+      ],
+      "income": 60000
+    },
+    {
+      "id": "midlands",
+      "name": "The Midlands",
+      "kind": "state",
+      "regions": [
+        "em",
+        "wm"
+      ],
+      "income": 40000
+    },
+    {
+      "id": "south",
+      "name": "South and East",
+      "kind": "state",
+      "regions": [
+        "ee",
+        "se",
+        "sw"
+      ],
+      "income": 60000
+    },
+    {
+      "id": "london",
+      "name": "London",
+      "kind": "state",
+      "regions": [
+        "lon"
+      ],
+      "income": 50000
+    },
+    {
+      "id": "devolved",
+      "name": "Scotland, Wales and Northern Ireland",
+      "kind": "state",
+      "regions": [
+        "sco",
+        "wal",
+        "ni"
+      ],
+      "income": 40000
+    },
+    {
+      "id": "cities",
+      "name": "Big cities",
+      "kind": "state",
+      "regions": [
+        "lon",
+        "nw",
+        "wm",
+        "yh",
+        "sco"
+      ],
+      "income": 50000
+    },
+    {
+      "id": "unions",
+      "name": "Trade unions",
+      "kind": "national",
+      "regions": [],
+      "income": 40000
+    },
+    {
+      "id": "business",
+      "name": "Business owners",
+      "kind": "national",
+      "regions": [],
+      "income": 50000
+    },
+    {
+      "id": "pensioners",
+      "name": "Pensioners",
+      "kind": "national",
+      "regions": [],
+      "income": 40000
+    },
+    {
+      "id": "students",
+      "name": "Students",
+      "kind": "national",
+      "regions": [],
+      "income": 30000
+    },
+    {
+      "id": "farmers",
+      "name": "Farmers",
+      "kind": "national",
+      "regions": [],
+      "income": 30000
+    },
+    {
+      "id": "commuters",
+      "name": "Commuters",
+      "kind": "national",
+      "regions": [],
+      "income": 30000
+    }
+  ],
+  "candidates": [
+    {
+      "id": "keir-starmer",
+      "name": "Keir Starmer",
+      "affiliation": "Labour",
+      "modifiers": {
+        "london": 10,
+        "unions": 5,
+        "business": 5
+      },
+      "notes": {
+        "london": "MP for a London seat",
+        "unions": "Labour leader",
+        "business": "Courted business before 2024"
+      }
+    },
+    {
+      "id": "angela-rayner",
+      "name": "Angela Rayner",
+      "affiliation": "Labour",
+      "modifiers": {
+        "north": 15,
+        "unions": 15,
+        "business": -10
+      },
+      "notes": {
+        "north": "MP for Ashton-under-Lyne",
+        "unions": "Former trade union rep",
+        "business": "Workers' rights agenda"
+      }
+    },
+    {
+      "id": "wes-streeting",
+      "name": "Wes Streeting",
+      "affiliation": "Labour",
+      "modifiers": {
+        "london": 10,
+        "pensioners": 5
+      },
+      "notes": {
+        "london": "MP for Ilford North",
+        "pensioners": "Health Secretary"
+      }
+    },
+    {
+      "id": "andy-burnham",
+      "name": "Andy Burnham",
+      "affiliation": "Labour",
+      "modifiers": {
+        "north": 15,
+        "cities": 10,
+        "commuters": 5
+      },
+      "notes": {
+        "north": "Mayor of Greater Manchester",
+        "cities": "Big-city mayor",
+        "commuters": "Brought buses back under public control"
+      }
+    },
+    {
+      "id": "sadiq-khan",
+      "name": "Sadiq Khan",
+      "affiliation": "Labour",
+      "modifiers": {
+        "london": 20,
+        "cities": 5,
+        "commuters": -10
+      },
+      "notes": {
+        "london": "Mayor of London",
+        "cities": "Big-city mayor",
+        "commuters": "ULEZ charge"
+      }
+    },
+    {
+      "id": "kemi-badenoch",
+      "name": "Kemi Badenoch",
+      "affiliation": "Conservative",
+      "modifiers": {
+        "south": 10,
+        "business": 10,
+        "students": -10
+      },
+      "notes": {
+        "south": "MP for North West Essex",
+        "business": "Former Business Secretary",
+        "students": "Low support among young voters"
+      }
+    },
+    {
+      "id": "rishi-sunak",
+      "name": "Rishi Sunak",
+      "affiliation": "Conservative",
+      "modifiers": {
+        "north": 5,
+        "business": 15,
+        "unions": -10
+      },
+      "notes": {
+        "north": "MP for a Yorkshire seat",
+        "business": "Former Chancellor",
+        "unions": "Strikes during his term"
+      }
+    },
+    {
+      "id": "penny-mordaunt",
+      "name": "Penny Mordaunt",
+      "affiliation": "Conservative",
+      "modifiers": {
+        "south": 10,
+        "pensioners": 5
+      },
+      "notes": {
+        "south": "Former MP for Portsmouth North",
+        "pensioners": "Former Defence Secretary"
+      }
+    },
+    {
+      "id": "nigel-farage",
+      "name": "Nigel Farage",
+      "affiliation": "Reform UK",
+      "modifiers": {
+        "south": 5,
+        "pensioners": 15,
+        "london": -15,
+        "students": -15
+      },
+      "notes": {
+        "south": "MP for Clacton",
+        "pensioners": "Strongest with older voters",
+        "london": "Weak in London",
+        "students": "Weak with young voters"
+      }
+    },
+    {
+      "id": "ed-davey",
+      "name": "Ed Davey",
+      "affiliation": "Liberal Democrats",
+      "modifiers": {
+        "london": 5,
+        "south": 10,
+        "students": -5
+      },
+      "notes": {
+        "london": "MP for Kingston and Surbiton",
+        "south": "Lib Dem target seats",
+        "students": "Tuition fees history"
+      }
+    },
+    {
+      "id": "john-swinney",
+      "name": "John Swinney",
+      "affiliation": "SNP",
+      "modifiers": {
+        "devolved": 20,
+        "london": -10
+      },
+      "notes": {
+        "devolved": "First Minister of Scotland",
+        "london": "Scotland-first platform"
+      }
+    },
+    {
+      "id": "rhun-ap-iorwerth",
+      "name": "Rhun ap Iorwerth",
+      "affiliation": "Plaid Cymru",
+      "modifiers": {
+        "devolved": 15,
+        "farmers": 5
+      },
+      "notes": {
+        "devolved": "Leader of Plaid Cymru",
+        "farmers": "Rural Welsh support"
+      }
+    },
+    {
+      "id": "winston-churchill",
+      "name": "Winston Churchill",
+      "affiliation": "Conservative",
+      "modifiers": {
+        "pensioners": 10,
+        "south": 10,
+        "unions": -15
+      },
+      "notes": {
+        "pensioners": "Wartime leader",
+        "south": "MP for Woodford in Essex",
+        "unions": "Opposed the 1926 General Strike"
+      }
+    },
+    {
+      "id": "clement-attlee",
+      "name": "Clement Attlee",
+      "affiliation": "Labour",
+      "modifiers": {
+        "unions": 15,
+        "london": 10,
+        "business": -10
+      },
+      "notes": {
+        "unions": "Founded the welfare state",
+        "london": "MP for Limehouse",
+        "business": "Nationalised major industries"
+      }
+    },
+    {
+      "id": "margaret-thatcher",
+      "name": "Margaret Thatcher",
+      "affiliation": "Conservative",
+      "modifiers": {
+        "business": 20,
+        "south": 10,
+        "unions": -20,
+        "devolved": -15
+      },
+      "notes": {
+        "business": "Deregulation and privatisation",
+        "south": "Strongest in the south",
+        "unions": "Miners' strike",
+        "devolved": "Unpopular in Scotland and Wales"
+      }
+    },
+    {
+      "id": "tony-blair",
+      "name": "Tony Blair",
+      "affiliation": "Labour",
+      "modifiers": {
+        "north": 10,
+        "commuters": 10,
+        "students": -5
+      },
+      "notes": {
+        "north": "MP for Sedgefield",
+        "commuters": "Won middle England",
+        "students": "Introduced tuition fees"
+      }
+    }
+  ],
+  "aiPartyNames": [
+    "Tea Break Party",
+    "Queue Appreciation Society",
+    "Umbrella Alliance",
+    "Sunny Spells Party",
+    "Biscuit Dunkers League",
+    "Allotment Front",
+    "Mind the Gap Party",
+    "Drizzle Party"
+  ]
+}
