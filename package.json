@@ -11,7 +11,8 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
-    "check": "pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "maps": "pnpm --filter @majority-map/mapbuild maps"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
