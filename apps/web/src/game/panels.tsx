@@ -9,6 +9,7 @@ import {
   pickPool,
   projectedSeats,
   totalMoney,
+  type AiLevel,
   type ElectionResult,
   type GameState,
   type Plan,
@@ -17,6 +18,7 @@ import {
 import type { GameApi } from "./useGame";
 import { candidate, candidateName, groupName, money, pack, planLines, plannedPlayer, playerOf, trackName, YOU } from "./model";
 
+const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const pct = (n: number) => `${n > 0 ? "+" : ""}${Math.round(n)}%`;
 const partyName = (s: GameState, id: string) => playerOf(s, id).party.name;
 const partyColor = (s: GameState, id: string) => playerOf(s, id).party.color;
@@ -337,7 +339,7 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
               <div className="rival-head">
                 <Chip color={p.party.color} />
                 <b>{p.party.name}</b>
-                <span className="tag">AI · Easy</span>
+                <span className="tag">AI · {LEVEL_NAME[game.level]}</span>
               </div>
               <p className="small">
                 Leader {candidateName(p.leaderId)} · {seats[p.id] ?? 0} seats projected · money at turn start {money(totalMoney(p))}
@@ -405,9 +407,23 @@ export function Results({ game }: { game: GameApi }) {
             ))}
           </tbody>
         </table>
-        <button type="button" className="primary" onClick={game.restart}>
-          Play again
-        </button>
+        <div className="again">
+          <label htmlFor="level">Next match</label>
+          <select id="level" defaultValue={game.level} data-testid="level">
+            {(["easy", "normal", "hard"] as const).map((l) => (
+              <option key={l} value={l}>
+                {LEVEL_NAME[l]} opponents
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => game.restart((document.getElementById("level") as HTMLSelectElement | null)?.value as AiLevel | undefined)}
+          >
+            Play again
+          </button>
+        </div>
       </div>
     </div>
   );

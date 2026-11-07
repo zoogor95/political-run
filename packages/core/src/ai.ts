@@ -1,7 +1,7 @@
 /**
  * Computer opponents. Easy: invests most of its money each turn, mostly in regions that give many seats for their
  * cost, enters new regions steadily, picks and assigns party members, and never thinks about conflicts. Normal and
- * Hard come later (milestone M1.5). Deterministic: all randomness comes from the seeded generator passed in.
+ * Hard are in ai-smart.ts. Deterministic: all randomness comes from the seeded generator passed in.
  */
 import { moveCost, playerById } from "./costs.js";
 import { isRegion, totalMoney, trackIds } from "./economy.js";
@@ -9,6 +9,7 @@ import { nextRandom } from "./rng.js";
 import { meterOf, regionLeader } from "./standing.js";
 import { canPick, pickPool, validatePlan } from "./turn.js";
 import type { GameState, MapPack, Plan } from "./types.js";
+import { planSmart } from "./ai-smart.js";
 
 export interface AiResult {
   plan: Plan;
@@ -79,4 +80,11 @@ export function planEasy(pack: MapPack, state: GameState, playerId: string, rng:
     weight.set(best.id, weight.get(best.id)! * 0.85);
   }
   return { plan, rng };
+}
+
+export type AiLevel = "easy" | "normal" | "hard";
+
+/** Plans a turn for a computer player at the given difficulty. */
+export function planAi(pack: MapPack, state: GameState, playerId: string, level: AiLevel, rng: number): AiResult {
+  return level === "easy" ? planEasy(pack, state, playerId, rng) : planSmart(pack, state, playerId, level, rng);
 }

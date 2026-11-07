@@ -13,7 +13,7 @@ async function start(page: Page) {
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
-  await page.goto("/?seed=42");
+  await page.goto("/?seed=42&ai=easy");
   await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
   return errors;
 }
@@ -100,6 +100,9 @@ test("rival view and a whole match through to the results", async ({ page }) => 
   for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await page.getByTestId("submit").click();
   await expect(page.getByTestId("results")).toBeVisible();
   await expect(page.getByTestId("results")).toContainText("wins the most seats");
+  await page.getByTestId("level").selectOption("hard");
   await page.getByRole("button", { name: "Play again" }).click();
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
+  await page.getByTestId("tab-rivals").click();
+  await expect(page.getByTestId("rivals-panel")).toContainText("AI · Hard");
 });
