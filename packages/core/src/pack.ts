@@ -77,6 +77,8 @@ export function validatePack(pack: MapPack): PackIssue[] {
     groupIds.add(g.id);
     if (!g.name) add(`${p}.name`, "is required");
     if (!Number.isInteger(g.income) || g.income < 0) add(`${p}.income`, "must be a whole number");
+    if (g.kind === "national" && (!Number.isInteger(g.baseCost) || (g.baseCost ?? 0) < 1)) add(`${p}.baseCost`, "a national group needs a whole-number step cost of at least 1");
+    if (g.kind === "state" && g.baseCost !== undefined) add(`${p}.baseCost`, "only national groups have their own step cost");
     if (g.kind === "state") {
       if (g.regions.length === 0) add(`${p}.regions`, "a state group needs at least one region");
       g.regions.forEach((rid) => {

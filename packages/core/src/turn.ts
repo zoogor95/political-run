@@ -1,4 +1,5 @@
 import { moveCost, playerById } from "./costs.js";
+import { controlChanges, controllers, grantIncome, isRegion, pay, trackIds } from "./economy.js";
 import { seedRng } from "./rng.js";
 import { allInContention, inContention, meterOf } from "./standing.js";
 import type { GameState, MapPack, Plan, PlayerSetup, TurnEvent } from "./types.js";
@@ -22,10 +23,11 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
     if (!pack.candidates.some((c) => c.id === p.leaderId)) throw new Error(`Unknown leader "${p.leaderId}"`);
   }
   const meters: GameState["meters"] = {};
-  for (const r of pack.regions) {
-    meters[r.id] = {};
-    for (const p of setup.players) meters[r.id]![p.id] = { steps: 0, reached: [], entered: false };
+  for (const id of trackIds(pack)) {
+    meters[id] = {};
+    for (const p of setup.players) meters[id]![p.id] = { steps: 0, reached: [], entered: false };
   }
+  const wallets = () => Object.fromEntries(pack.groups.map((g) => [g.id, 0]));
   return {
     packId: pack.id,
     turn: 1,
@@ -37,6 +39,7 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
       party: { ...p.party },
       members: [],
       money: pack.rules.baseIncome,
+      wallets: wallets(),
       spent: 0,
     })),
     meters,
@@ -53,7 +56,7 @@ export function isPickTurn(pack: MapPack, state: GameState): boolean {
 export interface PlanIssue {
   code:
     | "not_campaigning"
-    | "unknown_region"
+    | "unknown_track"
     | "locked"
     | "not_higher"
     | "over_top"
@@ -88,12 +91,16 @@ export function validatePlan(pack: MapPack, state: GameState, playerId: string, 
     else if (members.includes(plan.pick)) add("bad_pick", "Already in your party");
     else members.push(plan.pick);
   }
-  const costPlayer = { ...player, members: members.map((candidateId) => ({ candidateId, regionId: null, assignedTurn: null })) };
-
+  // A scratch copy of the player pays for the plan in the same order resolution will, so "can afford" means exactly that.
+  const payer = structuredClone(player);
+  payer.members = members.map((candidateId) => ({ candidateId, regionId: null, assignedTurn: null }));
+  const tracks = trackIds(pack);
   let total = 0;
-  for (const [regionId, target] of Object.entries(plan.steps ?? {})) {
-    if (!pack.regions.some((r) => r.id === regionId)) {
-      add("unknown_region", `Unknown region "${regionId}"`);
+  let short = false;
+  const ordered = Object.entries(plan.steps ?? {}).sort(([a], [b]) => tracks.indexOf(a) - tracks.indexOf(b));
+  for (const [regionId, target] of ordered) {
+    if (!tracks.includes(regionId)) {
+      add("unknown_track", `Unknown region or group "${regionId}"`);
       continue;
     }
     const meter = meterOf(state, regionId, playerId);
@@ -101,9 +108,13 @@ export function validatePlan(pack: MapPack, state: GameState, playerId: string, 
     else if (!Number.isInteger(target) || target <= meter.steps) add("not_higher", `${regionId}: the target must be above your current ${meter.steps} steps`);
     else if (target > pack.rules.steps) add("over_top", `${regionId}: the meter has ${pack.rules.steps} steps`);
     else if (!meter.entered && target > pack.rules.firstEntryMax) add("entry_limit", `${regionId}: your first investment is limited to ${pack.rules.firstEntryMax} steps`);
-    else total += moveCost(pack, costPlayer, regionId, meter.steps, target);
+    else {
+      const cost = moveCost(pack, payer, regionId, meter.steps, target);
+      total += cost;
+      if (pay(pack, payer, regionId, cost) === null) short = true;
+    }
   }
-  if (total > player.money) add("not_enough_money", `This plan costs ${total} but you have ${player.money}`);
+  if (short) add("not_enough_money", `This plan costs ${total}, more than the money you can spend in those places`);
 
   const usedRegions = new Set(player.members.map((m) => m.regionId).filter((r): r is string => r !== null));
   for (const [candidateId, regionId] of Object.entries(plan.assign ?? {})) {
@@ -111,7 +122,7 @@ export function validatePlan(pack: MapPack, state: GameState, playerId: string, 
     const isNewPick = plan.pick === candidateId && members.includes(candidateId);
     if (!existing && !isNewPick) add("bad_assign", `${candidateId} isn't one of your members`);
     else if (existing && existing.regionId !== null) add("bad_assign", "Members can't be moved once assigned");
-    else if (!pack.regions.some((r) => r.id === regionId)) add("bad_assign", `Unknown region "${regionId}"`);
+    else if (!isRegion(pack, regionId)) add("bad_assign", `Members can only be assigned to regions`);
     else if (!meterOf(state, regionId, playerId).entered) add("bad_assign", `Members can only go to regions you've entered`);
     else if (usedRegions.has(regionId)) add("bad_assign", `You already have a member in ${regionId}`);
     else if (state.locked[regionId] !== undefined) add("bad_assign", `${regionId} is locked`);
@@ -135,6 +146,8 @@ export function resolveTurn(pack: MapPack, before: GameState, plans: Record<stri
   const paidStamp = turn * 2;
   const freeStamp = turn * 2 + 1;
   const contendedBefore = new Set(pack.regions.filter((r) => inContention(pack, before, r.id)).map((r) => r.id));
+  const controlBefore = controllers(pack, before);
+  const tracks = trackIds(pack);
 
   // 1. Picks and assignments.
   for (const player of state.players) {
@@ -151,8 +164,9 @@ export function resolveTurn(pack: MapPack, before: GameState, plans: Record<stri
     }
   }
 
-  // 2. Paid moves, revealed together. Costs use the start-of-turn steps plus this turn's picks.
-  for (const region of pack.regions) {
+  // 2. Paid moves, revealed together, on regions and national group meters. Costs use the start-of-turn steps plus
+  // this turn's picks; each player pays track by track in pack order, matching validatePlan.
+  for (const region of tracks.map((id) => ({ id }))) {
     const moves = state.players
       .map((p) => ({ player: p, target: plans[p.id]?.steps?.[region.id] }))
       .filter((m): m is { player: (typeof state.players)[number]; target: number } => m.target !== undefined);
@@ -161,10 +175,11 @@ export function resolveTurn(pack: MapPack, before: GameState, plans: Record<stri
 
     for (const [target, group] of byTarget) {
       const costs: Record<string, number> = {};
+      const paid: Record<string, Record<string, number>> = {};
       for (const { player } of group) {
         const meter = meterOf(state, region.id, player.id);
         const cost = moveCost(pack, player, region.id, meter.steps, target);
-        player.money -= cost;
+        paid[player.id] = pay(pack, player, region.id, cost)!;
         player.spent += cost;
         costs[player.id] = cost;
         meter.entered = true;
@@ -178,7 +193,7 @@ export function resolveTurn(pack: MapPack, before: GameState, plans: Record<stri
       const from = meter.steps;
       for (let s = from + 1; s <= target; s++) meter.reached[s - 1] = paidStamp;
       meter.steps = target;
-      events.push({ type: "moved", regionId: region.id, playerId: player.id, from, to: target, cost: costs[player.id]! });
+      events.push({ type: "moved", regionId: region.id, playerId: player.id, from, to: target, cost: costs[player.id]!, paidFrom: paid[player.id]! });
     }
     lockIfFull(pack, state, region.id, events);
   }
@@ -211,11 +226,10 @@ export function resolveTurn(pack: MapPack, before: GameState, plans: Record<stri
     events.push({ type: "final_turn" });
   }
 
-  // 5. Next turn and its income.
+  // 5. Groups that changed hands, then the next turn and its income (base money plus every group controlled now).
+  events.push(...controlChanges(controlBefore, controllers(pack, state)));
   state.turn = turn + 1;
-  if (state.phase === "campaign" || state.phase === "final") {
-    for (const p of state.players) p.money += pack.rules.baseIncome;
-  }
+  if (state.phase === "campaign" || state.phase === "final") grantIncome(pack, state, events);
   return { state, events };
 }
 

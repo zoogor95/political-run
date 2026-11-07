@@ -1,3 +1,4 @@
+import { grantIncome } from "./economy.js";
 import { majority, meterOf, splitSeats, totalPips } from "./standing.js";
 import type { GameState, MapPack } from "./types.js";
 
@@ -52,7 +53,7 @@ export function countElection(pack: MapPack, state: GameState): ElectionResult {
   const ranking = [...seatOrder].sort(
     (a, b) =>
       seats[b]! - seats[a]! ||
-      totalPips(state, b) - totalPips(state, a) ||
+      totalPips(pack, state, b) - totalPips(pack, state, a) ||
       spent(a) - spent(b) ||
       seatOrder.indexOf(a) - seatOrder.indexOf(b),
   );
@@ -79,7 +80,8 @@ export function formGovernment(ranking: string[], seats: Record<string, number>,
 }
 
 /**
- * Second round after a tie for most seats: every player loses pips in every region (never below 0), locks open,
+ * Second round after a tie for most seats: every player loses pips in every region (never below 0), region locks open,
+ * national group meters are left as they are,
  * the order of who reached each remaining step first is kept, money is kept, and the campaign continues.
  */
 export function startSecondRound(pack: MapPack, before: GameState): GameState {
@@ -92,10 +94,10 @@ export function startSecondRound(pack: MapPack, before: GameState): GameState {
       m.reached = m.reached.slice(0, m.steps);
     }
   }
-  state.locked = {};
+  for (const r of pack.regions) delete state.locked[r.id];
   state.round += 1;
   state.phase = "campaign";
-  for (const p of state.players) p.money += pack.rules.baseIncome;
+  grantIncome(pack, state, []);
   return state;
 }
 

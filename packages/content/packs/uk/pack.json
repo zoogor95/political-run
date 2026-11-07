@@ -162,42 +162,48 @@
       "name": "Trade unions",
       "kind": "national",
       "regions": [],
-      "income": 40000
+      "income": 40000,
+      "baseCost": 25000
     },
     {
       "id": "business",
       "name": "Business owners",
       "kind": "national",
       "regions": [],
-      "income": 50000
+      "income": 50000,
+      "baseCost": 30000
     },
     {
       "id": "pensioners",
       "name": "Pensioners",
       "kind": "national",
       "regions": [],
-      "income": 40000
+      "income": 40000,
+      "baseCost": 25000
     },
     {
       "id": "students",
       "name": "Students",
       "kind": "national",
       "regions": [],
-      "income": 30000
+      "income": 30000,
+      "baseCost": 20000
     },
     {
       "id": "farmers",
       "name": "Farmers",
       "kind": "national",
       "regions": [],
-      "income": 30000
+      "income": 30000,
+      "baseCost": 20000
     },
     {
       "id": "commuters",
       "name": "Commuters",
       "kind": "national",
       "regions": [],
-      "income": 30000
+      "income": 30000,
+      "baseCost": 20000
     }
   ],
   "candidates": [

@@ -16,7 +16,7 @@ export const testPack: MapPack = {
   groups: [
     { id: "capital", name: "Capital", kind: "state", regions: ["city"], income: 50_000 },
     { id: "mainland", name: "Mainland", kind: "state", regions: ["north", "south", "city"], income: 50_000 },
-    { id: "unions", name: "Trade unions", kind: "national", regions: [], income: 40_000 },
+    { id: "unions", name: "Trade unions", kind: "national", regions: [], income: 40_000, baseCost: 30_000 },
   ],
   candidates: [
     { id: "ann", name: "Ann", affiliation: "Party One", modifiers: { capital: 10 } },
