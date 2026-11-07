@@ -13,7 +13,6 @@ import {
   type ElectionResult,
   type GameState,
   type Plan,
-  type TurnEvent,
 } from "@majority-map/core";
 import type { GameApi } from "./useGame";
 import { candidate, candidateName, groupName, money, pack, planLines, plannedPlayer, playerOf, trackName, YOU } from "./model";
@@ -28,7 +27,9 @@ function Chip({ color }: { color: string }) {
 }
 
 export function TopBar({ game }: { game: GameApi }) {
-  const { state, issues } = game;
+  // During the recap the bar shows the board as it was before the turn, so the reveal isn't given away.
+  const state = game.stage === "recap" && game.report ? game.report.before : game.state;
+  const { issues } = game;
   const seats = projectedSeats(pack, state);
   const total = pack.regions.reduce((a, r) => a + r.seats, 0);
   const contention = pack.regions.filter((r) => state.players.some((p) => meterOf(state, r.id, p.id).steps >= pack.rules.contentionAt)).length;
@@ -60,7 +61,7 @@ export function TopBar({ game }: { game: GameApi }) {
           {contention} / {pack.regions.length}
         </b>
       </div>
-      <button type="button" className="submit" disabled={issues.length > 0 || state.phase === "finished"} onClick={game.submit} data-testid="submit">
+      <button type="button" className="submit" disabled={issues.length > 0 || state.phase === "finished" || game.stage !== "planning"} onClick={game.submit} data-testid="submit">
         Submit turn
       </button>
     </header>
@@ -355,32 +356,6 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
   );
 }
 
-export function LastTurn({ state, events }: { state: GameState; events: TurnEvent[] }) {
-  if (events.length === 0) return null;
-  const lines: string[] = [];
-  for (const e of events) {
-    if (e.type === "conflict" && e.playerIds.includes(YOU))
-      lines.push(`Conflict in ${trackName(e.regionId)}: you and ${e.playerIds.filter((p) => p !== YOU).map((p) => partyName(state, p)).join(", ")} all aimed for step ${e.step} and lost the money.`);
-    if (e.type === "conflict" && !e.playerIds.includes(YOU)) lines.push(`Conflict in ${trackName(e.regionId)} between ${e.playerIds.map((p) => partyName(state, p)).join(" and ")}.`);
-    if (e.type === "locked") lines.push(`${trackName(e.regionId)} is locked by ${partyName(state, e.playerId)}.`);
-    if (e.type === "free_pip" && e.playerId === YOU) lines.push(`${candidateName(e.candidateId)} added a free pip in ${trackName(e.regionId)}.`);
-    if (e.type === "control_gained") lines.push(`${partyName(state, e.playerId)} took control of ${groupName(e.groupId)}.`);
-    if (e.type === "final_turn") lines.push("Every region is in play. Ballots are counted after the next turn.");
-  }
-  const moved = events.filter((e) => e.type === "moved" && e.playerId !== YOU).length;
-  lines.push(`Rivals made ${moved} move${moved === 1 ? "" : "s"}.`);
-  return (
-    <section className="last" data-testid="last-turn">
-      <h3>Last turn</h3>
-      <ul>
-        {lines.map((l, i) => (
-          <li key={i}>{l}</li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 export function Results({ game }: { game: GameApi }) {
   const { state, result } = game as { state: GameState; result: ElectionResult };
   const won = result.ranking[0] === YOU;
@@ -388,6 +363,11 @@ export function Results({ game }: { game: GameApi }) {
     <div className="overlay" data-testid="results">
       <div className="results">
         <h2>{won ? "You win the most seats!" : `${partyName(state, result.ranking[0]!)} wins the most seats`}</h2>
+        {game.matchHeadline && (
+          <p className="headline-of-turn" data-testid="match-headline">
+            <span className="breaking-tag">HEADLINE OF THE MATCH</span> {game.matchHeadline.text}
+          </p>
+        )}
         <p className="muted">
           {result.government.hasMajority ? `Government: ${result.government.members.map((id) => partyName(state, id)).join(" + ")} (${result.government.seats} seats)` : "No majority"}
         </p>

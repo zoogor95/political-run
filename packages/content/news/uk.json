@@ -1,0 +1,209 @@
+{
+  "channel": "MMN",
+  "templates": {
+    "conflict": [
+      "{parties} both spend {amount} in {region}; voters report hearing nothing",
+      "{parties} book the same village hall in {region} on the same night; caretaker locks up early",
+      "Leaflets from {parties} collide in {region} letterboxes; postal workers ask for a quiet word",
+      "{parties} send rival battle buses down the same {region} lane; both reverse for an hour",
+      "{region} residents receive two doorstep visits at once from {parties}; kettle overwhelmed",
+      "{parties} both aim for step {step} in {region}; campaign money vanishes into the drizzle",
+      "Megaphone standoff in {region} as {parties} drown each other out",
+      "{parties} hire the same {region} marching band; band plays both anthems at once",
+      "{region} lamp posts can only take so many posters, say council officers after {parties} clash",
+      "{parties} cancel each other out in {region}; local newspaper prints a blank page",
+      "Two rallies, one bandstand: {parties} meet in {region} and nobody moves forward",
+      "{parties} both promise {region} a new bypass on the same afternoon; roads stay the same"
+    ],
+    "conflict_you": [
+      "{you} collides with {rivals} in {region}; {amount} spent, voters unmoved",
+      "{you} bus meets the {rivals} bus at a {region} roundabout; everyone goes round it twice",
+      "{region} doors answered once, knocked twice: {you} cancelled out by {rivals}",
+      "Step {step} in {region} proves popular: {you} and its rivals collide and nobody gets there",
+      "{you} campaign in {region} drowned out by {rivals}; aides blame the acoustics",
+      "{you} rally in {region} clashes with {rivals}; audience splits evenly into nobody",
+      "{amount} later, {you} is exactly where it started in {region} after clashing with {rivals}",
+      "{you} canvassers meet {rivals} canvassers on a {region} doorstep; homeowner makes tea for everyone"
+    ],
+    "first_entry": [
+      "{party} spotted in {region}, asks for directions to the voters",
+      "{party} arrives in {region} with a map and a very large umbrella",
+      "{party} opens a campaign office in {region}; first visitor asks where the toilets are",
+      "{region} welcomes {party} with polite curiosity and a plate of biscuits",
+      "{party} puts up its first poster in {region}; it is immediately rained on",
+      "{party} battle bus reaches {region}; satnav claims credit",
+      "{party} discovers {region}, declares it lovely this time of year",
+      "{party} knocks on its first door in {region}; resident was expecting a parcel",
+      "{party} unrolls a banner in {region}; banner unrolls itself back",
+      "{party} plants a flag in {region} at a sensible, respectful distance from the flower beds",
+      "{party} joins the {region} campaign; local café reports a surge in leaflet-sized napkins",
+      "{party} arrives in {region} on the 14:05; the 14:05 arrives at 14:40"
+    ],
+    "big_move": [
+      "{party} goes all in on {region}: {steps} steps in a single week",
+      "{party} floods {region} with volunteers; {steps} steps closer to winning it over",
+      "{region} cannot move for {party} rosettes after a {steps}-step blitz",
+      "{party} triples the leaflet order for {region}; {steps} steps follow",
+      "{party} sends every bus it owns to {region}; town square briefly becomes a car park",
+      "{region} sees the biggest campaign push of the season as {party} climbs {steps} steps",
+      "{party} canvassers knock on every door in {region} twice; {steps} steps gained",
+      "{party} unveils {steps} new campaign promises in {region} before lunch",
+      "{party} turns {region} into its second home; {steps} steps in one turn",
+      "Poster printers in {region} work through the night for {party}"
+    ],
+    "saving": [
+      "{party} spends nothing this week; aides insist this is a strategy",
+      "{party} campaign takes a quiet week; spokesperson spotted reading the paper",
+      "{party} keeps its wallet firmly shut; treasurer delighted, candidates less so",
+      "{party} battle bus stays in the garage all week; mechanics finally catch up",
+      "{party} declares a week of careful saving; leaflets gather dust",
+      "Not a single {party} poster goes up this week; lamp posts enjoy the rest",
+      "{party} saving for something big, say sources who refuse to say what",
+      "{party} campaign enters what one aide calls a thinking period"
+    ],
+    "locked": [
+      "{region} declares itself fully decided for {party}; campaign staff told to go home",
+      "{party} wins over every last voter in {region}; meter full, region locked",
+      "{region} is {party} country now, and everyone else can stop knocking",
+      "Rivals told {region} is closed for business after {party} fills the meter",
+      "{party} locks up {region}; keys handed to a very proud volunteer",
+      "{region} officially out of play as {party} completes the set",
+      "{party} hangs a 'Thank you, {region}' banner; nobody else may campaign there again",
+      "{region} goes all the way with {party}; leaflets for other parties politely returned",
+      "No vacancies in {region}: {party} has every step",
+      "{party} reaches the top step in {region}; celebrations involve a lot of tea"
+    ],
+    "free_pip": [
+      "{member} works the doorsteps of {region} for {party}; quiet progress made",
+      "{member} gives {party} a lift in {region} after weeks of patient campaigning",
+      "{member} spotted at a {region} coffee morning; {party} gains ground",
+      "{member} opens a {region} community fete for {party}; turnout excellent",
+      "Steady work from {member} in {region} nudges {party} up a step",
+      "{member} has been in {region} so long the locals offer directions back",
+      "{member} helps {party} in {region}, one handshake at a time",
+      "{party} credits {member} for another step in {region}"
+    ],
+    "control_gained": [
+      "{party} takes control of {group}; extra money expected next week",
+      "{group} falls to {party}; campaign treasurer smiles for the first time",
+      "{party} now leads {group}, and the funding that comes with it",
+      "Big win for {party} as {group} comes over to its side",
+      "{group} backs {party}; rivals check their own maps nervously",
+      "{party} celebrates winning {group} with a strong cup of tea",
+      "{party} adds {group} to its collection",
+      "{group} now firmly in the {party} column",
+      "{party} wins the battle for {group}; expect busier campaign buses",
+      "Rivals left out in the drizzle as {party} claims {group}",
+      "{party} secures {group}; a new wallet is opened for the money",
+      "{group} switches to {party} in a moment one commentator calls 'quite something'"
+    ],
+    "control_lost": [
+      "{party} loses its grip on {group}; money already raised is safe, future funding is not",
+      "{group} slips away from {party}",
+      "{party} no longer leads {group}; aides call it a temporary setback",
+      "Bad week for {party} as {group} walks away",
+      "{group} cools on {party}; treasurer revises the spreadsheet",
+      "{party} hands back the keys to {group}",
+      "{group} leaves {party}; campaign HQ goes very quiet",
+      "{party} misses out on {group} income from next week"
+    ],
+    "contention": [
+      "{region} now firmly in play",
+      "Campaign trail finally reaches {region} in earnest",
+      "{region} becomes a real contest; locals stock up on biscuits",
+      "Analysts circle {region} on the map in red pen",
+      "{region} officially a battleground; window posters everywhere",
+      "{region} joins the race; campaign buses reroute",
+      "All eyes on {region} as the contest heats up",
+      "{region} residents brace for a lot more doorbells",
+      "{region} is now in contention, and it knows it",
+      "The race for {region} is properly on"
+    ],
+    "final_turn": [
+      "Every region now in play; nation braces for one last week of leaflets",
+      "Final week of campaigning begins; ballots counted after this turn",
+      "One last push: the whole country is in contention",
+      "Campaigns enter the final stretch; volunteers locate their last clean shirt",
+      "It all comes down to this week, say commentators, as every region is now contested",
+      "Final call for leaflets: the last turn starts now"
+    ],
+    "election": [
+      "Polls are closed; the counting begins",
+      "Election night is here: ballot boxes arrive at the count",
+      "The nation stays up late as results start coming in",
+      "Counting under way; tellers request more biscuits",
+      "The campaign is over and the count begins"
+    ],
+    "second_round": [
+      "A dead heat! A second round begins and every party loses ground everywhere",
+      "Tie for most seats sends the country back to the campaign trail",
+      "Too close to call, literally: second round announced",
+      "Second round begins; campaign buses turned around mid-celebration"
+    ],
+    "lead_change": [
+      "{party} takes the lead with {seats} seats projected",
+      "New front-runner: {party} now projected to win {seats} seats",
+      "{party} moves to the top of the projections on {seats} seats",
+      "The race turns: {party} ahead on {seats} seats",
+      "{party} overtakes the field; {seats} seats if the election were today",
+      "Projection shock: {party} leads with {seats} seats",
+      "{party} hits the front on {seats} seats; rivals reach for the map",
+      "Fresh numbers put {party} in first place on {seats} seats"
+    ],
+    "race_leader": [
+      "{party} stays out in front on {seats} seats",
+      "{party} still leads, projected {seats} seats",
+      "No change at the top: {party} on {seats} seats",
+      "{party} holds the lead with {seats} seats projected",
+      "Projections keep {party} ahead on {seats} seats",
+      "{party} remains the one to beat, on {seats} seats",
+      "{party} leads the race; {seats} seats if the election were today",
+      "Steady week for front-runner {party}, projected {seats} seats"
+    ],
+    "race_close": [
+      "Neck and neck: {party} and {party2} separated by a handful of seats",
+      "Too close to call between {party} and {party2}",
+      "{party} edges {party2} in a race tighter than a full bus at rush hour",
+      "{party} and {party2} level pegging as the campaign rolls on",
+      "Projections put {party} and {party2} almost exactly level",
+      "Photo finish looming between {party} and {party2}"
+    ],
+    "member_picked": [
+      "{party} signs up {member}; party office orders a bigger whiteboard",
+      "{member} joins the {party} campaign team",
+      "{party} welcomes {member} aboard; new name badges printed",
+      "{member} is the newest face on the {party} campaign",
+      "{party} adds {member} to its team; rivals take note",
+      "{member} pulls on a {party} rosette for the first time",
+      "{party} announces {member} as its latest recruit",
+      "{member} arrives at {party} HQ and is shown where the kettle is"
+    ],
+    "filler": [
+      "Yard sign sales hit record high; lawns ask for a break",
+      "Nation's kettles report busiest campaign season on record",
+      "Leaflet paper shortage feared as campaigns print more than ever",
+      "Weather forecast: light drizzle, heavy canvassing",
+      "Poll finds most voters would like the campaign buses to stop honking",
+      "Rosette makers enjoy their best year in living memory",
+      "Survey: one in three doorbells now plays a tune when canvassers arrive",
+      "Campaign volunteers report umbrella usage at an all-time high",
+      "Local councils remind campaigns that roundabouts are not stages",
+      "Biscuit tin found empty at three separate campaign offices",
+      "Dog walkers ask canvassers to stop following them for votes",
+      "Village fetes double as campaign stops; prize marrows unimpressed",
+      "Megaphone batteries sell out nationwide",
+      "Experts confirm the queue for the campaign bus is very orderly",
+      "Commuters report hearing the word 'mandate' 400 times this week",
+      "Allotment holders demand campaigns stop leaning on their sheds",
+      "Window poster etiquette guide published; one poster per pane, please",
+      "Election jingles now stuck in the heads of millions",
+      "Postal workers awarded medals for leaflet endurance",
+      "Campaign trail sandwich of the week: cheese and pickle, again",
+      "Swans on the river decline to be photographed with candidates",
+      "Seaside towns report record numbers of campaign selfies with seagulls",
+      "Canvassers advised to wear sensible shoes as campaign enters muddy season",
+      "Nation agrees the debates would be better with more tea breaks",
+      "Weather turns; campaign rallies move under the nearest bandstand"
+    ]
+  }
+}

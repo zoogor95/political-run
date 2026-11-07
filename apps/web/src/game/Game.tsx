@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BoardView, type BoardData } from "@majority-map/board";
 import ukBoard from "@majority-map/content/maps/uk.json";
 import { boardStyles } from "./model";
-import { GroupsPanel, LastTurn, PartyPanel, PlanPanel, Results, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
+import { GroupsPanel, PartyPanel, PlanPanel, Results, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
+import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { useGame, type GameApi } from "./useGame";
 
 const board = ukBoard as unknown as BoardData;
@@ -24,7 +25,41 @@ export function Game() {
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<BoardView | null>(null);
-  const styles = useMemo(() => boardStyles(game.state, game.plan, highlight), [game.state, game.plan, highlight]);
+  // Recap: regions are revealed one by one, the board showing last turn's state until each is revealed.
+  const report = game.report;
+  const recapRegions = useMemo(() => (report ? report.summary.changedRegions.filter((id) => board.regions.some((r) => r.id === id)) : []), [report]);
+  const [recapIndex, setRecapIndex] = useState(0);
+  const [speed, setSpeed] = useState<1 | 2>(1);
+  const [breakingDone, setBreakingDone] = useState(false);
+  const recapping = game.stage === "recap" && report !== null;
+  const breaking = recapping && !breakingDone ? report.headlines.find((h) => h.breaking) : undefined;
+
+  useEffect(() => {
+    setRecapIndex(0);
+    setBreakingDone(false);
+  }, [report]);
+
+  useEffect(() => {
+    if (!recapping || breaking) return;
+    if (recapRegions.length === 0) {
+      game.endRecap();
+      return;
+    }
+    const t = setTimeout(() => {
+      if (recapIndex + 1 >= recapRegions.length) game.endRecap();
+      else setRecapIndex((i) => i + 1);
+    }, (recapIndex + 1 >= recapRegions.length ? 1400 : 1100) / speed);
+    return () => clearTimeout(t);
+  }, [recapping, breaking, recapIndex, recapRegions, speed, game]);
+
+  const styles = useMemo(() => {
+    if (!recapping) return boardStyles(game.state, game.plan, highlight);
+    const before = boardStyles(report.before, {}, null);
+    const after = boardStyles(report.after, {}, null);
+    const shown = new Set(recapRegions.slice(0, recapIndex + 1));
+    return Object.fromEntries(board.regions.map((r) => [r.id, shown.has(r.id) ? after[r.id]! : before[r.id]!]));
+  }, [recapping, report, recapRegions, recapIndex, game.state, game.plan, highlight]);
+  const endBreaking = useCallback(() => setBreakingDone(true), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,9 +88,13 @@ export function Game() {
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
+    if (recapping) {
+      view.select(breaking ? null : (recapRegions[recapIndex] ?? null));
+      return;
+    }
     const isRegion = selected !== null && board.regions.some((r) => r.id === selected);
     view.select(isRegion ? selected : null);
-  }, [selected, styles, ready]);
+  }, [selected, styles, ready, recapping, breaking, recapRegions, recapIndex]);
 
   useEffect(() => {
     if (viewRef.current) window.__game = { view: viewRef.current, game, ready: true };
@@ -63,12 +102,29 @@ export function Game() {
 
   return (
     <div className="game">
+      <Ticker headlines={game.ticker} />
       <TopBar game={game} />
       {game.secondRound && <div className="banner">Tie for most seats! Second round: everyone loses 5 pips in every region and the campaign goes on.</div>}
       <main className="game-body">
         <div className="board" ref={host} data-testid="board" />
         <aside className="panel game-panel">
-          {selected ? (
+          {recapping ? (
+            <RecapPanel
+              report={report}
+              regionId={breaking ? null : (recapRegions[recapIndex] ?? null)}
+              controls={{
+                index: recapIndex,
+                total: recapRegions.length,
+                speed,
+                setSpeed,
+                replay: () => {
+                  setRecapIndex(0);
+                  setBreakingDone(true);
+                },
+                skip: game.endRecap,
+              }}
+            />
+          ) : selected ? (
             <TrackCard key={selected} game={game} trackId={selected} onClose={() => setSelected(null)} />
           ) : (
             <>
@@ -83,12 +139,22 @@ export function Game() {
               {tab === "party" && <PartyPanel game={game} />}
               {tab === "groups" && <GroupsPanel game={game} onOpen={setSelected} />}
               {tab === "rivals" && <RivalsPanel game={game} highlight={highlight} onHighlight={setHighlight} />}
-              {tab === "plan" && <LastTurn state={game.state} events={game.lastEvents} />}
+              {tab === "plan" && report && (
+                <section className="last" data-testid="last-turn">
+                  <h3>Last turn</h3>
+                  <p className="small">{report.headlines[0]?.text}</p>
+                  <button type="button" onClick={game.showSummary} data-testid="open-summary">
+                    Turn summary
+                  </button>
+                </section>
+              )}
             </>
           )}
         </aside>
       </main>
-      {game.result && <Results game={game} />}
+      {breaking && <BreakingCard headline={breaking} onDone={endBreaking} />}
+      {game.stage === "summary" && report && <SummaryView game={game} />}
+      {game.result && game.stage === "planning" && <Results game={game} />}
     </div>
   );
 }

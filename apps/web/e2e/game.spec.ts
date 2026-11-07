@@ -29,6 +29,16 @@ async function tapRegion(page: Page, id: string) {
   else await page.mouse.click(p.x, p.y);
 }
 
+/** Submits the turn and clicks through the BREAKING card, the recap and the summary back to planning. */
+async function submitTurn(page: Page) {
+  await page.getByTestId("submit").click();
+  const breaking = page.getByTestId("breaking");
+  if (await breaking.isVisible().catch(() => false)) await breaking.click();
+  const skip = page.getByTestId("skip");
+  if (await skip.isVisible().catch(() => false)) await skip.click();
+  await page.getByTestId("continue").click();
+}
+
 const turn = (page: Page) => page.evaluate(() => (window as unknown as HookWindow).__game!.game.state.turn);
 
 test("plan steps in a region, submit, and the AI plays its turn", async ({ page }) => {
@@ -46,9 +56,9 @@ test("plan steps in a region, submit, and the AI plays its turn", async ({ page 
   await expect(page.getByTestId("plan-list")).toContainText("London");
   await expect(page.getByTestId("plan-list")).toContainText("0 → 2");
 
-  await page.getByTestId("submit").click();
+  await submitTurn(page);
   await expect(page.getByTestId("turn")).toContainText("Turn 2");
-  await expect(page.getByTestId("last-turn")).toContainText("Rivals made");
+  await expect(page.getByTestId("last-turn")).toBeVisible();
   await expect(page.getByTestId("plan-list")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -58,7 +68,7 @@ test("pick a party member on turn 5 and assign them to a region you've entered",
   await tapRegion(page, "nw");
   await page.getByTestId("add-to-plan").click();
   await page.getByRole("button", { name: "Close" }).click();
-  for (let t = 1; t < 5; t++) await page.getByTestId("submit").click();
+  for (let t = 1; t < 5; t++) await submitTurn(page);
   expect(await turn(page)).toBe(5);
 
   await page.getByTestId("tab-party").click();
@@ -72,7 +82,7 @@ test("pick a party member on turn 5 and assign them to a region you've entered",
   const options = await assign.locator("option").allTextContents();
   const target = options.find((o) => o !== "Assign to…")!;
   await assign.selectOption({ label: target });
-  await page.getByTestId("submit").click();
+  await submitTurn(page);
   await page.getByTestId("tab-party").click();
   await expect(page.getByTestId("party-panel")).toContainText("Angela Rayner");
   await expect(page.getByTestId("party-panel")).toContainText(`${target} · free pip in 3 turns`);
@@ -91,18 +101,67 @@ test("national groups open their own meter from the groups view", async ({ page 
 
 test("rival view and a whole match through to the results", async ({ page }) => {
   await start(page);
-  await page.getByTestId("submit").click();
+  await submitTurn(page);
   await page.getByTestId("tab-rivals").click();
   await page.getByTestId("rivals-panel").getByRole("button", { name: "Show what they lead" }).first().click();
   await expect(page.getByTestId("rivals-panel").getByRole("button", { name: "Hide on map" })).toBeVisible();
 
   // Keep submitting empty plans; the AIs carry the campaign to election night.
-  for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await page.getByTestId("submit").click();
+  for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await submitTurn(page);
   await expect(page.getByTestId("results")).toBeVisible();
   await expect(page.getByTestId("results")).toContainText("wins the most seats");
+  await expect(page.getByTestId("match-headline")).toContainText("HEADLINE OF THE MATCH");
   await page.getByTestId("level").selectOption("hard");
   await page.getByRole("button", { name: "Play again" }).click();
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
   await page.getByTestId("tab-rivals").click();
   await expect(page.getByTestId("rivals-panel")).toContainText("AI · Hard");
+});
+
+test("after a turn: BREAKING card, region-by-region recap, then the turn summary", async ({ page }) => {
+  const errors = await start(page);
+  await expect(page.getByTestId("ticker")).toContainText(/\w/);
+  await tapRegion(page, "lon");
+  await page.getByTestId("add-to-plan").click();
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByTestId("submit").click();
+
+  // Winning London's region group is big news.
+  await expect(page.getByTestId("breaking")).toContainText("BREAKING");
+  await page.getByTestId("breaking").click();
+
+  // The recap reveals changed regions one at a time; the top bar still shows the turn being recapped.
+  await expect(page.getByTestId("recap-card")).toBeVisible();
+  await expect(page.getByTestId("turn")).toContainText("Turn 1");
+  await page.getByRole("button", { name: "2× speed" }).click();
+  await expect(page.getByRole("button", { name: "2× speed" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Replay" }).click();
+  await expect(page.getByTestId("recap")).toContainText(/1 \/ \d+/);
+  await page.getByTestId("skip").click();
+
+  const summary = page.getByTestId("summary");
+  await expect(summary).toContainText("Turn 1 summary");
+  await expect(summary).toContainText("HEADLINE OF THE TURN");
+  await expect(summary).toContainText("Zoogor Party (you)");
+  await expect(page.getByTestId("income")).toContainText("Base");
+  await page.getByTestId("continue").click();
+  await expect(page.getByTestId("turn")).toContainText("Turn 2");
+
+  // The summary can be reopened from the plan tab, and the ticker now carries this turn's news.
+  await page.getByTestId("open-summary").click();
+  await expect(summary).toBeVisible();
+  await page.getByTestId("continue").click();
+  await expect(page.getByTestId("ticker")).toContainText("London");
+  expect(errors).toEqual([]);
+});
+
+test("the ticker can be hidden, and stays hidden after a reload", async ({ page }) => {
+  await start(page);
+  await page.getByRole("button", { name: "Hide the news ticker" }).click();
+  await expect(page.getByTestId("ticker")).toHaveCount(0);
+  await page.reload();
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready));
+  await expect(page.getByTestId("ticker")).toHaveCount(0);
+  await page.getByTestId("ticker-show").click();
+  await expect(page.getByTestId("ticker")).toBeVisible();
 });
