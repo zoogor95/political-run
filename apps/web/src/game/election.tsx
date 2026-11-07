@@ -1,10 +1,10 @@
 /** Election night (suspense card, region-by-region calls, the tally racing to the majority) and the results panel. */
 import { controllers, majority, type AiLevel, type GameState } from "@majority-map/core";
-import { groupName, money, pack, playerOf, trackName, YOU } from "./model";
+import { groupName, money, pack, playerOf, trackName } from "./model";
 import type { ElectionNight as Night, GameApi } from "./useGame";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
-const partyName = (s: GameState, id: string) => (id === YOU ? "Zoogor Party" : playerOf(s, id).party.name);
+const partyName = (s: GameState, id: string) => playerOf(s, id).party.name;
 const partyColor = (s: GameState, id: string) => playerOf(s, id).party.color;
 
 export type NightPhase = "suspense" | "calling" | "done";
@@ -15,7 +15,7 @@ function Tally({ night, called }: { night: Night; called: number }) {
   const need = majority(pack);
   return (
     <div className="night-tally" data-testid="night-tally">
-      <div className="tally">
+      <div className="tally" role="img" aria-label={`Seats declared: ${night.state.players.map((p) => `${p.party.name} ${totals[p.id] ?? 0}`).join(", ")}`}>
         {night.state.players.map((p) => (
           <div key={p.id} style={{ width: `${(100 * (totals[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: totals[p.id] ? 8 : 0 }}>
             <span>{totals[p.id] ? totals[p.id] : ""}</span>
@@ -33,7 +33,7 @@ function Tally({ night, called }: { night: Night; called: number }) {
   );
 }
 
-export function ElectionNightView({ night, called, phase, onSkip, onDone }: { night: Night; called: number; phase: NightPhase; onSkip: () => void; onDone: () => void }) {
+export function ElectionNightView({ night, called, phase, onSkip, onDone, you }: { night: Night; called: number; phase: NightPhase; onSkip: () => void; onDone: () => void; you: string | null }) {
   const s = night.state;
   const call = called > 0 ? night.calls[called - 1] : undefined;
   const result = night.result;
@@ -75,7 +75,7 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone }: { ni
               {night.tie
                 ? "Tie for most seats! A second round begins."
                 : hasMajority
-                  ? `${winner === YOU ? "You win" : `${partyName(s, winner)} wins`} a majority!`
+                  ? `${winner === you ? "You win" : `${partyName(s, winner)} wins`} a majority!`
                   : `Hung parliament: ${partyName(s, winner)} has the most seats, but no majority`}
             </h2>
             {night.tie && <p className="muted">Every party loses 5 pips in every region, locks open, and the campaign goes on until every region is in contention again.</p>}
@@ -93,7 +93,7 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone }: { ni
                     <td>
                       <i className="chip" style={{ background: partyColor(s, id) }} />
                       {partyName(s, id)}
-                      {id === YOU ? " (you)" : ""}
+                      {id === you ? " (you)" : ""}
                     </td>
                     <td>
                       <b>{result.seats[id]}</b>
@@ -123,14 +123,16 @@ export function ResultsPanel({ game, replay, onReplay }: { game: GameApi; replay
   const winner = result.ranking[0]!;
   const need = majority(pack);
   const ctrl = controllers(pack, s);
-  const lost = game.summaries.reduce((a, t) => a + (t.parties.find((p) => p.playerId === YOU)?.conflicts.reduce((x, c) => x + c.amount, 0) ?? 0), 0);
-  const locked = Object.values(s.locked).filter((id) => id === YOU).length;
-  const you = playerOf(s, YOU);
+  const me = game.humans[0]!;
+  const lost = game.summaries.reduce((a, t) => a + (t.parties.find((p) => p.playerId === me)?.conflicts.reduce((x, c) => x + c.amount, 0) ?? 0), 0);
+  const locked = Object.values(s.locked).filter((id) => id === me).length;
+  const you = playerOf(s, me);
+  const youTag = (id: string) => (game.solo && id === me ? " (you)" : "");
   const votes = Object.values(result.popularVote).reduce((a, b) => a + b, 0);
   const lastBoard = game.boards.length - 1;
   return (
     <section data-testid="results">
-      <h2 className="results-title">{winner === YOU ? "You win the most seats!" : `${partyName(s, winner)} wins the most seats`}</h2>
+      <h2 className="results-title">{game.solo && winner === me ? "You win the most seats!" : `${partyName(s, winner)} wins the most seats`}</h2>
       {game.matchHeadline && (
         <p className="headline-of-turn" data-testid="match-headline">
           <span className="breaking-tag">HEADLINE OF THE MATCH</span> {game.matchHeadline.text}
@@ -179,7 +181,7 @@ export function ResultsPanel({ game, replay, onReplay }: { game: GameApi; replay
               <td>
                 <i className="chip" style={{ background: partyColor(s, id) }} />
                 {partyName(s, id)}
-                {id === YOU ? " (you)" : ""}
+                {youTag(id)}
               </td>
               <td>
                 <b>{result.seats[id]}</b>
@@ -191,6 +193,7 @@ export function ResultsPanel({ game, replay, onReplay }: { game: GameApi; replay
         </tbody>
       </table>
 
+      <h3>{game.solo ? "Your match" : `${you.party.name}'s match`}</h3>
       <div className="stats" data-testid="stats">
         <div>
           <small>SPENT</small>

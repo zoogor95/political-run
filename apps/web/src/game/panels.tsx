@@ -14,7 +14,7 @@ import {
   type Plan,
 } from "@majority-map/core";
 import type { GameApi } from "./useGame";
-import { candidate, candidateName, groupName, money, pack, planLines, plannedPlayer, playerOf, trackName, YOU } from "./model";
+import { candidate, candidateName, groupName, money, pack, planLines, plannedPlayer, playerOf, trackName } from "./model";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const pct = (n: number) => `${n > 0 ? "+" : ""}${Math.round(n)}%`;
@@ -25,23 +25,37 @@ function Chip({ color }: { color: string }) {
   return <i className="chip" style={{ background: color }} />;
 }
 
-export function TopBar({ game }: { game: GameApi }) {
+export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: () => void; onSettings?: () => void }) {
   // During the recap the bar shows the board as it was before the turn, so the reveal isn't given away.
   const state = game.stage === "recap" && game.report ? game.report.before : game.state;
   const { issues } = game;
   const seats = projectedSeats(pack, state);
   const total = pack.regions.reduce((a, r) => a + r.seats, 0);
   const contention = pack.regions.filter((r) => state.players.some((p) => meterOf(state, r.id, p.id).steps >= pack.rules.contentionAt)).length;
-  const order = [...state.players].sort((a, b) => (a.id === YOU ? -1 : b.id === YOU ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
+  const order = [...state.players].sort((a, b) => (a.id === game.viewer ? -1 : b.id === game.viewer ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
   const final = state.phase === "final";
   return (
     <header className="topbar">
+      {(onMenu || onSettings) && (
+        <div className="game-menu">
+          {onMenu && (
+            <button type="button" onClick={onMenu} aria-label="Main menu" data-testid="menu-button">
+              ☰
+            </button>
+          )}
+          {onSettings && (
+            <button type="button" onClick={onSettings} aria-label="Settings" data-testid="settings-button">
+              ⚙
+            </button>
+          )}
+        </div>
+      )}
       <div className={`turn${final ? " final" : ""}`} data-testid="turn">
         <b>{game.stage === "results" ? "Result" : final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
         <span>{state.round > 1 ? "Second round · " : ""}United Kingdom</span>
       </div>
       <div className="tally-wrap">
-        <div className="tally" aria-label="Projected seats">
+        <div className="tally" role="img" aria-label={`Projected seats: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>
           {order.map((p) => (
             <div key={p.id} style={{ width: `${(100 * (seats[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: seats[p.id] ? 8 : 0 }}>
               <span>{seats[p.id] ? seats[p.id] : ""}</span>
@@ -73,7 +87,7 @@ function Meter({ state, trackId, playerId, plannedTo }: { state: GameState; trac
   const steps = meterOf(state, trackId, playerId).steps;
   const color = partyColor(state, playerId);
   return (
-    <div className="meter" aria-label={`${partyName(state, playerId)}: ${steps} steps`}>
+    <div className="meter" role="img" aria-label={`${partyName(state, playerId)}: ${steps} of ${pack.rules.steps} steps`}>
       {Array.from({ length: pack.rules.steps }, (_, i) => {
         const n = i + 1;
         const filled = n <= steps;
@@ -93,12 +107,12 @@ function Meter({ state, trackId, playerId, plannedTo }: { state: GameState; trac
 export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: string; onClose: () => void }) {
   const { state, plan } = game;
   const region = pack.regions.find((r) => r.id === trackId);
-  const mine = meterOf(state, trackId, YOU);
+  const mine = meterOf(state, trackId, game.viewer);
   const planned = plan.steps?.[trackId];
   const locked = state.locked[trackId] !== undefined;
   const max = mine.entered ? pack.rules.steps : Math.min(pack.rules.steps, pack.rules.firstEntryMax);
   const target = planned ?? Math.min(max, mine.steps + 1);
-  const you = plannedPlayer(state, plan);
+  const you = plannedPlayer(state, plan, game.viewer);
   const cost = target > mine.steps ? moveCost(pack, you, trackId, mine.steps, target) : 0;
   const canAdd = !locked && mine.steps < max && state.phase !== "finished";
   const wallets = eligibleWallets(pack, trackId).filter((w) => (you.wallets[w] ?? 0) > 0);
@@ -120,9 +134,9 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
           <div key={p.id} className="meter-row">
             <span className="who">
               <Chip color={p.party.color} />
-              {p.id === YOU ? "You" : p.party.name}
+              {game.label(p.id)}
             </span>
-            <Meter state={state} trackId={trackId} playerId={p.id} plannedTo={p.id === YOU ? planned : undefined} />
+            <Meter state={state} trackId={trackId} playerId={p.id} plannedTo={p.id === game.viewer ? planned : undefined} />
             <b>{meterOf(state, trackId, p.id).steps}</b>
           </div>
         ))}
@@ -168,9 +182,9 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
 
 export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string) => void }) {
   const { state, plan, issues } = game;
-  const lines = planLines(state, plan);
+  const lines = planLines(state, plan, game.viewer);
   const total = lines.reduce((a, l) => a + l.cost, 0);
-  const you = playerOf(state, YOU);
+  const you = playerOf(state, game.viewer);
   return (
     <section>
       <h3>Your plan</h3>
@@ -210,25 +224,25 @@ export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string
 
 export function PartyPanel({ game }: { game: GameApi }) {
   const { state, plan } = game;
-  const you = playerOf(state, YOU);
+  const you = playerOf(state, game.viewer);
   const every = pack.rules.memberPickEvery;
-  const nextPick = Math.ceil((state.turn + (canPick(pack, state, YOU) ? 0 : 1)) / every) * every;
+  const nextPick = Math.ceil((state.turn + (canPick(pack, state, game.viewer) ? 0 : 1)) / every) * every;
   const members = [...you.members, ...(plan.pick ? [{ candidateId: plan.pick, regionId: null, assignedTurn: null }] : [])];
   const usedRegions = new Set([...you.members.map((m) => m.regionId), ...Object.values(plan.assign ?? {})]);
-  const open = pack.regions.filter((r) => meterOf(state, r.id, YOU).entered && !usedRegions.has(r.id) && state.locked[r.id] === undefined);
+  const open = pack.regions.filter((r) => meterOf(state, r.id, game.viewer).entered && !usedRegions.has(r.id) && state.locked[r.id] === undefined);
   const leader = candidate(you.leaderId);
   return (
     <section data-testid="party-panel">
-      <h3>Zoogor Party</h3>
+      <h3>{you.party.name}</h3>
       <p className="muted">
         Leader {leader.name} ({leader.affiliation}) · picks every {every} turns, next on turn {nextPick}
       </p>
-      {canPick(pack, state, YOU) && (
+      {canPick(pack, state, game.viewer) && (
         <div className="pick">
           <label htmlFor="pick">Pick a party member (from any party)</label>
           <select id="pick" value={plan.pick ?? ""} onChange={(e) => game.setPick(e.target.value || null)} data-testid="pick">
             <option value="">Choose…</option>
-            {pickPool(pack, state, YOU).map((id) => (
+            {pickPool(pack, state, game.viewer).map((id) => (
               <option key={id} value={id}>
                 {candidateName(id)} · {candidate(id).affiliation}
               </option>
@@ -284,7 +298,7 @@ export function PartyPanel({ game }: { game: GameApi }) {
 export function GroupsPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string) => void }) {
   const { state } = game;
   const ctrl = controllers(pack, state);
-  const you = playerOf(state, YOU);
+  const you = playerOf(state, game.viewer);
   const row = (id: string) => {
     const g = pack.groups.find((x) => x.id === id)!;
     const owner = ctrl[id];
@@ -333,7 +347,7 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
     <section data-testid="rivals-panel">
       <h3>Rivals</h3>
       {state.players
-        .filter((p) => p.id !== YOU)
+        .filter((p) => p.id !== game.viewer)
         .map((p) => {
           const groups = Object.entries(ctrl).filter(([, o]) => o === p.id).map(([g]) => groupName(g));
           return (
@@ -341,7 +355,7 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
               <div className="rival-head">
                 <Chip color={p.party.color} />
                 <b>{p.party.name}</b>
-                <span className="tag">AI · {LEVEL_NAME[game.level]}</span>
+                <span className="tag">{game.levelOf(p.id) ? `AI · ${LEVEL_NAME[game.levelOf(p.id)!]}` : "Human"}</span>
               </div>
               <p className="small">
                 Leader {candidateName(p.leaderId)} · {seats[p.id] ?? 0} seats projected · money at turn start {money(totalMoney(p))}

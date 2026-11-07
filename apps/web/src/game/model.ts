@@ -44,8 +44,8 @@ export const groupName = (id: string) => pack.groups.find((g) => g.id === id)?.n
 export const playerOf = (state: GameState, id: string) => state.players.find((p) => p.id === id)!;
 
 /** The player as the plan's costs see them: with this turn's pick already counted as a member. */
-export function plannedPlayer(state: GameState, plan: Plan): PlayerState {
-  const you = structuredClone(playerOf(state, YOU));
+export function plannedPlayer(state: GameState, plan: Plan, viewer: string): PlayerState {
+  const you = structuredClone(playerOf(state, viewer));
   if (plan.pick) you.members.push({ candidateId: plan.pick, regionId: null, assignedTurn: null });
   return you;
 }
@@ -60,22 +60,22 @@ export interface PlanLine {
 }
 
 /** The plan's moves in the order the engine pays them, with how each is paid. */
-export function planLines(state: GameState, plan: Plan): PlanLine[] {
-  const payer = plannedPlayer(state, plan);
+export function planLines(state: GameState, plan: Plan, viewer: string): PlanLine[] {
+  const payer = plannedPlayer(state, plan, viewer);
   const order = trackIds(pack);
   return Object.entries(plan.steps ?? {})
     .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
     .map(([trackId, to]) => {
-      const from = meterOf(state, trackId, YOU).steps;
+      const from = meterOf(state, trackId, viewer).steps;
       const cost = moveCost(pack, payer, trackId, from, to);
       return { trackId, from, to, cost, paidFrom: pay(pack, payer, trackId, cost) };
     });
 }
 
 /** Board colours from the match: each region in its leader's shade for their pips, pip bars for the top three. */
-export function boardStyles(state: GameState, plan: Plan, highlight: string | null): Record<string, RegionStyle> {
+export function boardStyles(state: GameState, plan: Plan, highlight: string | null, viewer: string | null): Record<string, RegionStyle> {
   const color = Object.fromEntries(state.players.map((p) => [p.id, hexToNumber(p.party.color)]));
-  const you = playerOf(state, YOU);
+  const you = viewer ? playerOf(state, viewer) : null;
   const styles: Record<string, RegionStyle> = {};
   for (const r of pack.regions) {
     const top = regionRanking(state, r.id)
@@ -89,7 +89,7 @@ export function boardStyles(state: GameState, plan: Plan, highlight: string | nu
       fill,
       shares: top.slice(0, 3).map((x) => ({ color: color[x.id]!, share: x.steps })),
       locked: state.locked[r.id] !== undefined,
-      member: you.members.some((m) => m.regionId === r.id) || Object.values(plan.assign ?? {}).includes(r.id),
+      member: (you?.members.some((m) => m.regionId === r.id) ?? false) || Object.values(plan.assign ?? {}).includes(r.id),
       planned: plan.steps?.[r.id] !== undefined,
     };
   }

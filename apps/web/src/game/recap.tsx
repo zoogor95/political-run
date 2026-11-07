@@ -1,33 +1,15 @@
 /** News ticker, BREAKING cards, the animated turn recap and the turn summary. */
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { updateSettings, useSettings } from "./settings";
 import type { GameState, Headline, PartySummary } from "@majority-map/core";
-import { candidateName, groupName, money, pack, playerOf, trackName, YOU } from "./model";
+import { candidateName, groupName, money, pack, playerOf, trackName } from "./model";
 import type { GameApi, TurnReport } from "./useGame";
-
-const HIDE_KEY = "mm.ticker.hidden";
-
-function readHidden(): boolean {
-  try {
-    return localStorage.getItem(HIDE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
 
 /** The always-visible news bar from the fictional MMN channel. It can be hidden; the choice is remembered. */
 export function Ticker({ headlines }: { headlines: Headline[] }) {
-  const [hidden, setHidden] = useState(readHidden);
-  const toggle = () => {
-    setHidden((h) => {
-      try {
-        localStorage.setItem(HIDE_KEY, h ? "0" : "1");
-      } catch {
-        // Private windows can refuse storage; the ticker still toggles for this visit.
-      }
-      return !h;
-    });
-  };
-  if (hidden) {
+  const settings = useSettings();
+  const toggle = () => updateSettings({ showTicker: !settings.showTicker });
+  if (!settings.showTicker) {
     return (
       <button type="button" className="ticker-show" onClick={toggle} data-testid="ticker-show">
         Show the news
@@ -38,7 +20,7 @@ export function Ticker({ headlines }: { headlines: Headline[] }) {
   // Roughly constant reading speed however many headlines there are.
   const seconds = Math.max(20, text.length / 9);
   return (
-    <div className="ticker" data-testid="ticker" aria-label="News headlines">
+    <div className="ticker" data-testid="ticker" role="region" aria-label="News headlines">
       <span className="ticker-tag">MMN</span>
       <div className="ticker-track">
         <div className="ticker-text" style={{ animationDuration: `${seconds}s` }}>
@@ -67,15 +49,15 @@ export function BreakingCard({ headline, onDone }: { headline: Headline; onDone:
   );
 }
 
-const name = (s: GameState, id: string) => (id === YOU ? "You" : playerOf(s, id).party.name);
+const name = (s: GameState, id: string, label?: (id: string) => string) => (label ? label(id) : playerOf(s, id).party.name);
 const color = (s: GameState, id: string) => playerOf(s, id).party.color;
 
 /** What happened in one region this turn, party by party. */
-function regionLines(report: TurnReport, regionId: string): { id: string; text: string; bad?: boolean }[] {
+function regionLines(report: TurnReport, regionId: string, label: (id: string) => string): { id: string; text: string; bad?: boolean }[] {
   const lines: { id: string; text: string; bad?: boolean }[] = [];
   for (const p of report.summary.parties) {
     for (const m of p.moves.filter((x) => x.regionId === regionId)) lines.push({ id: p.playerId, text: `${m.from} → ${m.to} steps · ${money(m.cost)}${m.firstEntry ? " · first entry" : ""}` });
-    for (const c of p.conflicts.filter((x) => x.regionId === regionId)) lines.push({ id: p.playerId, text: `Collided at step ${c.step} with ${c.rivals.map((r) => name(report.after, r)).join(", ")} · lost ${money(c.amount)}`, bad: true });
+    for (const c of p.conflicts.filter((x) => x.regionId === regionId)) lines.push({ id: p.playerId, text: `Collided at step ${c.step} with ${c.rivals.map((r) => name(report.after, r, label)).join(", ")} · lost ${money(c.amount)}`, bad: true });
     for (const f of p.freePips.filter((x) => x.regionId === regionId)) lines.push({ id: p.playerId, text: `Free pip from ${candidateName(f.candidateId)} · now ${f.to}` });
     if (p.locked.includes(regionId)) lines.push({ id: p.playerId, text: "Filled the meter: region locked" });
   }
@@ -91,8 +73,8 @@ export interface RecapControls {
   skip(): void;
 }
 
-export function RecapPanel({ report, regionId, controls }: { report: TurnReport; regionId: string | null; controls: RecapControls }) {
-  const lines = regionId ? regionLines(report, regionId) : [];
+export function RecapPanel({ report, regionId, controls, label }: { report: TurnReport; regionId: string | null; controls: RecapControls; label: (id: string) => string }) {
+  const lines = regionId ? regionLines(report, regionId, label) : [];
   const region = pack.regions.find((r) => r.id === regionId);
   return (
     <section className="recap" data-testid="recap">
@@ -110,7 +92,7 @@ export function RecapPanel({ report, regionId, controls }: { report: TurnReport;
             {lines.map((l, i) => (
               <li key={i} className={l.bad ? "bad" : ""}>
                 <i className="chip" style={{ background: color(report.after, l.id) }} />
-                <b>{name(report.after, l.id)}</b> {l.text}
+                <b>{name(report.after, l.id, label)}</b> {l.text}
               </li>
             ))}
           </ul>
@@ -131,13 +113,14 @@ export function RecapPanel({ report, regionId, controls }: { report: TurnReport;
   );
 }
 
-function partyRow(s: GameState, p: PartySummary) {
+function partyRow(s: GameState, p: PartySummary, game: GameApi) {
   const change = p.seatsAfter - p.seatsBefore;
   return (
-    <tr key={p.playerId} className={p.playerId === YOU ? "you" : ""}>
+    <tr key={p.playerId} className={game.humans.includes(p.playerId) ? "you" : ""}>
       <td>
         <i className="chip" style={{ background: color(s, p.playerId) }} />
-        {p.playerId === YOU ? "Zoogor Party (you)" : playerOf(s, p.playerId).party.name}
+        {playerOf(s, p.playerId).party.name}
+        {game.solo && p.playerId === game.humans[0] ? " (you)" : ""}
       </td>
       <td>
         <b>{p.seatsAfter}</b> <small className={change > 0 ? "up" : change < 0 ? "down" : ""}>{change > 0 ? `+${change}` : change < 0 ? `${change}` : "±0"}</small>
@@ -156,8 +139,7 @@ function partyRow(s: GameState, p: PartySummary) {
 export function SummaryView({ game }: { game: GameApi }) {
   const report = game.report!;
   const s = report.after;
-  const mine = report.summary.parties.find((p) => p.playerId === YOU)!;
-  const income = mine.income;
+  const incomes = report.summary.parties.filter((p) => game.humans.includes(p.playerId) && p.income);
   const top = report.headlines[0];
   return (
     <div className="overlay" data-testid="summary">
@@ -178,17 +160,19 @@ export function SummaryView({ game }: { game: GameApi }) {
               <th>Groups</th>
             </tr>
           </thead>
-          <tbody>{report.summary.parties.map((p) => partyRow(s, p))}</tbody>
+          <tbody>{report.summary.parties.map((p) => partyRow(s, p, game))}</tbody>
         </table>
-        {income && (
-          <div className="income" data-testid="income">
-            <b>Your income next turn: {money(income.base + Object.values(income.groups).reduce((a, b) => a + b, 0))}</b>
+        {incomes.map((p) => (
+          <div className="income" data-testid="income" key={p.playerId}>
+            <b>
+              {game.solo ? "Your" : `${playerOf(s, p.playerId).party.name}:`} income next turn: {money(p.income!.base + Object.values(p.income!.groups).reduce((a, b) => a + b, 0))}
+            </b>
             <span className="small">
-              Base {money(income.base)}
-              {Object.entries(income.groups).map(([g, v]) => ` · ${groupName(g)} ${money(v)}`)}
+              Base {money(p.income!.base)}
+              {Object.entries(p.income!.groups).map(([g, v]) => ` · ${groupName(g)} ${money(v)}`)}
             </span>
           </div>
-        )}
+        ))}
         {report.summary.finalTurnNext && <p className="final-note">Every region is now in contention: next turn is the FINAL TURN.</p>}
         <button type="button" className="primary" onClick={game.backToPlanning} data-testid="continue">
           {game.result ? "See the results" : game.state.phase === "final" ? "Play the final turn" : `Plan turn ${game.state.turn}`}

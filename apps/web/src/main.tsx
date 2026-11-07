@@ -1,10 +1,66 @@
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { initAudio } from "./game/audio";
 import { Game } from "./game/Game";
+import { MainMenu, SettingsPanel, SetupScreen } from "./game/Menu";
+import { loadMatch, clearSave } from "./game/saves";
+import { defaultConfig, type Mode } from "./game/setup";
+import { useSettings } from "./game/settings";
+import type { GameStart } from "./game/useGame";
 import { Lab } from "./Lab";
 import "./styles.css";
 import "./game/game.css";
 
-const lab = new URLSearchParams(location.search).has("lab");
+type Screen = { name: "menu" } | { name: "setup"; mode: Mode } | { name: "game"; start: GameStart; key: number };
 
-createRoot(document.getElementById("root")!).render(<StrictMode>{lab ? <Lab /> : <Game />}</StrictMode>);
+/** Links with ?seed=, ?ai= or ?scenario= go straight into a solo match (used by tests and shared links). */
+function directStart(): GameStart | null {
+  const params = new URLSearchParams(location.search);
+  if (!params.has("seed") && !params.has("ai") && !params.has("scenario")) return null;
+  const ai = params.get("ai");
+  const level = ai === "easy" || ai === "hard" ? ai : "normal";
+  const scenario = params.get("scenario");
+  const start: GameStart = { config: defaultConfig("solo", level) };
+  const seed = Number(params.get("seed"));
+  if (seed) start.seed = seed;
+  if (scenario === "hung" || scenario === "tie") start.scenario = scenario;
+  return start;
+}
+
+function App() {
+  useSettings();
+  const direct = directStart();
+  const [screen, setScreen] = useState<Screen>(() => (direct ? { name: "game", start: direct, key: 0 } : { name: "menu" }));
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const openSettings = () => setSettingsOpen(true);
+  return (
+    <>
+      {screen.name === "menu" && (
+        <MainMenu
+          onContinue={() => {
+            const save = loadMatch();
+            if (save) setScreen({ name: "game", start: { save }, key: Date.now() });
+          }}
+          onNew={(mode) => setScreen({ name: "setup", mode })}
+          onSettings={openSettings}
+        />
+      )}
+      {screen.name === "setup" && (
+        <SetupScreen
+          mode={screen.mode}
+          onBack={() => setScreen({ name: "menu" })}
+          onStart={(config) => {
+            clearSave();
+            setScreen({ name: "game", start: { config }, key: Date.now() });
+          }}
+        />
+      )}
+      {screen.name === "game" && <Game key={screen.key} start={screen.start} onMenu={() => setScreen({ name: "menu" })} onSettings={openSettings} />}
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+    </>
+  );
+}
+
+initAudio();
+const lab = new URLSearchParams(location.search).has("lab");
+createRoot(document.getElementById("root")!).render(<StrictMode>{lab ? <Lab /> : <App />}</StrictMode>);

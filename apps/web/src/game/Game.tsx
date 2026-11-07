@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BoardView, type BoardData } from "@majority-map/board";
 import ukBoard from "@majority-map/content/maps/uk.json";
-import { boardStyles, electionStyles, playerOf, trackName, type Scenario } from "./model";
+import { boardStyles, electionStyles, pack, playerOf, trackName } from "./model";
+import { play } from "./audio";
+import { useSettings } from "./settings";
 import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
 import { GroupsPanel, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
-import { useGame, type GameApi } from "./useGame";
+import { useGame, type GameApi, type GameStart } from "./useGame";
 
 const board = ukBoard as unknown as BoardData;
 
@@ -15,13 +17,9 @@ declare global {
   }
 }
 
-export function Game() {
-  const params = new URLSearchParams(location.search);
-  const seed = Number(params.get("seed")) || undefined;
-  const ai = params.get("ai");
-  const scenarioParam = params.get("scenario");
-  const scenario: Scenario | undefined = scenarioParam === "hung" || scenarioParam === "tie" ? scenarioParam : undefined;
-  const game = useGame(seed, ai === "easy" || ai === "hard" ? ai : "normal", scenario);
+export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: () => void; onSettings: () => void }) {
+  const game = useGame(start);
+  const settings = useSettings();
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("plan");
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -32,7 +30,7 @@ export function Game() {
   const report = game.report;
   const recapRegions = useMemo(() => (report ? report.summary.changedRegions.filter((id) => board.regions.some((r) => r.id === id)) : []), [report]);
   const [recapIndex, setRecapIndex] = useState(0);
-  const [speed, setSpeed] = useState<1 | 2>(1);
+  const [speed, setSpeed] = useState<1 | 2>(settings.recapSpeed);
   const [breakingDone, setBreakingDone] = useState(false);
   const recapping = game.stage === "recap" && report !== null;
   const breaking = recapping && !breakingDone ? report.headlines.find((h) => h.breaking) : undefined;
@@ -94,15 +92,29 @@ export function Game() {
     if (onNight) return electionStyles(night.state, night.calls, called);
     if (game.stage === "results" && night) {
       if (replay >= game.boards.length - 1) return electionStyles(night.state, night.calls, night.calls.length);
-      return boardStyles(game.boards[replay]!, {}, null);
+      return boardStyles(game.boards[replay]!, {}, null, null);
     }
-    if (!recapping) return boardStyles(game.state, game.plan, highlight);
-    const before = boardStyles(report.before, {}, null);
-    const after = boardStyles(report.after, {}, null);
+    // Pass and play: the hand-off screen shows the board but nobody's plan.
+    if (game.stage === "handoff") return boardStyles(game.state, {}, null, null);
+    if (!recapping) return boardStyles(game.state, game.plan, highlight, game.viewer);
+    const before = boardStyles(report.before, {}, null, null);
+    const after = boardStyles(report.after, {}, null, null);
     const shown = new Set(recapRegions.slice(0, recapIndex + 1));
     return Object.fromEntries(board.regions.map((r) => [r.id, shown.has(r.id) ? after[r.id]! : before[r.id]!]));
   }, [recapping, report, recapRegions, recapIndex, game.state, game.plan, highlight, onNight, night, called, game.stage, game.boards, replay]);
   const endBreaking = useCallback(() => setBreakingDone(true), []);
+
+  // Sound cues: submitting, BREAKING cards, election calls and a majority.
+  useEffect(() => {
+    if (game.stage === "recap") play("submit");
+  }, [game.stage]);
+  useEffect(() => {
+    if (breaking) play("breaking");
+  }, [breaking]);
+  useEffect(() => {
+    if (!onNight || called === 0 || !night) return;
+    play(night.calls[called - 1]?.majorityFor ? "majority" : "call");
+  }, [onNight, called, night]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +124,10 @@ export function Game() {
       const view = await BoardView.create(host.current, board);
       if (cancelled) return view.destroy();
       viewRef.current = view;
-      view.onTap((id) => setSelected((cur) => (cur === id ? null : id)));
+      view.onTap((id) => {
+        play("tap");
+        setSelected((cur) => (cur === id ? null : id));
+      });
       view.setStyles(styles);
       setReady(true);
     })();
@@ -150,7 +165,11 @@ export function Game() {
   return (
     <div className="game">
       <Ticker headlines={game.ticker} />
-      {onNight ? <ElectionNightView night={night} called={called} phase={nightPhase} onSkip={skipNight} onDone={game.endElection} /> : <TopBar game={game} />}
+      {onNight ? (
+        <ElectionNightView night={night} called={called} phase={nightPhase} onSkip={skipNight} onDone={game.endElection} you={game.solo ? game.humans[0]! : null} />
+      ) : (
+        <TopBar game={game} onMenu={onMenu} onSettings={onSettings} />
+      )}
       {game.secondRound && <div className="banner">Tie for most seats! Second round: everyone loses 5 pips in every region and the campaign goes on.</div>}
       <main className="game-body">
         <div className="board" ref={host} data-testid="board" />
@@ -180,6 +199,7 @@ export function Game() {
             </section>
           ) : recapping ? (
             <RecapPanel
+              label={game.label}
               report={report}
               regionId={breaking ? null : (recapRegions[recapIndex] ?? null)}
               controls={{
@@ -205,6 +225,26 @@ export function Game() {
                   </button>
                 ))}
               </nav>
+              {tab === "plan" && (
+                <label className="find">
+                  <span>Go to a region</span>
+                  <select value="" onChange={(e) => e.target.value && setSelected(e.target.value)} data-testid="find-region">
+                    <option value="">Choose a region or group…</option>
+                    {pack.regions.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} ({r.seats} seats)
+                      </option>
+                    ))}
+                    {pack.groups
+                      .filter((g) => g.kind === "national")
+                      .map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} (national group)
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
               {tab === "plan" && <PlanPanel game={game} onOpen={setSelected} />}
               {tab === "party" && <PartyPanel game={game} />}
               {tab === "groups" && <GroupsPanel game={game} onOpen={setSelected} />}
@@ -224,7 +264,28 @@ export function Game() {
       </main>
       {breaking && <BreakingCard headline={breaking} onDone={endBreaking} />}
       {game.stage === "summary" && report && <SummaryView game={game} />}
+      {game.stage === "handoff" && <Handoff game={game} />}
 
+    </div>
+  );
+}
+
+/** Pass and play: cover the screen between players so nobody sees anyone else's plan. */
+function Handoff({ game }: { game: GameApi }) {
+  const seat = game.config.seats.find((x) => x.id === game.viewer);
+  const party = playerOf(game.state, game.viewer).party;
+  return (
+    <div className="overlay handoff" data-testid="handoff">
+      <div className="handoff-card">
+        <i className="chip big" style={{ background: party.color }} />
+        <h2>Pass the device to {seat?.label ?? party.name}</h2>
+        <p className="muted">
+          {party.name} plans turn {game.state.turn} in secret. Everyone else, look away.
+        </p>
+        <button type="button" className="primary" onClick={game.ready} data-testid="ready">
+          I'm {seat?.label ?? party.name}: show my turn
+        </button>
+      </div>
     </div>
   );
 }
