@@ -8,3 +8,5 @@ export * from "./turn.js";
 export * from "./election.js";
 export * from "./ai.js";
 export * from "./ai-smart.js";
+export * from "./summary.js";
+export * from "./news.js";
