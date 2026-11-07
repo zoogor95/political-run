@@ -513,3 +513,22 @@
     max-height: 45%;
   }
 }
+
+.again {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-weight: 900;
+}
+
+.again select {
+  font: 800 14px "Nunito", sans-serif;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 6px;
+}
+
+.again .primary {
+  margin-left: auto;
+}

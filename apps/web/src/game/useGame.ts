@@ -1,6 +1,6 @@
 /** Match state for the play screen: your plan for this turn, submitting it against the AI, and the election. */
 import { useCallback, useMemo, useState } from "react";
-import { finishElection, planEasy, resolveTurn, validatePlan, type ElectionResult, type GameState, type Plan, type TurnEvent } from "@majority-map/core";
+import { finishElection, planAi, resolveTurn, validatePlan, type AiLevel, type ElectionResult, type GameState, type Plan, type TurnEvent } from "@majority-map/core";
 import { newGame, pack, YOU } from "./model";
 
 export interface GameApi {
@@ -14,10 +14,13 @@ export interface GameApi {
   setPick(candidateId: string | null): void;
   setAssign(candidateId: string, regionId: string | null): void;
   submit(): void;
-  restart(): void;
+  /** Difficulty of the computer parties in this match. */
+  level: AiLevel;
+  restart(level?: AiLevel): void;
 }
 
-export function useGame(seed?: number): GameApi {
+export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameApi {
+  const [level, setLevel] = useState<AiLevel>(initialLevel);
   const [state, setState] = useState<GameState>(() => newGame(seed));
   const [plan, setPlan] = useState<Plan>({});
   const [lastEvents, setLastEvents] = useState<TurnEvent[]>([]);
@@ -65,7 +68,7 @@ export function useGame(seed?: number): GameApi {
     const plans: Record<string, Plan> = { [YOU]: plan };
     for (const p of state.players) {
       if (p.id === YOU) continue;
-      const r = planEasy(pack, state, p.id, rng);
+      const r = planAi(pack, state, p.id, level, rng);
       rng = r.rng;
       plans[p.id] = r.plan;
     }
@@ -82,9 +85,10 @@ export function useGame(seed?: number): GameApi {
     setState(next);
     setPlan({});
     setLastEvents(events);
-  }, [state, plan]);
+  }, [state, plan, level]);
 
-  const restart = useCallback(() => {
+  const restart = useCallback((next?: AiLevel) => {
+    if (next) setLevel(next);
     setState(newGame());
     setPlan({});
     setLastEvents([]);
@@ -92,5 +96,5 @@ export function useGame(seed?: number): GameApi {
     setSecondRound(false);
   }, []);
 
-  return { state, plan, issues, lastEvents, result, secondRound, setTarget, setPick, setAssign, submit, restart };
+  return { state, plan, issues, lastEvents, result, secondRound, level, setTarget, setPick, setAssign, submit, restart };
 }

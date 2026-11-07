@@ -7,3 +7,4 @@ export * from "./standing.js";
 export * from "./turn.js";
 export * from "./election.js";
 export * from "./ai.js";
+export * from "./ai-smart.js";

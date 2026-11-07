@@ -14,8 +14,10 @@ declare global {
 }
 
 export function Game() {
-  const seed = Number(new URLSearchParams(location.search).get("seed")) || undefined;
-  const game = useGame(seed);
+  const params = new URLSearchParams(location.search);
+  const seed = Number(params.get("seed")) || undefined;
+  const ai = params.get("ai");
+  const game = useGame(seed, ai === "easy" || ai === "hard" ? ai : "normal");
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("plan");
   const [highlight, setHighlight] = useState<string | null>(null);
