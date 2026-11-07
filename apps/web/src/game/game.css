@@ -37,7 +37,7 @@
 }
 
 .turn.final {
-  background: #df4338;
+  background: #b8322a;
   color: #fff;
 }
 
@@ -125,7 +125,7 @@
 
 .banner {
   margin: 0 16px;
-  background: #df4338;
+  background: #b8322a;
   color: #fff;
   border: 3px solid var(--ink);
   border-radius: 12px;
@@ -545,7 +545,7 @@
 }
 
 .ticker-tag {
-  background: #df4338;
+  background: #b8322a;
   display: flex;
   align-items: center;
   padding: 0 14px;
@@ -648,7 +648,7 @@
 
 .breaking-tag {
   display: inline-block;
-  background: #df4338;
+  background: #b8322a;
   color: #fff;
   font: 400 15px "Lilita One", sans-serif;
   letter-spacing: 0.05em;
