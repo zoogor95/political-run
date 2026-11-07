@@ -6,3 +6,5 @@ coverage/
 .env
 .env.*
 .cache/
+apps/web/test-results/
+apps/web/playwright-report/

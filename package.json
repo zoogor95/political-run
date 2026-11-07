@@ -12,7 +12,9 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "maps": "pnpm --filter @majority-map/mapbuild maps"
+    "maps": "pnpm --filter @majority-map/mapbuild maps",
+    "e2e": "pnpm --filter @majority-map/web e2e",
+    "dev": "pnpm --filter @majority-map/web dev"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

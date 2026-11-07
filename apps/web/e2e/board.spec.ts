@@ -1,0 +1,73 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/** The board lab's test hook (window.__board), typed just enough for these tests. */
+type Hook = {
+  boardId: string;
+  ready: boolean;
+  view: {
+    selection: string | null;
+    piecePoint(id: string): { x: number; y: number };
+    screenPoint(id: string): { x: number; y: number };
+    app: { canvas: HTMLCanvasElement };
+  };
+};
+type HookWindow = { __board?: Hook };
+
+async function open(page: Page, board: string) {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  await page.goto(`/?board=${board}`);
+  await page.waitForFunction((id) => { const h = (window as unknown as HookWindow).__board; return Boolean(h?.ready && h.boardId === id); }, board, { timeout: 30_000 });
+  return errors;
+}
+
+/** Page coordinates of a region's piece or badge. */
+async function pointOf(page: Page, id: string, what: "piece" | "badge") {
+  return page.evaluate(
+    ([rid, kind]) => {
+      const v = (window as unknown as HookWindow).__board!.view;
+      const p = kind === "piece" ? v.piecePoint(rid!) : v.screenPoint(rid!);
+      const r = v.app.canvas.getBoundingClientRect();
+      return { x: r.left + p.x, y: r.top + p.y };
+    },
+    [id, what],
+  );
+}
+
+async function tapAt(page: Page, p: { x: number; y: number }) {
+  if (test.info().project.name === "phone") await page.touchscreen.tap(p.x, p.y);
+  else await page.mouse.click(p.x, p.y);
+}
+
+for (const board of ["uk", "pk", "in", "my", "us"]) {
+  test(`${board} board draws without errors`, async ({ page }) => {
+    const errors = await open(page, board);
+    const shot = await page.getByTestId("board").screenshot();
+    expect(shot.byteLength).toBeGreaterThan(20_000); // a blank canvas compresses to almost nothing
+    expect(errors).toEqual([]);
+  });
+}
+
+test("tapping a piece lifts it and opens its region card; tapping again drops it", async ({ page }) => {
+  await open(page, "uk");
+  await tapAt(page, await pointOf(page, "nw", "piece"));
+  await expect(page.getByTestId("region-card").locator("h2")).toHaveText("North West");
+  expect(await page.evaluate(() => (window as unknown as HookWindow).__board!.view.selection)).toBe("nw");
+  await tapAt(page, await pointOf(page, "nw", "piece"));
+  await expect(page.getByTestId("region-card")).toHaveCount(0);
+});
+
+test("tapping a seat badge selects its region", async ({ page }) => {
+  await open(page, "uk");
+  await tapAt(page, await pointOf(page, "se", "badge"));
+  await expect(page.getByTestId("region-card").locator("h2")).toHaveText("South East");
+});
+
+test("small regions are tappable through their enlarged piece", async ({ page }) => {
+  await open(page, "pk");
+  await tapAt(page, await pointOf(page, "isl", "piece"));
+  await expect(page.getByTestId("region-card").locator("h2")).toHaveText("Islamabad");
+});
