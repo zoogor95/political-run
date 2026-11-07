@@ -19,7 +19,7 @@ async function open(page: Page, board: string) {
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });
-  await page.goto(`/?board=${board}`);
+  await page.goto(`/?lab&board=${board}`);
   await page.waitForFunction((id) => { const h = (window as unknown as HookWindow).__board; return Boolean(h?.ready && h.boardId === id); }, board, { timeout: 30_000 });
   return errors;
 }

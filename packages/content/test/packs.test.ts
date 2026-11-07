@@ -5,6 +5,7 @@ import {
   isPickTurn,
   majority,
   moveCost,
+  planEasy,
   projectedSeats,
   resolveTurn,
   totalSeats,
@@ -127,5 +128,37 @@ describe("a full UK match", () => {
       expect(p.money).toBeGreaterThanOrEqual(0);
       for (const v of Object.values(p.wallets)) expect(v).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+describe("a UK match between Easy AIs", () => {
+  it("finishes with members picked and lasts a sensible number of turns", () => {
+    const players = [
+      { id: "zoogor", leaderId: "keir-starmer", party: { name: "Zoogor Party", color: "#6a3fc8", emblem: "megaphone" } },
+      { id: "tea", leaderId: "kemi-badenoch", party: { name: "Tea Break Party", color: "#0f4fa8", emblem: "teacup" } },
+      { id: "queue", leaderId: "nigel-farage", party: { name: "Queue Appreciation Society", color: "#12a3b8", emblem: "ticket" } },
+    ];
+    let state = createMatch(uk, { seed: 11, players });
+    let rng = state.rng;
+    let campaignTurns = 0;
+    for (let guard = 0; guard < 200 && state.phase !== "finished"; guard++) {
+      if (state.phase === "election") {
+        state = finishElection(uk, state).state;
+        continue;
+      }
+      const plans: Record<string, Plan> = {};
+      for (const p of state.players) {
+        const r = planEasy(uk, state, p.id, rng);
+        rng = r.rng;
+        plans[p.id] = r.plan;
+      }
+      state = resolveTurn(uk, state, plans).state;
+      campaignTurns++;
+    }
+    console.log(`UK Easy-AI match: ${campaignTurns} campaign turns, round ${state.round}, members ${state.players.map((p) => p.members.length).join("/")}`);
+    expect(state.phase).toBe("finished");
+    expect(campaignTurns).toBeGreaterThanOrEqual(5);
+    expect(campaignTurns).toBeLessThanOrEqual(30);
+    expect(state.players.every((p) => p.members.length >= 1)).toBe(true);
   });
 });
