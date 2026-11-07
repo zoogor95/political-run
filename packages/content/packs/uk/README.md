@@ -2,7 +2,8 @@
 
 **Every number here is a draft sample value for tuning, not final balance.**
 
-- **Regions:** the 12 nations and English regions, with real 2024 seat counts (650 in total, 326 for a majority).
+- **Regions:** the 12 nations and English regions, with real 2024 seat counts (650 in total, 326 for a majority) and approximate 2024 electorates (rounded), used only for the popular vote on election night.
+- **Election night call order:** the North East first (a nod to the traditional early results from Sunderland), the South East last.
 - **Step costs:** each region's first step costs £5,000 + £200 per seat (London: £20,000). Each later step costs 1.1x the previous one.
 - **Income:** £250K base money every turn, plus each group you control (£30K to £60K per group, adjusted by your modifier on that group).
 - **Groups:** 6 state groups (sets of regions) and 6 national groups. A region can be in more than one group; London and the big cities overlap on purpose.

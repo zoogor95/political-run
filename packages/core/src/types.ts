@@ -35,6 +35,8 @@ export interface RegionDef {
   seats: number;
   /** Campaign cost of the first step, in whole currency units. */
   baseCost: number;
+  /** Registered voters, for the popular vote shown on election night. Optional; it never affects the result. */
+  voters?: number;
 }
 
 export interface GroupDef {
@@ -73,6 +75,8 @@ export interface MapPack {
   candidates: CandidateDef[];
   /** Comical made-up party names for AI players. Never a parody of a real party, religion or community. */
   aiPartyNames: string[];
+  /** Order regions are called on election night (every region once). Defaults to map order. */
+  callOrder?: string[];
 }
 
 /** Match state. Plain JSON so it can be saved, sent over the network and replayed. */

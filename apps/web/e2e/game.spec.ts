@@ -29,14 +29,25 @@ async function tapRegion(page: Page, id: string) {
   else await page.mouse.click(p.x, p.y);
 }
 
-/** Submits the turn and clicks through the BREAKING card, the recap and the summary back to planning. */
+/** Submits the turn and clicks through whatever follows (BREAKING card, recap, summary, election night) until the next turn or the results. */
 async function submitTurn(page: Page) {
   await page.getByTestId("submit").click();
-  const breaking = page.getByTestId("breaking");
-  if (await breaking.isVisible().catch(() => false)) await breaking.click();
-  const skip = page.getByTestId("skip");
-  if (await skip.isVisible().catch(() => false)) await skip.click();
-  await page.getByTestId("continue").click();
+  // Wait until the turn has really left planning, so a not-yet-rendered recap isn't mistaken for the next turn.
+  await page.waitForFunction(() => (window as unknown as { __game?: { game: { stage: string } } }).__game?.game.stage !== "planning");
+  for (let i = 0; i < 80; i++) {
+    if ((await page.getByTestId("results").count()) > 0) return;
+    // Back to planning: Submit is on the page and enabled. (isEnabled would wait for a missing button, so count first.)
+    const submit = page.getByTestId("submit");
+    if ((await submit.count()) > 0 && (await submit.isEnabled())) {
+      if ((await page.getByTestId("summary").count()) === 0 && (await page.getByTestId("night-tally").count()) === 0) return;
+    }
+    for (const id of ["breaking", "skip", "continue", "night-skip", "night-done"]) {
+      const el = page.getByTestId(id);
+      if (await el.isVisible().catch(() => false)) await el.click({ timeout: 2000 }).catch(() => {});
+    }
+    await page.waitForTimeout(150);
+  }
+  throw new Error("turn did not finish");
 }
 
 const turn = (page: Page) => page.evaluate(() => (window as unknown as HookWindow).__game!.game.state.turn);
@@ -100,6 +111,7 @@ test("national groups open their own meter from the groups view", async ({ page 
 });
 
 test("rival view and a whole match through to the results", async ({ page }) => {
+  test.setTimeout(180_000); // a whole match, recaps and election night included
   await start(page);
   await submitTurn(page);
   await page.getByTestId("tab-rivals").click();
@@ -164,4 +176,60 @@ test("the ticker can be hidden, and stays hidden after a reload", async ({ page 
   await expect(page.getByTestId("ticker")).toHaveCount(0);
   await page.getByTestId("ticker-show").click();
   await expect(page.getByTestId("ticker")).toBeVisible();
+});
+
+async function toElectionNight(page: Page, scenario: string) {
+  await page.goto(`/?scenario=${scenario}&ai=easy`);
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  await expect(page.getByTestId("turn")).toContainText("FINAL TURN");
+  await page.getByTestId("submit").click();
+  for (let i = 0; i < 60 && !(await page.getByTestId("continue").isVisible().catch(() => false)); i++) {
+    for (const id of ["breaking", "skip"]) {
+      const el = page.getByTestId(id);
+      if (await el.isVisible().catch(() => false)) await el.click({ timeout: 1000 }).catch(() => {});
+    }
+    await page.waitForTimeout(150);
+  }
+  await page.getByTestId("continue").click();
+}
+
+test("election night ending in a hung parliament forms a coalition government", async ({ page }) => {
+  await toElectionNight(page, "hung");
+  await expect(page.getByTestId("suspense")).toContainText("Ballot count, turn 9");
+  await expect(page.getByTestId("call-banner")).toContainText("North East"); // the UK count starts in the North East
+  await expect(page.getByTestId("night-log")).toContainText("North East");
+  await page.getByTestId("night-skip").click();
+  const end = page.getByTestId("night-end");
+  await expect(end).toContainText("HUNG PARLIAMENT");
+  await expect(end).toContainText("274");
+  await expect(end).toContainText("%"); // popular vote
+  await page.getByTestId("night-done").click();
+
+  const formation = page.getByTestId("formation");
+  await expect(formation).toContainText("Zoogor Party has the most seats: forms the government 274");
+  await expect(formation).toContainText("Tea Break Party is second: main opposition 214");
+  await expect(formation).toContainText("Queue Appreciation Society joins the government +162");
+  await expect(formation).toContainText("Majority reached with 436");
+  await expect(page.getByTestId("turn")).toContainText("Result");
+  await expect(page.getByTestId("stats")).toContainText("TURNS");
+  await page.getByTestId("replay").fill("0");
+  await expect(page.getByText("Replay the map: start")).toBeVisible();
+  await page.getByRole("button", { name: "Play again" }).click();
+  await expect(page.getByTestId("turn")).toContainText("Turn 1");
+});
+
+test("a tie for most seats starts a second round that plays through to a result", async ({ page }) => {
+  test.setTimeout(180_000); // a whole second round, recaps included
+  await toElectionNight(page, "tie");
+  await page.getByTestId("night-skip").click();
+  await expect(page.getByTestId("night-end")).toContainText("DEAD HEAT");
+  await expect(page.getByTestId("night-end")).toContainText("325");
+  await page.getByTestId("night-done").click();
+  await expect(page.getByTestId("turn")).toContainText("Second round");
+  await expect(page.locator(".banner")).toContainText("Second round");
+
+  // The campaign goes on until every region is in contention again, then a final turn and a new count.
+  for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await submitTurn(page);
+  await expect(page.getByTestId("results")).toBeVisible();
+  await expect(page.getByTestId("formation")).toContainText("forms the government");
 });

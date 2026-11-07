@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countElection, finishElection, formGovernment, majority, nextRandom, projectedSeats, regionLeader, seedRng, splitSeats } from "../src/index.js";
+import { countElection, electionCalls, finishElection, formGovernment, majority, nextRandom, popularVote, projectedSeats, regionLeader, seedRng, splitSeats, validatePack } from "../src/index.js";
 import { newMatch, setSteps, testPack as pack } from "./fixtures.js";
 
 describe("seats by pip share", () => {
@@ -136,5 +136,53 @@ describe("seeded randomness", () => {
     expect(run(7)).toEqual(run(7));
     expect(run(7)).not.toEqual(run(8));
     run(7).forEach((v) => expect(v >= 0 && v < 1).toBe(true));
+  });
+});
+
+describe("election night", () => {
+  const withVoters = {
+    ...pack,
+    regions: pack.regions.map((r) => ({ ...r, voters: { north: 1000, south: 800, city: 3000 }[r.id]! })),
+    callOrder: ["city", "north", "south"],
+  };
+
+  it("calls regions in the pack's order with running totals and marks the call that passes the majority", () => {
+    const s = newMatch();
+    setSteps(s, "city", "a", 3); // 75 seats: past the 73 majority on the first call
+    setSteps(s, "north", "b", 3);
+    setSteps(s, "south", "b", 2, 2);
+    setSteps(s, "south", "c", 2, 1); // c got there first
+    const calls = electionCalls(withVoters, s);
+    expect(calls.map((c) => c.regionId)).toEqual(["city", "north", "south"]);
+    expect(calls[0]).toMatchObject({ winner: "a", totals: { a: 75, b: 0, c: 0 }, majorityFor: "a" });
+    expect(calls[1]!.majorityFor).toBeUndefined();
+    expect(calls[2]!.winner).toBe("c"); // 15-15 split; c reached its steps first
+    expect(calls.at(-1)!.totals).toEqual({ a: 75, b: 55, c: 15 });
+  });
+
+  it("has no majority call in a hung parliament", () => {
+    const s = newMatch();
+    setSteps(s, "city", "a", 3);
+    setSteps(s, "city", "b", 3);
+    setSteps(s, "north", "c", 3);
+    setSteps(s, "south", "c", 3);
+    expect(electionCalls(withVoters, s).some((c) => c.majorityFor)).toBe(false);
+  });
+
+  it("splits each region's voters by pip share for the popular vote", () => {
+    const s = newMatch();
+    setSteps(s, "city", "a", 3);
+    setSteps(s, "city", "b", 1);
+    setSteps(s, "north", "b", 2);
+    s.phase = "election";
+    const { result } = finishElection(withVoters, s);
+    expect(result.popularVote).toEqual({ a: 2250, b: 750 + 1000, c: 0 });
+    expect(popularVote(pack, s)).toEqual({ a: 0, b: 0, c: 0 }); // no voter counts, no popular vote
+  });
+
+  it("checks the call order lists every region once", () => {
+    expect(validatePack({ ...withVoters, callOrder: ["city", "north"] }).map((i) => i.path)).toContain("callOrder");
+    expect(validatePack({ ...withVoters, callOrder: ["city", "north", "north"] }).map((i) => i.path)).toContain("callOrder");
+    expect(validatePack(withVoters)).toEqual([]);
   });
 });

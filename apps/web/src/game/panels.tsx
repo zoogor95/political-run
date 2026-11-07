@@ -10,7 +10,6 @@ import {
   projectedSeats,
   totalMoney,
   type AiLevel,
-  type ElectionResult,
   type GameState,
   type Plan,
 } from "@majority-map/core";
@@ -38,7 +37,7 @@ export function TopBar({ game }: { game: GameApi }) {
   return (
     <header className="topbar">
       <div className={`turn${final ? " final" : ""}`} data-testid="turn">
-        <b>{final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
+        <b>{game.stage === "results" ? "Result" : final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
         <span>{state.round > 1 ? "Second round · " : ""}United Kingdom</span>
       </div>
       <div className="tally-wrap">
@@ -61,9 +60,11 @@ export function TopBar({ game }: { game: GameApi }) {
           {contention} / {pack.regions.length}
         </b>
       </div>
-      <button type="button" className="submit" disabled={issues.length > 0 || state.phase === "finished" || game.stage !== "planning"} onClick={game.submit} data-testid="submit">
-        Submit turn
-      </button>
+      {game.stage !== "results" && (
+        <button type="button" className="submit" disabled={issues.length > 0 || state.phase === "finished" || game.stage !== "planning"} onClick={game.submit} data-testid="submit">
+          Submit turn
+        </button>
+      )}
     </header>
   );
 }
@@ -353,59 +354,6 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
           );
         })}
     </section>
-  );
-}
-
-export function Results({ game }: { game: GameApi }) {
-  const { state, result } = game as { state: GameState; result: ElectionResult };
-  const won = result.ranking[0] === YOU;
-  return (
-    <div className="overlay" data-testid="results">
-      <div className="results">
-        <h2>{won ? "You win the most seats!" : `${partyName(state, result.ranking[0]!)} wins the most seats`}</h2>
-        {game.matchHeadline && (
-          <p className="headline-of-turn" data-testid="match-headline">
-            <span className="breaking-tag">HEADLINE OF THE MATCH</span> {game.matchHeadline.text}
-          </p>
-        )}
-        <p className="muted">
-          {result.government.hasMajority ? `Government: ${result.government.members.map((id) => partyName(state, id)).join(" + ")} (${result.government.seats} seats)` : "No majority"}
-        </p>
-        <table className="list">
-          <tbody>
-            {result.ranking.map((id, i) => (
-              <tr key={id}>
-                <td>{i + 1}</td>
-                <td>
-                  <Chip color={partyColor(state, id)} />
-                  {id === YOU ? "Zoogor Party (you)" : partyName(state, id)}
-                </td>
-                <td>
-                  <b>{result.seats[id]}</b>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="again">
-          <label htmlFor="level">Next match</label>
-          <select id="level" defaultValue={game.level} data-testid="level">
-            {(["easy", "normal", "hard"] as const).map((l) => (
-              <option key={l} value={l}>
-                {LEVEL_NAME[l]} opponents
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="primary"
-            onClick={() => game.restart((document.getElementById("level") as HTMLSelectElement | null)?.value as AiLevel | undefined)}
-          >
-            Play again
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 

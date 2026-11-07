@@ -66,6 +66,7 @@ export function validatePack(pack: MapPack): PackIssue[] {
     if (!reg.name) add(`${p}.name`, "is required");
     if (!Number.isInteger(reg.seats) || reg.seats < 1) add(`${p}.seats`, "must be a whole number of at least 1");
     if (!Number.isInteger(reg.baseCost) || reg.baseCost < 1) add(`${p}.baseCost`, "must be a whole number of at least 1");
+    if (reg.voters !== undefined && (!Number.isInteger(reg.voters) || reg.voters < 1)) add(`${p}.voters`, "must be a whole number of at least 1");
   });
   if (pack.regions.length < 2) add("regions", "needs at least 2 regions");
 
@@ -109,6 +110,13 @@ export function validatePack(pack: MapPack): PackIssue[] {
     }
   });
   if (pack.candidates.length < 2) add("candidates", "needs at least 2 candidates");
+
+  if (pack.callOrder) {
+    const order = new Set(pack.callOrder);
+    if (order.size !== pack.callOrder.length || order.size !== regionIds.size || [...order].some((id) => !regionIds.has(id))) {
+      add("callOrder", "must list every region exactly once");
+    }
+  }
 
   if (pack.aiPartyNames.length < 4) add("aiPartyNames", "needs at least 4 names, one per AI seat");
   if (new Set(pack.aiPartyNames.map((n) => n.toLowerCase())).size !== pack.aiPartyNames.length) add("aiPartyNames", "lists a name twice");
