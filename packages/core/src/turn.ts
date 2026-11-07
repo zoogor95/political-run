@@ -53,6 +53,20 @@ export function isPickTurn(pack: MapPack, state: GameState): boolean {
   return every > 0 && state.turn % every === 0;
 }
 
+/** True when the player may pick a party member this turn: a pick turn on which they haven't used their pick. */
+export function canPick(pack: MapPack, state: GameState, playerId: string): boolean {
+  if (!isPickTurn(pack, state)) return false;
+  const allowed = Math.floor(state.turn / pack.rules.memberPickEvery);
+  return playerById(state, playerId).members.length < allowed;
+}
+
+/** Candidates a player may pick as a member: anyone except themselves, other parties' leaders and members they already have. */
+export function pickPool(pack: MapPack, state: GameState, playerId: string): string[] {
+  const player = playerById(state, playerId);
+  const taken = new Set([...state.players.map((p) => p.leaderId), ...player.members.map((m) => m.candidateId)]);
+  return pack.candidates.map((c) => c.id).filter((id) => !taken.has(id));
+}
+
 export interface PlanIssue {
   code:
     | "not_campaigning"

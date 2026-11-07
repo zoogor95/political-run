@@ -26,7 +26,7 @@ async function fontsReady() {
   await Promise.race([document.fonts.load('16px "Lilita One"'), new Promise((r) => setTimeout(r, 1500))]);
 }
 
-export function App() {
+export function Lab() {
   const [boardId, setBoardId] = useState(() => new URLSearchParams(location.search).get("board") ?? "uk");
   const [selected, setSelected] = useState<string | null>(null);
   const [fps, setFps] = useState(0);

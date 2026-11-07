@@ -46,6 +46,7 @@ export class BoardView {
   private frameQueued = false;
   private renders: number[] = [];
   private cached = false;
+  private resizeObserver: ResizeObserver | undefined;
   private readonly cx: number;
   private readonly cy: number;
 
@@ -85,7 +86,13 @@ export class BoardView {
       autoStart: false,
     });
     parent.appendChild(app.canvas);
-    return new BoardView(app, board, opts);
+    const view = new BoardView(app, board, opts);
+    // Follow the parent's own size (panels opening and closing), not just the window's.
+    if (typeof ResizeObserver !== "undefined") {
+      view.resizeObserver = new ResizeObserver(() => app.resize());
+      view.resizeObserver.observe(parent);
+    }
+    return view;
   }
 
   onTap(handler: (id: string) => void): void {
@@ -166,6 +173,7 @@ export class BoardView {
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect();
     this.app.destroy(true, { children: true });
   }
 
@@ -307,6 +315,7 @@ export class BoardView {
         x += sw;
       }
     }
+    if (style?.planned) flags.circle(0, 0, b.r + 2.6).stroke({ width: 3, color: GOLD }).circle(0, 0, b.r + 4.4).stroke({ width: 1.2, color: INK });
     if (style?.member) flags.circle(b.r * 0.75, -b.r * 0.75, b.r * 0.32).fill({ color: GOLD }).stroke({ width: 1.2, color: INK });
     if (style?.locked) {
       flags.circle(-b.r * 0.78, -b.r * 0.72, b.r * 0.34).fill({ color: INK });

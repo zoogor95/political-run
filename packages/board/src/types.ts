@@ -33,6 +33,8 @@ export interface RegionStyle {
   locked?: boolean;
   /** One of your party members works here. */
   member?: boolean;
+  /** Your plan this turn adds steps here: the badge gets a gold ring. */
+  planned?: boolean;
 }
 
 export interface Point {

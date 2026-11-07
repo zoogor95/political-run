@@ -6,3 +6,4 @@ export * from "./economy.js";
 export * from "./standing.js";
 export * from "./turn.js";
 export * from "./election.js";
+export * from "./ai.js";
