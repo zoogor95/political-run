@@ -95,3 +95,52 @@ export function boardStyles(state: GameState, plan: Plan, highlight: string | nu
   }
   return styles;
 }
+
+/** Prepared boards for checking election night end to end: a hung parliament and a dead heat. */
+export type Scenario = "hung" | "tie";
+
+/** A UK match on its final turn with a prepared board. Pips are set directly, as if earned over earlier turns. */
+export function scenarioGame(kind: Scenario): GameState {
+  const s = newGame(7);
+  s.turn = 9;
+  s.phase = "final";
+  const give = (regionId: string, playerId: string, steps: number, turn: number) => {
+    const m = s.meters[regionId]![playerId]!;
+    m.steps = steps;
+    m.entered = true;
+    m.reached = Array.from({ length: steps }, () => turn * 2);
+  };
+  if (kind === "hung") {
+    // Zoogor 274, Tea Break 214, Queue Appreciation Society 162: nobody reaches 326.
+    const owners: Record<string, string> = { se: YOU, lon: YOU, sw: YOU, wal: YOU, ni: YOU, nw: "tea", sco: "tea", wm: "tea", ne: "tea", ee: "queue", yh: "queue", em: "queue" };
+    for (const [r, p] of Object.entries(owners)) give(r, p, 3, 2);
+  } else {
+    // You and Tea Break level everywhere; odd seat counts alternate who got there first, so it ends 325 each.
+    let youFirst = true;
+    for (const r of pack.regions) {
+      const odd = r.seats % 2 === 1;
+      give(r.id, YOU, 3, odd && !youFirst ? 3 : 2);
+      give(r.id, "tea", 3, odd && youFirst ? 3 : 2);
+      if (odd) youFirst = !youFirst;
+    }
+  }
+  return s;
+}
+
+/**
+ * Election-night colours: called regions in the colour of the party that won the most seats there, at full
+ * strength, with the seat split as the badge bar; regions not yet called stay unpainted.
+ */
+export function electionStyles(state: GameState, calls: { regionId: string; seats: Record<string, number>; winner: string | null }[], called: number): Record<string, RegionStyle> {
+  const color = Object.fromEntries(state.players.map((p) => [p.id, hexToNumber(p.party.color)]));
+  const styles: Record<string, RegionStyle> = {};
+  for (const r of pack.regions) styles[r.id] = { fill: EMPTY };
+  calls.slice(0, called).forEach((c) => {
+    const split = Object.entries(c.seats).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    styles[c.regionId] = {
+      fill: c.winner ? color[c.winner]! : EMPTY,
+      shares: split.slice(0, 3).map(([id, n]) => ({ color: color[id]!, share: n })),
+    };
+  });
+  return styles;
+}

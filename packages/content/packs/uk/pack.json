@@ -22,73 +22,85 @@
       "id": "sco",
       "name": "Scotland",
       "seats": 57,
-      "baseCost": 16400
+      "baseCost": 16400,
+      "voters": 4000000
     },
     {
       "id": "wal",
       "name": "Wales",
       "seats": 32,
-      "baseCost": 11400
+      "baseCost": 11400,
+      "voters": 2310000
     },
     {
       "id": "ni",
       "name": "Northern Ireland",
       "seats": 18,
-      "baseCost": 8600
+      "baseCost": 8600,
+      "voters": 1370000
     },
     {
       "id": "ne",
       "name": "North East",
       "seats": 27,
-      "baseCost": 10400
+      "baseCost": 10400,
+      "voters": 1950000
     },
     {
       "id": "nw",
       "name": "North West",
       "seats": 73,
-      "baseCost": 19600
+      "baseCost": 19600,
+      "voters": 5450000
     },
     {
       "id": "yh",
       "name": "Yorkshire and the Humber",
       "seats": 54,
-      "baseCost": 15800
+      "baseCost": 15800,
+      "voters": 3960000
     },
     {
       "id": "em",
       "name": "East Midlands",
       "seats": 47,
-      "baseCost": 14400
+      "baseCost": 14400,
+      "voters": 3510000
     },
     {
       "id": "wm",
       "name": "West Midlands",
       "seats": 57,
-      "baseCost": 16400
+      "baseCost": 16400,
+      "voters": 4210000
     },
     {
       "id": "ee",
       "name": "East of England",
       "seats": 61,
-      "baseCost": 17200
+      "baseCost": 17200,
+      "voters": 4600000
     },
     {
       "id": "lon",
       "name": "London",
       "seats": 75,
-      "baseCost": 20000
+      "baseCost": 20000,
+      "voters": 5550000
     },
     {
       "id": "se",
       "name": "South East",
       "seats": 91,
-      "baseCost": 23200
+      "baseCost": 23200,
+      "voters": 6780000
     },
     {
       "id": "sw",
       "name": "South West",
       "seats": 58,
-      "baseCost": 16600
+      "baseCost": 16600,
+      "voters": 4400000
     }
   ],
   "groups": [
@@ -453,5 +465,19 @@
     "Allotment Front",
     "Mind the Gap Party",
     "Drizzle Party"
+  ],
+  "callOrder": [
+    "ne",
+    "wal",
+    "ni",
+    "sco",
+    "yh",
+    "nw",
+    "em",
+    "wm",
+    "ee",
+    "sw",
+    "lon",
+    "se"
   ]
 }

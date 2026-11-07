@@ -1,6 +1,7 @@
 /** Match state for the play screen: your plan for this turn, submitting it against the AI, and the election. */
 import { useCallback, useMemo, useState } from "react";
 import {
+  electionCalls,
   finishElection,
   headlinesForTurn,
   planAi,
@@ -8,6 +9,7 @@ import {
   summarizeTurn,
   validatePlan,
   type AiLevel,
+  type ElectionCall,
   type ElectionResult,
   type GameState,
   type Headline,
@@ -17,7 +19,7 @@ import {
   type TurnSummary,
 } from "@majority-map/core";
 import ukNews from "@majority-map/content/news/uk.json";
-import { candidateName, groupName, money, newGame, pack, playerOf, trackName, YOU } from "./model";
+import { candidateName, groupName, money, newGame, pack, playerOf, scenarioGame, trackName, YOU, type Scenario } from "./model";
 
 const news = ukNews as NewsTemplates;
 
@@ -31,7 +33,17 @@ export interface TurnReport {
   headlines: Headline[];
 }
 
-export type Stage = "planning" | "recap" | "summary";
+export type Stage = "planning" | "recap" | "summary" | "election" | "results";
+
+/** The count after the final turn: every call in order, the result, and whether it was a tie. */
+export interface ElectionNight {
+  /** The board the votes were counted on. */
+  state: GameState;
+  calls: ElectionCall[];
+  result: ElectionResult;
+  tie: boolean;
+  turn: number;
+}
 
 function makeHeadlines(state: GameState, summary: TurnSummary, rng: number, secondRound = false) {
   return headlinesForTurn(news, {
@@ -64,7 +76,12 @@ export interface GameApi {
   /** The most newsworthy headline of the match so far. */
   matchHeadline: Headline | null;
   result: ElectionResult | null;
+  election: ElectionNight | null;
+  /** The board after every turn (index 0 is the empty board), for the results replay. */
+  boards: GameState[];
+  summaries: TurnSummary[];
   endRecap(): void;
+  endElection(): void;
   backToPlanning(): void;
   showSummary(): void;
   secondRound: boolean;
@@ -77,9 +94,14 @@ export interface GameApi {
   restart(level?: AiLevel): void;
 }
 
-export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameApi {
+export function useGame(seed?: number, initialLevel: AiLevel = "normal", scenario?: Scenario): GameApi {
   const [level, setLevel] = useState<AiLevel>(initialLevel);
-  const [state, setState] = useState<GameState>(() => newGame(seed));
+  const [state, setState] = useState<GameState>(() => (scenario ? scenarioGame(scenario) : newGame(seed)));
+  // Test scenarios start on the final turn with a prepared board; the computer parties sit that one turn out.
+  const [idleAi, setIdleAi] = useState(Boolean(scenario));
+  const [election, setElection] = useState<ElectionNight | null>(null);
+  const [boards, setBoards] = useState<GameState[]>(() => [state]);
+  const [summaries, setSummaries] = useState<TurnSummary[]>([]);
   const [plan, setPlan] = useState<Plan>({});
   const [lastEvents, setLastEvents] = useState<TurnEvent[]>([]);
   const [result, setResult] = useState<ElectionResult | null>(null);
@@ -132,6 +154,10 @@ export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameAp
     const plans: Record<string, Plan> = { [YOU]: plan };
     for (const p of state.players) {
       if (p.id === YOU) continue;
+      if (idleAi) {
+        plans[p.id] = {};
+        continue;
+      }
       const r = planAi(pack, state, p.id, level, rng);
       rng = r.rng;
       plans[p.id] = r.plan;
@@ -143,12 +169,16 @@ export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameAp
     let tie = false;
     setSecondRound(false);
     if (next.phase === "election") {
+      const calls = electionCalls(pack, next);
       const done = finishElection(pack, next);
+      setElection({ state: next, calls, result: done.result, tie: done.result.secondRound, turn: state.turn });
       next = done.state;
       tie = done.result.secondRound;
-      if (tie) setSecondRound(true);
-      else setResult(done.result);
+      if (!tie) setResult(done.result);
     }
+    setIdleAi(false);
+    setBoards((b) => [...b, resolved.state]);
+    setSummaries((x) => [...x, summary]);
     const made = makeHeadlines(next, summary, newsRng, tie);
     setNewsRng(made.rng);
     setTicker(made.headlines);
@@ -159,10 +189,19 @@ export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameAp
     setState(next);
     setPlan({});
     setLastEvents(events);
-  }, [state, plan, level, newsRng]);
+  }, [state, plan, level, newsRng, idleAi]);
 
   const endRecap = useCallback(() => setStage("summary"), []);
-  const backToPlanning = useCallback(() => setStage("planning"), []);
+  // After the summary of the final turn, election night comes before planning (or the results).
+  const backToPlanning = useCallback(() => setStage(election ? "election" : "planning"), [election]);
+  const endElection = useCallback(() => {
+    if (!election) return;
+    if (election.tie) {
+      setSecondRound(true);
+      setElection(null);
+      setStage("planning");
+    } else setStage("results");
+  }, [election]);
   const showSummary = useCallback(() => setStage((s) => (s === "planning" ? "summary" : s)), []);
 
   const restart = useCallback((next?: AiLevel) => {
@@ -177,6 +216,10 @@ export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameAp
     setReport(null);
     setStage("planning");
     setMatchHeadline(null);
+    setElection(null);
+    setBoards([fresh]);
+    setSummaries([]);
+    setIdleAi(false);
   }, []);
 
   return {
@@ -189,6 +232,10 @@ export function useGame(seed?: number, initialLevel: AiLevel = "normal"): GameAp
     ticker,
     matchHeadline,
     result,
+    election,
+    boards,
+    summaries,
+    endElection,
     secondRound,
     level,
     setTarget,
