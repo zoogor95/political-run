@@ -91,6 +91,7 @@ export function majority(pack: MapPack): number {
   return Math.floor(totalSeats(pack) / 2) + 1;
 }
 
-export function totalPips(state: GameState, playerId: string): number {
-  return Object.values(state.meters).reduce((a, byPlayer) => a + (byPlayer[playerId]?.steps ?? 0), 0);
+/** A player's pips across every region (national group meters don't count). */
+export function totalPips(pack: MapPack, state: GameState, playerId: string): number {
+  return pack.regions.reduce((a, r) => a + (state.meters[r.id]?.[playerId]?.steps ?? 0), 0);
 }

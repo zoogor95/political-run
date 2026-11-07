@@ -46,6 +46,8 @@ export interface GroupDef {
   regions: string[];
   /** Income per turn for the player who controls the group, in whole currency units. */
   income: number;
+  /** National groups only: cost of the first step on the group's own meter. */
+  baseCost?: number;
 }
 
 export interface CandidateDef {
@@ -100,7 +102,10 @@ export interface PlayerState {
   leaderId: string;
   party: PartyIdentity;
   members: Member[];
+  /** Base money: spendable anywhere. */
   money: number;
+  /** Group money by group id. State group money is spendable only in that group's regions; national group money anywhere. */
+  wallets: Record<string, number>;
   /** Total money spent so far, including money lost in conflicts. Used for tiebreaks. */
   spent: number;
 }
@@ -128,9 +133,9 @@ export interface GameState {
   round: number;
   phase: Phase;
   players: PlayerState[];
-  /** meters[regionId][playerId] */
+  /** meters[trackId][playerId]. A track is a region or a national group, which has its own meter. */
   meters: Record<string, Record<string, Meter>>;
-  /** Player who filled the region's meter, or absent while open. */
+  /** Player who filled the track's meter, or absent while open. */
   locked: Record<string, string>;
   /** Seeded random state, for AI and anything else that needs randomness. */
   rng: number;
@@ -138,7 +143,7 @@ export interface GameState {
 
 /** What a player submits for one turn. */
 export interface Plan {
-  /** Target step per region (the step the player wants to reach, not how many to add). */
+  /** Target step per region or national group (the step the player wants to reach, not how many to add). */
   steps?: Record<string, number>;
   /** Candidate picked as a new party member on a pick turn. */
   pick?: string;
@@ -147,8 +152,11 @@ export interface Plan {
 }
 
 export type TurnEvent =
-  | { type: "moved"; regionId: string; playerId: string; from: number; to: number; cost: number }
+  | { type: "moved"; regionId: string; playerId: string; from: number; to: number; cost: number; paidFrom: Record<string, number> }
   | { type: "conflict"; regionId: string; step: number; playerIds: string[]; costs: Record<string, number> }
+  | { type: "income"; playerId: string; base: number; groups: Record<string, number> }
+  | { type: "control_gained"; groupId: string; playerId: string }
+  | { type: "control_lost"; groupId: string; playerId: string }
   | { type: "picked"; playerId: string; candidateId: string }
   | { type: "assigned"; playerId: string; candidateId: string; regionId: string }
   | { type: "free_pip"; regionId: string; playerId: string; candidateId: string; to: number }
