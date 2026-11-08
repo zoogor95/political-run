@@ -37,7 +37,7 @@
 }
 
 .turn.final {
-  background: #df4338;
+  background: #b8322a;
   color: #fff;
 }
 
@@ -125,7 +125,7 @@
 
 .banner {
   margin: 0 16px;
-  background: #df4338;
+  background: #b8322a;
   color: #fff;
   border: 3px solid var(--ink);
   border-radius: 12px;
@@ -545,7 +545,7 @@
 }
 
 .ticker-tag {
-  background: #df4338;
+  background: #b8322a;
   display: flex;
   align-items: center;
   padding: 0 14px;
@@ -572,6 +572,8 @@
 
 .ticker-text span {
   padding-right: 60px;
+  /* Its own background, so contrast checks never measure the scrolling text against the red MMN tag. */
+  background: var(--ink);
 }
 
 @keyframes ticker {
@@ -646,7 +648,7 @@
 
 .breaking-tag {
   display: inline-block;
-  background: #df4338;
+  background: #b8322a;
   color: #fff;
   font: 400 15px "Lilita One", sans-serif;
   letter-spacing: 0.05em;
@@ -994,4 +996,385 @@
 
 .replay input {
   accent-color: var(--ink);
+}
+
+/* Accessibility: text size scales the panels (not the map), focus is always visible, motion can be reduced. */
+.game-panel,
+.topbar,
+.ticker,
+.summary,
+.results,
+.night-end,
+.settings-card,
+.setup,
+.menu,
+.handoff-card,
+.breaking,
+.call-banner {
+  zoom: var(--text-scale, 1);
+}
+
+:focus-visible {
+  outline: 3px solid #2f6fdf;
+  outline-offset: 2px;
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Menu and settings buttons above the board */
+.game-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.game-menu button {
+  width: 34px;
+  height: 30px;
+  font: 800 15px "Nunito", sans-serif;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 2px 0 var(--ink);
+  padding: 0;
+  cursor: pointer;
+}
+
+.find {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+/* Main menu */
+.menu {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px 16px;
+}
+
+.menu h1 {
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  font-size: clamp(40px, 8vw, 72px);
+  margin: 0;
+  color: var(--cream);
+  text-shadow: 0 5px 0 var(--ink), 3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 -3px 0 var(--ink);
+}
+
+.tagline {
+  margin: 0 0 8px;
+  font-weight: 900;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(420px, 100%);
+}
+
+.menu-big {
+  font: 400 24px "Lilita One", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  cursor: pointer;
+  text-align: left;
+}
+
+.menu-big.primary {
+  background: var(--gold);
+}
+
+.menu-big small {
+  font: 800 13px "Nunito", sans-serif;
+  color: var(--muted);
+}
+
+.lab-link {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* Match setup */
+.setup {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setup-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.setup-head h1 {
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  font-size: 32px;
+  margin: 0;
+}
+
+.setup button,
+.settings-card button,
+.handoff-card button {
+  font: 800 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.setup button.primary,
+.settings-card button.primary,
+.handoff-card button.primary {
+  background: var(--gold);
+  box-shadow: 0 4px 0 var(--ink);
+  font-weight: 900;
+}
+
+.setup button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.seats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.seat {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-top-width: 12px;
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seat-head b {
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  flex: 1;
+}
+
+.kind {
+  display: flex;
+}
+
+.setup .kind button {
+  border-radius: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.setup .kind button:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.setup .kind button:last-child {
+  border-radius: 0 10px 10px 0;
+  border-left: 0;
+}
+
+.setup .kind button[aria-pressed="true"] {
+  background: var(--gold);
+}
+
+.setup .remove {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.seat label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.seat input,
+.seat select,
+.settings-card select {
+  font: 800 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.seat .row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seat .row label {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.setup .swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+}
+
+.setup .swatch[aria-checked="true"] {
+  box-shadow: 0 0 0 3px var(--cream), 0 0 0 6px var(--ink);
+}
+
+.setup .swatch:disabled {
+  opacity: 0.25;
+}
+
+.add-seat {
+  min-height: 120px;
+  border-style: dashed !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  font-size: 16px !important;
+}
+
+.start {
+  align-self: flex-end;
+  font-size: 18px !important;
+  padding: 10px 18px !important;
+}
+
+/* Settings */
+.settings-card {
+  width: min(460px, 100%);
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-weight: 800;
+}
+
+.settings-card h2 {
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  margin: 0;
+}
+
+.slider,
+.pick-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.pick-row {
+  grid-template-columns: 1fr 1.2fr;
+}
+
+.slider input {
+  accent-color: var(--ink);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink);
+}
+
+.settings-card .primary {
+  align-self: flex-end;
+}
+
+/* Pass and play hand-off */
+.handoff {
+  background: var(--ink);
+}
+
+.handoff-card {
+  width: min(460px, 100%);
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.handoff-card h2 {
+  font-family: "Lilita One", sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  margin: 0;
+}
+
+.chip.big {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border-width: 3px;
+  margin: 0;
 }
