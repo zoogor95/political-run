@@ -36,3 +36,19 @@ jobs:
       - run: pnpm e2e
         env:
           CI: "true"
+
+  balance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Plays 10,000 computer-vs-computer UK matches; fails if a strategy wins more than 60% of its duels.
+      - run: pnpm balance --out "$RUNNER_TEMP/uk.md"
+      - run: cat "$RUNNER_TEMP/uk.md" >> "$GITHUB_STEP_SUMMARY"
+        if: always()

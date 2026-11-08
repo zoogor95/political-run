@@ -14,6 +14,7 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "maps": "pnpm --filter @majority-map/mapbuild maps",
     "e2e": "pnpm --filter @majority-map/web e2e",
+    "balance": "pnpm --filter @majority-map/balance sim",
     "dev": "pnpm --filter @majority-map/web dev"
   },
   "devDependencies": {

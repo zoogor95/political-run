@@ -2,15 +2,20 @@
  * Normal and Hard computer opponents.
  *
  * Both value a step by the share of a region's seats it adds per pound, plus a bonus for taking the lead (leads win
- * region groups), and value national groups by their income once they reach control. They pick members whose bonuses
- * suit the places they campaign, put members in their biggest regions, and spend everything on the final turn.
+ * region groups), and value national groups by their income, counting each step for its share of the way to control.
+ * They pick members whose bonuses suit the places they campaign, put members in their biggest regions, and spend
+ * everything on the final turn.
  *
- * Hard also values group control by the income it brings over the turns likely left, and times the end of the
- * campaign: it closes out the last regions when it is ahead and holds back when it is behind.
+ * Rivals: a region nobody else has entered yet will not stay empty. Both expect rivals to arrive (Hard more than
+ * Normal), so they value the early, cheap steps that keep a region once others come in.
  *
- * Conflicts: a target someone else is likely to aim for is risky. Normal steps around likely targets half the time,
- * Hard less often (to a randomly chosen safe step). When defending a lead, Hard aims at the step a rival would need to
- * overtake, so an attack there collides and cancels.
+ * Conflicts: a target someone else is likely to aim for is risky, so both step around likely targets about half the
+ * time, to a randomly chosen safe step so two players thinking alike don't dodge into each other.
+ *
+ * Hard spends everything every turn and is more focused (less random) than Normal. Its settings come from the balance
+ * simulator (packages/balance), which plays settings against each other in mirrored matches. The older options that
+ * the simulator found to lose games (planning income over the turns left, timing the end of the campaign, defending
+ * leads at the overtaking step) are kept as tuning switches, off by default, for testing on other maps.
  */
 import { groupModifier, moveCost, playerById } from "./costs.js";
 import { controllers, isRegion, nationalGroup, totalMoney, trackIds } from "./economy.js";
@@ -29,18 +34,45 @@ export interface Tuning {
   noise: number;
   /** Chance of stepping around a target a rival is likely to aim for. */
   dodge: number;
-  /** Hard defends leads by aiming at the rival's overtaking step. */
+  /** Defends leads by aiming at the step a rival would need to overtake, so an attack there collides and cancels. */
   defend: boolean;
   /** Values group control by the income it brings over the turns likely left, not a flat bonus. */
   plan_income: boolean;
   /** Times the end of the campaign: closes out the last regions when ahead, holds back when behind. */
   timing: boolean;
+  /** Rival steps to expect in each open region, per rival, even before they arrive: values early, cheap steps. 0 plans only for rivals already there. */
+  anticipate: number;
+  /** Strategy: above 0 favours regions with many seats, below 0 small ones. 0 is neutral. */
+  seatBias: number;
+  /** Strategy: how much group income matters, as a multiple of the usual value. 1 is neutral. */
+  groupBias: number;
+  /** Strategy: extra value, in seats per seat of the region, for bringing a region into contention (ending the campaign sooner). */
+  rush: number;
 }
 
+const NEUTRAL = { seatBias: 0, groupBias: 1, rush: 0 };
+
+// Hard's settings won the simulator's mirrored matches against their neighbours, and hold up in mixed line-ups: Hard
+// wins about half of its matches against two Normals, and two Hards win about their even share against a Normal.
 const TUNING: Record<SmartLevel, Tuning> = {
-  normal: { spend: 0.88, noise: 0.35, dodge: 0.5, defend: false, plan_income: false, timing: false },
-  // Hard dodges less often than Normal: two Hards that always dodge pick the same safe step and collide with each other.
-  hard: { spend: 0.95, noise: 0.12, dodge: 0.3, defend: true, plan_income: true, timing: true },
+  normal: { spend: 0.88, noise: 0.35, dodge: 0.5, defend: false, plan_income: false, timing: false, anticipate: 0.75, ...NEUTRAL },
+  // Income planning stays off: it overvalued national groups and lost to Normal almost every game.
+  hard: { spend: 1, noise: 0.3, dodge: 0.55, defend: false, plan_income: false, timing: false, anticipate: 1.75, ...NEUTRAL },
+};
+
+export type StrategyId = "balanced" | "big-regions" | "small-regions" | "groups" | "rush" | "hoard";
+
+/**
+ * Ways to play, as changes to the Hard AI. The balance simulator plays them against each other: a fair map has no
+ * single way to play that wins far more than its share.
+ */
+export const STRATEGIES: Record<StrategyId, { name: string; about: string; tuning: Partial<Tuning> }> = {
+  balanced: { name: "Balanced", about: "The Hard AI as it is: best seats for the money, groups when worth it.", tuning: {} },
+  "big-regions": { name: "Big regions", about: "Concentrates on the regions with the most seats.", tuning: { seatBias: 1 } },
+  "small-regions": { name: "Small regions", about: "Picks up the cheap regions with few seats that others leave alone.", tuning: { seatBias: -1 } },
+  groups: { name: "Groups and income", about: "Chases region and national groups for income first, seats later.", tuning: { groupBias: 2.5 } },
+  rush: { name: "Rush", about: "Brings regions into contention early to end the campaign while ahead.", tuning: { rush: 0.4 } },
+  hoard: { name: "Hoard", about: "Keeps a quarter of its money back each turn and pours the savings in on the final turn.", tuning: { spend: 0.75 } },
 };
 
 /** Steps a player is likely to aim for next on a track: first entry 1-2, otherwise one or two more, or one past the leader. */
@@ -84,7 +116,8 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
       seatsPerPound = Math.max(seatsPerPound, gain / moveCost(pack, player, r.id, m.steps, m.steps + 1));
     }
   }
-  const incomeWorth = (income: number) => (t.plan_income ? income * turnsLeft * seatsPerPound * 0.6 : income / 15_000);
+  const incomeWorth = (income: number) => t.groupBias * (t.plan_income ? income * turnsLeft * seatsPerPound * 0.6 : income / 15_000);
+  const meanSeats = pack.regions.reduce((a, r) => a + r.seats, 0) / pack.regions.length;
 
   // Members: the candidate whose bonuses add most where this player is campaigning (seats in entered regions).
   if (canPick(pack, state, playerId)) {
@@ -130,10 +163,10 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
   const value = (track: string, to: number): number => {
     if (isRegion(pack, track)) {
       const region = pack.regions.find((r) => r.id === track)!;
-      const theirs = others.reduce((a, id) => a + steps(track, id), 0);
+      const theirs = Math.max(others.reduce((a, id) => a + steps(track, id), 0), final ? 0 : others.length * t.anticipate);
       const share = (pips: number) => (pips + theirs === 0 ? 0 : pips / (pips + theirs));
       const from = steps(track, playerId);
-      let v = region.seats * (share(to) - share(from));
+      let v = region.seats * (share(to) - share(from)) * (region.seats / meanSeats) ** t.seatBias;
       // Taking the lead: worth part of every region group this region belongs to.
       const leader = regionLeader(state, track);
       const top = leader ? steps(track, leader) : 0;
@@ -141,17 +174,19 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
         for (const g of pack.groups) if (g.kind === "state" && g.regions.includes(track)) v += incomeWorth(g.income) * (1 + groupModifier(pack, payer, g.id) / 100) * 0.5;
       }
       // The last regions to reach contention start the final turn: worth it when ahead, a mistake when behind.
+      if (t.rush > 0 && !final && from < pack.rules.contentionAt && to >= pack.rules.contentionAt && !contested(track)) v += region.seats * t.rush;
       if (t.timing && from < pack.rules.contentionAt && to >= pack.rules.contentionAt && uncontested <= 2 && !contested(track)) {
         v += ahead ? region.seats * 0.3 : -region.seats;
       }
       return v;
     }
-    // National group: worth its income once this player would lead it with at least 3 steps.
+    // National group: worth its income once this player leads it with enough steps for control. Steps on the way there
+    // count for their share of the way, so a meter that takes several turns to climb is still worth starting.
     const g = nationalGroup(pack, track)!;
     const top = Math.max(0, ...others.map((id) => steps(track, id)));
-    const leadsAfter = to >= pack.rules.contentionAt && to > top;
-    const leadsNow = ctrl[track] === playerId;
-    return leadsAfter && !leadsNow ? incomeWorth(g.income) * (1 + groupModifier(pack, payer, g.id) / 100) : 0.05;
+    const need = Math.max(pack.rules.contentionAt, top + 1);
+    if (final) return 0;
+    return incomeWorth(g.income) * (1 + groupModifier(pack, payer, g.id) / 100) * Math.min(1, to / need);
   };
 
   const tracks = trackIds(pack).filter((id) => state.locked[id] === undefined);

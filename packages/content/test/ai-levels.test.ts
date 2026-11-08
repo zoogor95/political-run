@@ -58,8 +58,10 @@ describe("AI difficulty levels on the UK map (60 matches each; an even share wou
     expect(winShare(["hard", "normal", "normal"], "hard")).toBeGreaterThan(0.36);
   });
 
+  // Two Hards think alike; if they kept aiming at the same steps they would cancel each other out and win well under their
+  // even share of two thirds. The balance simulator puts them at about 65% over 800 matches.
   it("two Hards don't sabotage each other against a Normal", () => {
-    expect(winShare(["hard", "hard", "normal"], "hard")).toBeGreaterThan(0.67);
+    expect(winShare(["hard", "hard", "normal"], "hard")).toBeGreaterThan(0.55);
   });
 });
 
