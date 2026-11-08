@@ -1,0 +1,19 @@
+{
+  "name": "@majority-map/balance",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Balance simulator: plays thousands of computer-vs-computer matches and reports how fair a map pack is.",
+  "scripts": {
+    "sim": "tsx src/run.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@majority-map/content": "workspace:*",
+    "@majority-map/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.21.0"
+  }
+}
