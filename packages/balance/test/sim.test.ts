@@ -77,7 +77,7 @@ describe("report", () => {
       const wins = Object.values(m[a]!).reduce((x, y) => x + y, 0);
       duels[a as StrategyId] = { games: 100 * Object.keys(m[a]!).length, wins, fair: 50 * Object.keys(m[a]!).length };
     }
-    return { games: 0, duels, duelMatrix: m, duelGames, field: {} as Report["field"], leaders: {}, seats: {}, turns: { mean: 0, min: 0, max: 0 }, secondRounds: 0, capped: 0, winnerSeatShare: 0, majorityWins: 0 };
+    return { games: 0, duels, duelMatrix: m, duelGames, field: {} as Report["field"], leaders: {}, seats: {}, turns: { mean: 0, min: 0, max: 0 }, secondRounds: 0, capped: 0, winnerSeatShare: 0, majorityWins: 0, lostShare: 0 };
   }
 
   it("leaves a strategy that loses to everyone out of the field, then checks the limit", () => {

@@ -1,6 +1,6 @@
 /** Main menu, match setup (solo or pass and play) and settings. */
 import { useState } from "react";
-import { pack } from "./model";
+import { MAPS, isMapId, map, mapDetail, pack, selectMap, type MapId } from "./model";
 import { loadMatch } from "./saves";
 import { COLORS, EMBLEMS, EMBLEM_NAME, aiSeat, checkConfig, defaultConfig, humanSeat, type MatchConfig, type Mode, type Seat } from "./setup";
 import { updateSettings, useSettings } from "./settings";
@@ -18,7 +18,7 @@ export function MainMenu({ onContinue, onNew, onSettings }: { onContinue: () => 
           <button type="button" className="menu-big primary" onClick={onContinue} data-testid="continue-match">
             Continue match
             <small>
-              {save.result ? "Result" : save.state.phase === "final" ? "Final turn" : `Turn ${save.state.turn}`} · United Kingdom · saved {when}
+              {save.result ? "Result" : save.state.phase === "final" ? "Final turn" : `Turn ${save.state.turn}`} · {MAPS[isMapId(save.state.packId) ? save.state.packId : "uk"].name} · saved {when}
             </small>
           </button>
         )}
@@ -129,6 +129,22 @@ function SeatCard({ seat, config, mode, onChange, onRemove }: { seat: Seat; conf
 export function SetupScreen({ mode, onBack, onStart }: { mode: Mode; onBack: () => void; onStart: (config: MatchConfig) => void }) {
   const [config, setConfig] = useState<MatchConfig>(() => defaultConfig(mode));
   const issues = checkConfig(config);
+  // Another map has other leaders and computer parties: seats keep their kind, colour and emblem, and people keep
+  // their party names; leaders and computer party names come from the new map.
+  const changeMap = (id: MapId) => {
+    if (id === map.id) return;
+    selectMap(id);
+    const seats: Seat[] = [];
+    config.seats.forEach((s, i) => {
+      if (s.kind === "ai") {
+        const fresh = aiSeat(seats, i + 1, s.level);
+        seats.push({ ...s, leaderId: fresh.leaderId, party: { ...s.party, name: fresh.party.name } });
+      } else {
+        seats.push({ ...s, leaderId: humanSeat(seats, i + 1).leaderId });
+      }
+    });
+    setConfig({ ...config, map: id, seats });
+  };
   const update = (seat: Seat) => {
     // A seat switched to computer gets a made-up AI party; switched to human, a player's party.
     const old = config.seats.find((s) => s.id === seat.id)!;
@@ -152,8 +168,20 @@ export function SetupScreen({ mode, onBack, onStart }: { mode: Mode; onBack: () 
           Back
         </button>
         <h1>{mode === "solo" ? "Solo match" : "Pass and play"}</h1>
-        <span className="muted">United Kingdom · Parliamentary · 650 seats</span>
+        <span className="muted">
+          {map.name} · {mapDetail(map)}
+        </span>
       </header>
+      <div className="map-pick" role="radiogroup" aria-label="Map" data-testid="map-pick">
+        {Object.values(MAPS).map((m) => (
+          <button key={m.id} type="button" role="radio" aria-checked={m.id === map.id} className="map-card" onClick={() => changeMap(m.id)} data-testid={`map-${m.id}`}>
+            <b>{m.name}</b>
+            <small>
+              {mapDetail(m)} · {m.pack.regions.length} regions
+            </small>
+          </button>
+        ))}
+      </div>
       <p className="small">
         Colours, emblems and leaders are first come, first served: once a seat has one, nobody else can pick it. {mode === "hotseat" ? "Players take turns on this device; each plan stays secret." : ""}
       </p>

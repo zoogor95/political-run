@@ -1,8 +1,15 @@
-/** Game setup and pure helpers for the play screen: the UK solo match, board styles from the match state, money text. */
-import type { RegionStyle } from "@majority-map/board";
+/** The map in play and pure helpers for the play screen: board styles from the match state, money text. */
+import type { BoardData, RegionStyle } from "@majority-map/board";
 import { EMPTY, hexToNumber, shadeFor, tint } from "@majority-map/board";
+import pkBoard from "@majority-map/content/maps/pk.json";
+import ukBoard from "@majority-map/content/maps/uk.json";
+import pkNews from "@majority-map/content/news/pk.json";
+import ukNews from "@majority-map/content/news/uk.json";
+import pkPack from "@majority-map/content/packs/pk/pack.json";
 import ukPack from "@majority-map/content/packs/uk/pack.json";
 import {
+  totalSeats,
+  type NewsTemplates,
   createMatch,
   meterOf,
   moveCost,
@@ -15,7 +22,45 @@ import {
   type PlayerState,
 } from "@majority-map/core";
 
-export const pack = ukPack as unknown as MapPack;
+export type MapId = "uk" | "pk";
+
+export interface MapEntry {
+  id: MapId;
+  name: string;
+  pack: MapPack;
+  board: BoardData;
+  news: NewsTemplates;
+  /** The first player's default leader. */
+  defaultLeader: string;
+}
+
+export const MAPS: Record<MapId, MapEntry> = {
+  uk: { id: "uk", name: "United Kingdom", pack: ukPack as unknown as MapPack, board: ukBoard as unknown as BoardData, news: ukNews as NewsTemplates, defaultLeader: "keir-starmer" },
+  pk: { id: "pk", name: "Pakistan", pack: pkPack as unknown as MapPack, board: pkBoard as unknown as BoardData, news: pkNews as NewsTemplates, defaultLeader: "shehbaz-sharif" },
+};
+
+export const isMapId = (id: unknown): id is MapId => id === "uk" || id === "pk";
+
+/**
+ * The map in play. Screens import these and read them while rendering; selectMap switches them before a match or the
+ * setup screen draws, so every screen sees the same map.
+ */
+export let map: MapEntry = MAPS.uk;
+export let pack: MapPack = map.pack;
+export let board: BoardData = map.board;
+export let news: NewsTemplates = map.news;
+
+export function selectMap(id: string): MapEntry {
+  map = isMapId(id) ? MAPS[id] : MAPS.uk;
+  pack = map.pack;
+  board = map.board;
+  news = map.news;
+  return map;
+}
+
+/** For example "Parliamentary · 336 seats". */
+export const mapDetail = (entry: MapEntry) => `Parliamentary · ${totalSeats(entry.pack)} seats`;
+
 export const YOU = "you";
 
 export function newGame(seed = Date.now() % 1_000_000): GameState {
@@ -32,14 +77,19 @@ export function newGame(seed = Date.now() % 1_000_000): GameState {
 export function money(n: number): string {
   const sign = n < 0 ? "−" : "";
   const a = Math.abs(n);
-  if (a >= 1_000_000) return `${sign}${pack.currency}${(a / 1_000_000).toFixed(2)}M`;
-  if (a >= 1000) return `${sign}${pack.currency}${(a / 1000).toFixed(a >= 100_000 ? 0 : 1)}K`;
-  return `${sign}${pack.currency}${a}`;
+  // A symbol of letters (Rs) gets a space: "Rs 2.50M"; a sign (£) doesn't: "£250K".
+  const c = /^[A-Za-z]/.test(pack.currency) ? `${pack.currency} ` : pack.currency;
+  if (a >= 1_000_000) return `${sign}${c}${(a / 1_000_000).toFixed(2)}M`;
+  if (a >= 1000) return `${sign}${c}${(a / 1000).toFixed(a >= 100_000 ? 0 : 1)}K`;
+  return `${sign}${c}${a}`;
 }
 
 export const candidateName = (id: string) => pack.candidates.find((c) => c.id === id)?.name ?? id;
 export const candidate = (id: string) => pack.candidates.find((c) => c.id === id)!;
-export const trackName = (id: string) => pack.regions.find((r) => r.id === id)?.name ?? pack.groups.find((g) => g.id === id)?.name ?? id;
+export const trackName = (id: string) =>
+  pack.regions.find((r) => r.id === id)?.name ??
+  pack.groups.find((g) => g.id === id)?.name ??
+  (pack.reservedSeats?.some((d) => d.id === id) ? `Reserved seats: ${pack.reservedSeats.find((d) => d.id === id)!.name}` : id);
 export const groupName = (id: string) => pack.groups.find((g) => g.id === id)?.name ?? id;
 export const playerOf = (state: GameState, id: string) => state.players.find((p) => p.id === id)!;
 
@@ -136,6 +186,7 @@ export function electionStyles(state: GameState, calls: { regionId: string; seat
   const styles: Record<string, RegionStyle> = {};
   for (const r of pack.regions) styles[r.id] = { fill: EMPTY };
   calls.slice(0, called).forEach((c) => {
+    if (!(c.regionId in styles)) return; // reserved seats have no place on the board
     const split = Object.entries(c.seats).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
     styles[c.regionId] = {
       fill: c.winner ? color[c.winner]! : EMPTY,

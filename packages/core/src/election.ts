@@ -1,11 +1,13 @@
 import { grantIncome } from "./economy.js";
-import { majority, meterOf, splitSeats, totalPips } from "./standing.js";
+import { allocateReserved, majority, meterOf, regionSeats as seatsByRegion, splitSeats, totalPips } from "./standing.js";
 import type { GameState, MapPack } from "./types.js";
 
 export interface ElectionResult {
   /** Seats won in each region, by player. */
   regionSeats: Record<string, Record<string, number>>;
-  /** Total seats by player. */
+  /** Reserved seats by set and player (empty when the pack has none). */
+  reserved: Record<string, Record<string, number>>;
+  /** Total seats by player, reserved seats included. */
   seats: Record<string, number>;
   /** Players from first to last. */
   ranking: string[];
@@ -36,12 +38,11 @@ export interface Government {
  */
 export function countElection(pack: MapPack, state: GameState): ElectionResult {
   if (pack.gameType !== "parliamentary") throw new Error("Presidential elections are not implemented yet");
-  const regionSeats: Record<string, Record<string, number>> = {};
+  const regionSeats = seatsByRegion(pack, state);
+  const reserved = allocateReserved(pack, state, regionSeats);
   const seats: Record<string, number> = {};
   state.players.forEach((p) => (seats[p.id] = 0));
-  for (const r of pack.regions) {
-    const split = splitSeats(state, r.id, r.seats);
-    regionSeats[r.id] = split;
+  for (const split of [...Object.values(regionSeats), ...Object.values(reserved)]) {
     for (const [id, n] of Object.entries(split)) seats[id] = (seats[id] ?? 0) + n;
   }
 
@@ -60,7 +61,7 @@ export function countElection(pack: MapPack, state: GameState): ElectionResult {
       seatOrder.indexOf(a) - seatOrder.indexOf(b),
   );
 
-  return { regionSeats, seats, ranking, secondRound, government: formGovernment(ranking, seats, majority(pack)), popularVote: popularVote(pack, state) };
+  return { regionSeats, reserved, seats, ranking, secondRound, government: formGovernment(ranking, seats, majority(pack)), popularVote: popularVote(pack, state) };
 }
 
 /** Each region's voters split by pip share (largest remainder). Regions without a voter count are skipped. */
@@ -75,7 +76,10 @@ export function popularVote(pack: MapPack, state: GameState): Record<string, num
 }
 
 export interface ElectionCall {
+  /** The region called, or the reserved seat set when `reserved` is true. */
   regionId: string;
+  /** Reserved seats, declared after every region. */
+  reserved?: boolean;
   /** Seats each player won in this region. */
   seats: Record<string, number>;
   /** The player with the most seats here (ties go to the higher standing), or null if nobody campaigned. */
@@ -86,27 +90,35 @@ export interface ElectionCall {
   majorityFor?: string;
 }
 
-/** Election night, call by call, in the pack's call order: who won each region and the running totals. */
+/**
+ * Election night, call by call, in the pack's call order: who won each region and the running totals, then each set of
+ * reserved seats.
+ */
 export function electionCalls(pack: MapPack, state: GameState): ElectionCall[] {
   const order = pack.callOrder ?? pack.regions.map((r) => r.id);
   const totals: Record<string, number> = {};
   state.players.forEach((p) => (totals[p.id] = 0));
   const needed = majority(pack);
   let crossed = false;
-  return order.map((regionId) => {
-    const region = pack.regions.find((r) => r.id === regionId)!;
-    const seats = splitSeats(state, regionId, region.seats);
+  // The most seats in a call wins it; the list is in standing order (splitSeats) or seat order, so the first of equals wins.
+  const winnerOf = (seats: Record<string, number>) =>
+    Object.entries(seats).reduce<[string, number] | null>((a, [id, n]) => (n > 0 && (!a || n > a[1]) ? [id, n] : a), null)?.[0] ?? null;
+  const call = (regionId: string, seats: Record<string, number>, reserved: boolean): ElectionCall => {
     for (const [id, n] of Object.entries(seats)) totals[id] = (totals[id] ?? 0) + n;
-    // splitSeats lists players in standing order, so the first with the most seats is the region's winner.
-    const best = Object.entries(seats).reduce<[string, number] | null>((a, [id, n]) => (n > 0 && (!a || n > a[1]) ? [id, n] : a), null);
-    const call: ElectionCall = { regionId, seats, winner: best ? best[0] : null, totals: { ...totals } };
+    const c: ElectionCall = { regionId, seats, winner: winnerOf(seats), totals: { ...totals } };
+    if (reserved) c.reserved = true;
     const over = Object.entries(totals).find(([, n]) => n >= needed);
     if (!crossed && over) {
       crossed = true;
-      call.majorityFor = over[0];
+      c.majorityFor = over[0];
     }
-    return call;
-  });
+    return c;
+  };
+  const won = seatsByRegion(pack, state);
+  const calls = order.map((regionId) => call(regionId, won[regionId]!, false));
+  const reserved = allocateReserved(pack, state, won);
+  for (const def of pack.reservedSeats ?? []) calls.push(call(def.id, reserved[def.id]!, true));
+  return calls;
 }
 
 /** The largest party forms the government; partners join from largest to smallest until it holds a majority. */

@@ -118,6 +118,17 @@ export function validatePack(pack: MapPack): PackIssue[] {
     }
   }
 
+  const reservedIds = new Set<string>();
+  (pack.reservedSeats ?? []).forEach((d, i) => {
+    const p = `reservedSeats[${i}]`;
+    if (!ID.test(d.id)) add(`${p}.id`, "must be lowercase letters, digits and hyphens");
+    if (reservedIds.has(d.id) || regionIds.has(d.id) || groupIds.has(d.id)) add(`${p}.id`, `duplicate id "${d.id}"`);
+    reservedIds.add(d.id);
+    if (!d.name) add(`${p}.name`, "is required");
+    if (!Number.isInteger(d.seats) || d.seats < 1) add(`${p}.seats`, "must be a whole number of at least 1");
+    if (d.group !== undefined && pack.groups.find((g) => g.id === d.group)?.kind !== "state") add(`${p}.group`, `must be a state group, not "${d.group}"`);
+  });
+
   if (pack.aiPartyNames.length < 4) add("aiPartyNames", "needs at least 4 names, one per AI seat");
   if (new Set(pack.aiPartyNames.map((n) => n.toLowerCase())).size !== pack.aiPartyNames.length) add("aiPartyNames", "lists a name twice");
 

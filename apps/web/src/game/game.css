@@ -1166,6 +1166,41 @@
   cursor: not-allowed;
 }
 
+.map-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.setup button.map-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  border-width: 4px;
+  border-radius: 18px;
+  padding: 10px 14px;
+}
+
+.setup button.map-card b {
+  font: 400 22px "Lilita One", sans-serif;
+}
+
+.setup button.map-card small {
+  font: 800 13px "Nunito", sans-serif;
+  color: var(--muted);
+}
+
+.setup button.map-card[aria-checked="true"] {
+  background: var(--gold);
+  box-shadow: 0 5px 0 var(--ink);
+}
+
+.setup button.map-card[aria-checked="true"] small {
+  color: var(--ink);
+}
+
 .seats {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

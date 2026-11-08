@@ -1,6 +1,6 @@
 /** Match setup: who sits at the table (2 to 5 seats, human or computer), each party's name, colour, emblem and leader. */
 import type { AiLevel, PlayerSetup } from "@majority-map/core";
-import { pack } from "./model";
+import { map, pack, type MapId } from "./model";
 
 export type Mode = "solo" | "hotseat";
 
@@ -16,6 +16,8 @@ export interface Seat {
 
 export interface MatchConfig {
   mode: Mode;
+  /** The map; saves from before maps could be chosen are the UK. */
+  map?: MapId;
   seats: Seat[];
 }
 
@@ -81,17 +83,20 @@ export function humanSeat(seats: Seat[], index: number): Seat {
       color: firstFree(COLORS.map((c) => c.hex), seats.map((s) => s.party.color)),
       emblem: firstFree(EMBLEMS, seats.map((s) => s.party.emblem)),
     },
-    leaderId: firstFree(first ? ["keir-starmer", ...pack.candidates.map((c) => c.id)] : pack.candidates.map((c) => c.id), seats.map((s) => s.leaderId)),
+    leaderId: firstFree(first ? [map.defaultLeader, ...pack.candidates.map((c) => c.id)] : pack.candidates.map((c) => c.id), seats.map((s) => s.leaderId)),
   };
 }
 
-/** The default table: solo is you against two Normal computer parties; pass and play starts with two people and one computer. */
+/**
+ * The default table on the selected map: solo is you against two Normal computer parties; pass and play starts with
+ * two people and one computer.
+ */
 export function defaultConfig(mode: Mode, level: AiLevel = "normal"): MatchConfig {
   const seats: Seat[] = [];
   seats.push(humanSeat(seats, 1));
   if (mode === "hotseat") seats.push(humanSeat(seats, 2));
   while (seats.length < 3) seats.push(aiSeat(seats, seats.length, level));
-  return { mode, seats };
+  return { mode, map: map.id, seats };
 }
 
 export interface ConfigIssue {

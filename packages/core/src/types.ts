@@ -52,6 +52,19 @@ export interface GroupDef {
   baseCost?: number;
 }
 
+/**
+ * Seats filled after the count rather than won in a region, shared out by general seats won (Pakistan's seats reserved
+ * for women, per province, and for non-Muslims, nationwide). Largest remainder; a party with no general seats in the
+ * scope gets none.
+ */
+export interface ReservedSeatsDef {
+  id: string;
+  name: string;
+  seats: number;
+  /** A state group: shared by general seats won in that group's regions. Absent: by general seats won everywhere. */
+  group?: string;
+}
+
 export interface CandidateDef {
   id: string;
   name: string;
@@ -77,6 +90,8 @@ export interface MapPack {
   aiPartyNames: string[];
   /** Order regions are called on election night (every region once). Defaults to map order. */
   callOrder?: string[];
+  /** Reserved seats, declared after every region on election night. */
+  reservedSeats?: ReservedSeatsDef[];
 }
 
 /** Match state. Plain JSON so it can be saved, sent over the network and replayed. */

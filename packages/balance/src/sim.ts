@@ -2,7 +2,7 @@
  * Plays computer-vs-computer matches and tallies how each way of playing, each leader and each seat does.
  * Every match is seeded, so a schedule always gives the same results.
  */
-import { STRATEGIES, createMatch, finishElection, nextRandom, planEasy, planSmart, resolveTurn, seedRng, type AiLevel, type GameState, type MapPack, type Plan, type StrategyId, type Tuning } from "@majority-map/core";
+import { STRATEGIES, totalSeats, createMatch, finishElection, nextRandom, planEasy, planSmart, resolveTurn, seedRng, type AiLevel, type GameState, type MapPack, type Plan, type StrategyId, type Tuning } from "@majority-map/core";
 
 export interface Entrant {
   strategy: StrategyId;
@@ -26,6 +26,9 @@ export interface MatchRecord {
   capped: boolean;
   /** Money each entrant had left unspent when the election was counted. */
   unspent: number[];
+  /** Money each entrant spent, and the part of it lost to clashes (two parties aiming for the same step). */
+  spent: number[];
+  lost: number[];
 }
 
 /** Plays one match to its result, every seat played by the Hard AI with its strategy's changes. */
@@ -37,6 +40,8 @@ export function playMatch(pack: MapPack, entrants: Entrant[], seed: number): Mat
   let rng = seedRng(seed * 7919 + 1);
   let secondRound = false;
   let capped = false;
+  const spent = entrants.map(() => 0);
+  const lost = entrants.map(() => 0);
   for (let guard = 0; guard < 4 * pack.rules.turnCap; guard++) {
     if (state.phase === "election") {
       capped ||= state.turn > pack.rules.turnCap;
@@ -52,6 +57,8 @@ export function playMatch(pack: MapPack, entrants: Entrant[], seed: number): Mat
           secondRound,
           capped,
           unspent,
+          spent,
+          lost,
         };
       }
       secondRound = true;
@@ -66,7 +73,17 @@ export function playMatch(pack: MapPack, entrants: Entrant[], seed: number): Mat
       rng = r.rng;
       plans[p.id] = r.plan;
     });
-    state = resolveTurn(pack, state, plans).state;
+    const turn = resolveTurn(pack, state, plans);
+    for (const e of turn.events) {
+      if (e.type === "moved") spent[Number(e.playerId.slice(1))]! += e.cost;
+      if (e.type === "conflict") {
+        for (const [id, cost] of Object.entries(e.costs)) {
+          spent[Number(id.slice(1))]! += cost;
+          lost[Number(id.slice(1))]! += cost;
+        }
+      }
+    }
+    state = turn.state;
   }
   throw new Error(`Match ${seed} did not finish`);
 }
@@ -138,7 +155,7 @@ export function versus(pack: MapPack, a: Partial<Tuning>, b: Partial<Tuning>, ga
 }
 
 /** A difficulty line-up, e.g. hard, normal, normal, rotated through every seat, with random leaders. */
-export function lineup(pack: MapPack, levels: AiLevel[], games: number, seed = 1): ScheduledMatch[] {
+export function lineup(pack: MapPack, levels: AiLevel[], games: number, seed = 1, hardTuning?: Partial<Tuning>): ScheduledMatch[] {
   let rng = seedRng(seed);
   const rand = () => {
     const [v, next] = nextRandom(rng);
@@ -149,7 +166,8 @@ export function lineup(pack: MapPack, levels: AiLevel[], games: number, seed = 1
     const rot = g % levels.length;
     const order = [...levels.slice(rot), ...levels.slice(0, rot)];
     const pool = pack.candidates.map((c) => c.id);
-    const entrants = order.map((level) => ({ strategy: "balanced" as const, level, leaderId: pool.splice(Math.floor(rand() * pool.length), 1)[0]! }));
+    const entrants: Entrant[] = order.map((level) => ({ strategy: "balanced" as const, level, leaderId: pool.splice(Math.floor(rand() * pool.length), 1)[0]! }));
+    if (hardTuning) for (const e of entrants) if (e.level === "hard") e.tuning = hardTuning;
     return { seed: seed * 100_000 + g, kind: "field" as const, entrants };
   });
 }
@@ -201,6 +219,8 @@ export interface Report {
   /** Average share of the winner's seats in the parliament. */
   winnerSeatShare: number;
   majorityWins: number;
+  /** Share of all money spent that was lost to clashes. */
+  lostShare: number;
   /** Difficulty line-ups, when the run included them. */
   lineups?: LineupResult[];
 }
@@ -214,7 +234,7 @@ const add = (t: Record<string, Tally>, key: string, won: boolean, players: numbe
 };
 
 export function summarize(pack: MapPack, matches: { match: ScheduledMatch; record: MatchRecord }[]): Report {
-  const total = pack.regions.reduce((a, r) => a + r.seats, 0);
+  const total = totalSeats(pack);
   const report: Report = {
     games: matches.length,
     duels: {} as Report["duels"],
@@ -228,7 +248,10 @@ export function summarize(pack: MapPack, matches: { match: ScheduledMatch; recor
     capped: 0,
     winnerSeatShare: 0,
     majorityWins: 0,
+    lostShare: 0,
   };
+  let spentAll = 0;
+  let lostAll = 0;
   for (const { match, record } of matches) {
     const n = record.entrants.length;
     const winner = record.ranking[0]!;
@@ -253,7 +276,10 @@ export function summarize(pack: MapPack, matches: { match: ScheduledMatch; recor
     const top = record.seats[winner]!;
     report.winnerSeatShare += top / total / matches.length;
     if (top > total / 2) report.majorityWins++;
+    spentAll += record.spent.reduce((a, b) => a + b, 0);
+    lostAll += record.lost.reduce((a, b) => a + b, 0);
   }
+  report.lostShare = spentAll ? lostAll / spentAll : 0;
   return report;
 }
 
