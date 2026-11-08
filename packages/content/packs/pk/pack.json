@@ -1,0 +1,1309 @@
+{
+  "id": "pk",
+  "name": "Pakistan",
+  "gameType": "parliamentary",
+  "currency": "Rs",
+  "rules": {
+    "steps": 15,
+    "contentionAt": 3,
+    "firstEntryMax": 2,
+    "costGrowth": 1.1,
+    "costClampMin": 0.5,
+    "costClampMax": 1.5,
+    "baseIncome": 25000000,
+    "memberPickEvery": 5,
+    "memberSharePct": 20,
+    "freePipEvery": 3,
+    "secondRoundPipLoss": 5,
+    "turnCap": 40
+  },
+  "regions": [
+    {
+      "id": "khu",
+      "name": "Khuzdar",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "kha",
+      "name": "Khairpur",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1327612
+    },
+    {
+      "id": "man",
+      "name": "Mansehra",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 974583
+    },
+    {
+      "id": "she",
+      "name": "Sheikhupura",
+      "seats": 6,
+      "baseCost": 720000,
+      "voters": 3115230
+    },
+    {
+      "id": "isl",
+      "name": "Islamabad",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1083029
+    },
+    {
+      "id": "cha",
+      "name": "Chagai + Nushki + Kharan",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "kil",
+      "name": "Killa Abdullah",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "que",
+      "name": "Quetta",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1007240
+    },
+    {
+      "id": "pis",
+      "name": "Pishin",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "kal",
+      "name": "Mastung + Kalat",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "der",
+      "name": "Ziarat + Sibi + Kohlu + Dera Bugti",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "zho",
+      "name": "Killa Saifullah + Zhob",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "kec",
+      "name": "Gwadar + Kech + Panjgur",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 671493
+    },
+    {
+      "id": "lor",
+      "name": "Musakhel + Loralai + Barkhan",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "kac",
+      "name": "Jafarabad + Nasirabad + Jhal Magsi + Kachhi",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 671493
+    },
+    {
+      "id": "awa",
+      "name": "Awaran + Lasbela",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 335747
+    },
+    {
+      "id": "kar",
+      "name": "Karachi",
+      "seats": 22,
+      "baseCost": 1840000,
+      "voters": 9735818
+    },
+    {
+      "id": "tha",
+      "name": "Thatta",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "thb",
+      "name": "Tharparkar",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "ume",
+      "name": "Umerkot",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 442537
+    },
+    {
+      "id": "jam",
+      "name": "Jamshoro",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 442537
+    },
+    {
+      "id": "dad",
+      "name": "Dadu",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "tan",
+      "name": "Tando Muhammad Khan",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 442537
+    },
+    {
+      "id": "hyd",
+      "name": "Hyderabad",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1327612
+    },
+    {
+      "id": "taa",
+      "name": "Tando Allahyar",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 442537
+    },
+    {
+      "id": "bad",
+      "name": "Badin",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "mir",
+      "name": "Mirpur Khas",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "mat",
+      "name": "Matiari",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 442537
+    },
+    {
+      "id": "naw",
+      "name": "Nawabshah",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "san",
+      "name": "Sanghar",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "nau",
+      "name": "Naushahro Feroze",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "lar",
+      "name": "Larkana + Qambar Shahdadkot",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 1770149
+    },
+    {
+      "id": "kas",
+      "name": "Jacobabad + Shikarpur + Kashmore",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 1770149
+    },
+    {
+      "id": "gho",
+      "name": "Ghotki",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "suk",
+      "name": "Sukkur",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 885074
+    },
+    {
+      "id": "raj",
+      "name": "Rajanpur",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1557615
+    },
+    {
+      "id": "dea",
+      "name": "Dera Ghazi Khan",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "rah",
+      "name": "Rahim Yar Khan",
+      "seats": 6,
+      "baseCost": 720000,
+      "voters": 3115230
+    },
+    {
+      "id": "bah",
+      "name": "Bahawalpur",
+      "seats": 5,
+      "baseCost": 650000,
+      "voters": 2596025
+    },
+    {
+      "id": "baa",
+      "name": "Bahawalnagar",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "muz",
+      "name": "Muzaffargarh",
+      "seats": 6,
+      "baseCost": 720000,
+      "voters": 3115230
+    },
+    {
+      "id": "mul",
+      "name": "Multan",
+      "seats": 6,
+      "baseCost": 720000,
+      "voters": 3115230
+    },
+    {
+      "id": "lod",
+      "name": "Lodhran",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "veh",
+      "name": "Vehari",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "pak",
+      "name": "Pakpattan",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "khb",
+      "name": "Khanewal",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "lay",
+      "name": "Layyah",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "bha",
+      "name": "Bhakkar",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "mia",
+      "name": "Mianwali",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "att",
+      "name": "Attock",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "raw",
+      "name": "Rawalpindi",
+      "seats": 7,
+      "baseCost": 790000,
+      "voters": 3634435
+    },
+    {
+      "id": "chb",
+      "name": "Chakwal",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "jhe",
+      "name": "Jhelum",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "khc",
+      "name": "Khushab",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "jha",
+      "name": "Jhang",
+      "seats": 5,
+      "baseCost": 650000,
+      "voters": 2596025
+    },
+    {
+      "id": "sar",
+      "name": "Sargodha",
+      "seats": 5,
+      "baseCost": 650000,
+      "voters": 2596025
+    },
+    {
+      "id": "maa",
+      "name": "Mandi Bahauddin",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "guj",
+      "name": "Gujrat",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "sia",
+      "name": "Sialkot",
+      "seats": 5,
+      "baseCost": 650000,
+      "voters": 2596025
+    },
+    {
+      "id": "tob",
+      "name": "Toba Tek Singh",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1557615
+    },
+    {
+      "id": "sah",
+      "name": "Sahiwal",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1557615
+    },
+    {
+      "id": "kaa",
+      "name": "Kasur",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "fai",
+      "name": "Faisalabad",
+      "seats": 10,
+      "baseCost": 1000000,
+      "voters": 5192049
+    },
+    {
+      "id": "lah",
+      "name": "Lahore",
+      "seats": 14,
+      "baseCost": 1280000,
+      "voters": 7268869
+    },
+    {
+      "id": "haf",
+      "name": "Hafizabad",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 519205
+    },
+    {
+      "id": "deb",
+      "name": "Dera Ismail Khan + Tank",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1461875
+    },
+    {
+      "id": "moh",
+      "name": "Mohmand",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "sou",
+      "name": "South Waziristan",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "nor",
+      "name": "North Waziristan",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "kur",
+      "name": "Kurram",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "ora",
+      "name": "Orakzai + Hangu",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "khy",
+      "name": "Khyber",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "baj",
+      "name": "Bajaur",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "ban",
+      "name": "Bannu",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "lak",
+      "name": "Lakki Marwat",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "kab",
+      "name": "Karak",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "koh",
+      "name": "Kohat",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "pes",
+      "name": "Peshawar",
+      "seats": 5,
+      "baseCost": 650000,
+      "voters": 2436458
+    },
+    {
+      "id": "chc",
+      "name": "Charsadda",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 974583
+    },
+    {
+      "id": "now",
+      "name": "Nowshera",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 974583
+    },
+    {
+      "id": "chi",
+      "name": "Chitral",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "upp",
+      "name": "Upper Dir",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "low",
+      "name": "Lower Dir",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 974583
+    },
+    {
+      "id": "mal",
+      "name": "Malakand",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "swa",
+      "name": "Swat",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1461875
+    },
+    {
+      "id": "koa",
+      "name": "Kohistan",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "mar",
+      "name": "Mardan",
+      "seats": 3,
+      "baseCost": 510000,
+      "voters": 1461875
+    },
+    {
+      "id": "swb",
+      "name": "Swabi",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 974583
+    },
+    {
+      "id": "bun",
+      "name": "Buner",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "har",
+      "name": "Haripur",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "abb",
+      "name": "Abbottabad",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 974583
+    },
+    {
+      "id": "bat",
+      "name": "Battagram",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "sha",
+      "name": "Shangla",
+      "seats": 1,
+      "baseCost": 370000,
+      "voters": 487292
+    },
+    {
+      "id": "oka",
+      "name": "Okara",
+      "seats": 4,
+      "baseCost": 580000,
+      "voters": 2076820
+    },
+    {
+      "id": "nar",
+      "name": "Narowal",
+      "seats": 2,
+      "baseCost": 440000,
+      "voters": 1038410
+    },
+    {
+      "id": "gua",
+      "name": "Gujranwala",
+      "seats": 6,
+      "baseCost": 720000,
+      "voters": 3115230
+    }
+  ],
+  "groups": [
+    {
+      "id": "punjab",
+      "name": "Punjab",
+      "kind": "state",
+      "regions": [
+        "she",
+        "raj",
+        "dea",
+        "rah",
+        "bah",
+        "baa",
+        "muz",
+        "mul",
+        "lod",
+        "veh",
+        "pak",
+        "khb",
+        "lay",
+        "bha",
+        "mia",
+        "att",
+        "raw",
+        "chb",
+        "jhe",
+        "khc",
+        "jha",
+        "sar",
+        "maa",
+        "guj",
+        "sia",
+        "tob",
+        "sah",
+        "kaa",
+        "fai",
+        "lah",
+        "haf",
+        "oka",
+        "nar",
+        "gua"
+      ],
+      "income": 8000000
+    },
+    {
+      "id": "sindh",
+      "name": "Sindh",
+      "kind": "state",
+      "regions": [
+        "kha",
+        "kar",
+        "tha",
+        "thb",
+        "ume",
+        "jam",
+        "dad",
+        "tan",
+        "hyd",
+        "taa",
+        "bad",
+        "mir",
+        "mat",
+        "naw",
+        "san",
+        "nau",
+        "lar",
+        "kas",
+        "gho",
+        "suk"
+      ],
+      "income": 5000000
+    },
+    {
+      "id": "kp",
+      "name": "Khyber Pakhtunkhwa",
+      "kind": "state",
+      "regions": [
+        "man",
+        "deb",
+        "moh",
+        "sou",
+        "nor",
+        "kur",
+        "ora",
+        "khy",
+        "baj",
+        "ban",
+        "lak",
+        "kab",
+        "koh",
+        "pes",
+        "chc",
+        "now",
+        "chi",
+        "upp",
+        "low",
+        "mal",
+        "swa",
+        "koa",
+        "mar",
+        "swb",
+        "bun",
+        "har",
+        "abb",
+        "bat",
+        "sha"
+      ],
+      "income": 4000000
+    },
+    {
+      "id": "balochistan",
+      "name": "Balochistan",
+      "kind": "state",
+      "regions": [
+        "khu",
+        "cha",
+        "kil",
+        "que",
+        "pis",
+        "kal",
+        "der",
+        "zho",
+        "kec",
+        "lor",
+        "kac",
+        "awa"
+      ],
+      "income": 3000000
+    },
+    {
+      "id": "islamabad",
+      "name": "Islamabad",
+      "kind": "state",
+      "regions": [
+        "isl"
+      ],
+      "income": 2000000
+    },
+    {
+      "id": "south-punjab",
+      "name": "South Punjab",
+      "kind": "state",
+      "regions": [
+        "raj",
+        "dea",
+        "rah",
+        "bah",
+        "baa",
+        "muz",
+        "mul",
+        "lod",
+        "veh",
+        "khb",
+        "lay",
+        "bha",
+        "pak"
+      ],
+      "income": 3000000
+    },
+    {
+      "id": "urban-sindh",
+      "name": "Urban Sindh",
+      "kind": "state",
+      "regions": [
+        "kar",
+        "hyd"
+      ],
+      "income": 3000000
+    },
+    {
+      "id": "merged-districts",
+      "name": "Merged tribal districts",
+      "kind": "state",
+      "regions": [
+        "baj",
+        "moh",
+        "khy",
+        "kur",
+        "ora",
+        "nor",
+        "sou"
+      ],
+      "income": 2000000
+    },
+    {
+      "id": "cities",
+      "name": "Big cities",
+      "kind": "state",
+      "regions": [
+        "kar",
+        "lah",
+        "fai",
+        "raw",
+        "mul",
+        "gua",
+        "pes",
+        "hyd",
+        "que",
+        "isl"
+      ],
+      "income": 4000000
+    },
+    {
+      "id": "farmers",
+      "name": "Farmers",
+      "kind": "national",
+      "regions": [],
+      "income": 3000000,
+      "baseCost": 900000
+    },
+    {
+      "id": "traders",
+      "name": "Traders",
+      "kind": "national",
+      "regions": [],
+      "income": 4000000,
+      "baseCost": 1100000
+    },
+    {
+      "id": "youth",
+      "name": "Young voters",
+      "kind": "national",
+      "regions": [],
+      "income": 3000000,
+      "baseCost": 900000
+    },
+    {
+      "id": "overseas",
+      "name": "Overseas Pakistanis",
+      "kind": "national",
+      "regions": [],
+      "income": 3000000,
+      "baseCost": 900000
+    },
+    {
+      "id": "workers",
+      "name": "Workers",
+      "kind": "national",
+      "regions": [],
+      "income": 3000000,
+      "baseCost": 900000
+    },
+    {
+      "id": "women",
+      "name": "Women voters",
+      "kind": "national",
+      "regions": [],
+      "income": 3000000,
+      "baseCost": 900000
+    }
+  ],
+  "candidates": [
+    {
+      "id": "nawaz-sharif",
+      "name": "Nawaz Sharif",
+      "affiliation": "PML-N",
+      "modifiers": {
+        "punjab": 10,
+        "traders": 10,
+        "youth": -5
+      },
+      "notes": {
+        "punjab": "Three-time Prime Minister from Lahore",
+        "traders": "Business family with trader support",
+        "youth": "Older support base"
+      }
+    },
+    {
+      "id": "shehbaz-sharif",
+      "name": "Shehbaz Sharif",
+      "affiliation": "PML-N",
+      "modifiers": {
+        "punjab": 10,
+        "cities": 5
+      },
+      "notes": {
+        "punjab": "Former Chief Minister of Punjab",
+        "cities": "Built Lahore's Metro Bus as Chief Minister"
+      }
+    },
+    {
+      "id": "maryam-nawaz",
+      "name": "Maryam Nawaz",
+      "affiliation": "PML-N",
+      "modifiers": {
+        "punjab": 15,
+        "women": 10
+      },
+      "notes": {
+        "punjab": "Chief Minister of Punjab from 2024",
+        "women": "Pakistan's first woman chief minister"
+      }
+    },
+    {
+      "id": "ahsan-iqbal",
+      "name": "Ahsan Iqbal",
+      "affiliation": "PML-N",
+      "modifiers": {
+        "punjab": 5,
+        "youth": 10
+      },
+      "notes": {
+        "punjab": "MNA for Narowal",
+        "youth": "Champions higher education as Planning Minister"
+      }
+    },
+    {
+      "id": "bilawal-bhutto-zardari",
+      "name": "Bilawal Bhutto Zardari",
+      "affiliation": "PPP",
+      "modifiers": {
+        "sindh": 15,
+        "youth": 10,
+        "punjab": -5
+      },
+      "notes": {
+        "sindh": "PPP chairman; Sindh is PPP's stronghold",
+        "youth": "Youngest leader of a major party",
+        "punjab": "PPP is weaker in Punjab"
+      }
+    },
+    {
+      "id": "asif-ali-zardari",
+      "name": "Asif Ali Zardari",
+      "affiliation": "PPP",
+      "modifiers": {
+        "sindh": 15,
+        "traders": 5
+      },
+      "notes": {
+        "sindh": "President of Pakistan; PPP co-chairman",
+        "traders": "Business background"
+      }
+    },
+    {
+      "id": "murad-ali-shah",
+      "name": "Murad Ali Shah",
+      "affiliation": "PPP",
+      "modifiers": {
+        "sindh": 15,
+        "farmers": 10
+      },
+      "notes": {
+        "sindh": "Chief Minister of Sindh",
+        "farmers": "Rural Sindh base"
+      }
+    },
+    {
+      "id": "benazir-bhutto",
+      "name": "Benazir Bhutto",
+      "affiliation": "PPP",
+      "modifiers": {
+        "sindh": 10,
+        "women": 15,
+        "punjab": 5
+      },
+      "notes": {
+        "sindh": "From Larkana",
+        "women": "First woman prime minister of Pakistan",
+        "punjab": "Won seats nationwide in 1988"
+      }
+    },
+    {
+      "id": "imran-khan",
+      "name": "Imran Khan",
+      "affiliation": "PTI",
+      "modifiers": {
+        "kp": 15,
+        "youth": 15,
+        "overseas": 15,
+        "sindh": -10
+      },
+      "notes": {
+        "kp": "PTI governed Khyber Pakhtunkhwa from 2013",
+        "youth": "Strongest with young voters",
+        "overseas": "Wide support among overseas Pakistanis",
+        "sindh": "PTI is weaker in rural Sindh"
+      }
+    },
+    {
+      "id": "gohar-ali-khan",
+      "name": "Gohar Ali Khan",
+      "affiliation": "PTI",
+      "modifiers": {
+        "kp": 10,
+        "youth": 5
+      },
+      "notes": {
+        "kp": "PTI chairman from Buner",
+        "youth": "PTI's young base"
+      }
+    },
+    {
+      "id": "khalid-maqbool-siddiqui",
+      "name": "Khalid Maqbool Siddiqui",
+      "affiliation": "MQM-P",
+      "modifiers": {
+        "urban-sindh": 25,
+        "punjab": -10
+      },
+      "notes": {
+        "urban-sindh": "MQM-P's base is urban Sindh",
+        "punjab": "Little support outside Sindh"
+      }
+    },
+    {
+      "id": "fazl-ur-rehman",
+      "name": "Fazl-ur-Rehman",
+      "affiliation": "JUI-F",
+      "modifiers": {
+        "kp": 10,
+        "balochistan": 15,
+        "cities": -10
+      },
+      "notes": {
+        "kp": "From Dera Ismail Khan",
+        "balochistan": "JUI-F is strong in Balochistan's Pashtun belt",
+        "cities": "Weaker in the big cities"
+      }
+    },
+    {
+      "id": "hafiz-naeem-ur-rehman",
+      "name": "Hafiz Naeem ur Rehman",
+      "affiliation": "Jamaat-e-Islami",
+      "modifiers": {
+        "urban-sindh": 15,
+        "workers": 5
+      },
+      "notes": {
+        "urban-sindh": "Led Jamaat-e-Islami in Karachi",
+        "workers": "Campaigned against electricity bills"
+      }
+    },
+    {
+      "id": "aimal-wali-khan",
+      "name": "Aimal Wali Khan",
+      "affiliation": "ANP",
+      "modifiers": {
+        "kp": 15,
+        "workers": 5
+      },
+      "notes": {
+        "kp": "ANP president; Pashtun base in Khyber Pakhtunkhwa",
+        "workers": "ANP's left-wing roots"
+      }
+    },
+    {
+      "id": "akhtar-mengal",
+      "name": "Akhtar Mengal",
+      "affiliation": "BNP-M",
+      "modifiers": {
+        "balochistan": 25,
+        "punjab": -10
+      },
+      "notes": {
+        "balochistan": "Former Chief Minister of Balochistan",
+        "punjab": "Baloch nationalist platform"
+      }
+    },
+    {
+      "id": "aleem-khan",
+      "name": "Aleem Khan",
+      "affiliation": "IPP",
+      "modifiers": {
+        "punjab": 10,
+        "traders": 15
+      },
+      "notes": {
+        "punjab": "From Lahore",
+        "traders": "Property developer and businessman"
+      }
+    }
+  ],
+  "aiPartyNames": [
+    "Chai Break Party",
+    "Cricket Fans Alliance",
+    "Traffic Jam Party",
+    "Biryani Unity Front",
+    "Rooftop Kite Club",
+    "Monsoon Umbrella Alliance",
+    "Extra Raita Society",
+    "Late Wedding Guests Party",
+    "Mango Season Front",
+    "Rickshaw Riders Club",
+    "Second Helping Party",
+    "Power Nap Alliance"
+  ],
+  "callOrder": [
+    "awa",
+    "baj",
+    "ban",
+    "bat",
+    "bun",
+    "cha",
+    "chi",
+    "haf",
+    "har",
+    "jam",
+    "kab",
+    "khu",
+    "khy",
+    "kil",
+    "zho",
+    "koh",
+    "koa",
+    "kur",
+    "lak",
+    "mal",
+    "kal",
+    "mat",
+    "moh",
+    "lor",
+    "nor",
+    "ora",
+    "pis",
+    "sha",
+    "sou",
+    "taa",
+    "tan",
+    "ume",
+    "upp",
+    "der",
+    "abb",
+    "att",
+    "bad",
+    "bha",
+    "chb",
+    "chc",
+    "dad",
+    "gho",
+    "kec",
+    "kac",
+    "jhe",
+    "khc",
+    "lay",
+    "lod",
+    "low",
+    "maa",
+    "man",
+    "mia",
+    "mir",
+    "nar",
+    "nau",
+    "naw",
+    "now",
+    "pak",
+    "san",
+    "suk",
+    "swb",
+    "thb",
+    "tha",
+    "deb",
+    "hyd",
+    "isl",
+    "kha",
+    "mar",
+    "que",
+    "raj",
+    "sah",
+    "swa",
+    "tob",
+    "baa",
+    "dea",
+    "guj",
+    "kas",
+    "kaa",
+    "khb",
+    "lar",
+    "oka",
+    "veh",
+    "bah",
+    "jha",
+    "pes",
+    "sar",
+    "sia",
+    "gua",
+    "mul",
+    "muz",
+    "rah",
+    "she",
+    "raw",
+    "fai",
+    "lah",
+    "kar"
+  ],
+  "reservedSeats": [
+    {
+      "id": "women-punjab",
+      "name": "Women (Punjab)",
+      "seats": 32,
+      "group": "punjab"
+    },
+    {
+      "id": "women-sindh",
+      "name": "Women (Sindh)",
+      "seats": 14,
+      "group": "sindh"
+    },
+    {
+      "id": "women-kp",
+      "name": "Women (Khyber Pakhtunkhwa)",
+      "seats": 10,
+      "group": "kp"
+    },
+    {
+      "id": "women-balochistan",
+      "name": "Women (Balochistan)",
+      "seats": 4,
+      "group": "balochistan"
+    },
+    {
+      "id": "non-muslims",
+      "name": "Non-Muslims",
+      "seats": 10
+    }
+  ]
+}

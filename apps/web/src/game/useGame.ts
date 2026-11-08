@@ -18,17 +18,14 @@ import {
   type ElectionResult,
   type GameState,
   type Headline,
-  type NewsTemplates,
   type Plan,
   type TurnEvent,
   type TurnSummary,
 } from "@majority-map/core";
-import ukNews from "@majority-map/content/news/uk.json";
-import { candidateName, groupName, money, pack, playerOf, scenarioGame, trackName, type Scenario } from "./model";
+import { candidateName, groupName, money, news, pack, playerOf, scenarioGame, trackName, type Scenario } from "./model";
 import { saveMatch, type SavedMatch } from "./saves";
 import { defaultConfig, playersOf, type MatchConfig } from "./setup";
 
-const news = ukNews as NewsTemplates;
 
 /** Everything about the turn just played, for the recap, the summary and the ticker. */
 export interface TurnReport {

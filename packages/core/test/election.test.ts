@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { countElection, electionCalls, finishElection, formGovernment, majority, nextRandom, popularVote, projectedSeats, regionLeader, seedRng, splitSeats, validatePack } from "../src/index.js";
-import { newMatch, setSteps, testPack as pack } from "./fixtures.js";
+import {
+  allocateReserved,
+  countElection,
+  electionCalls,
+  finishElection,
+  formGovernment,
+  generalSeats,
+  majority,
+  nextRandom,
+  popularVote,
+  projectedSeats,
+  regionLeader,
+  regionSeats,
+  seatWeight,
+  seedRng,
+  splitSeats,
+  totalSeats,
+  validatePack,
+  type MapPack,
+} from "../src/index.js";
+import { newMatch, setSteps, testPack, testPack as pack } from "./fixtures.js";
 
 describe("seats by pip share", () => {
   it("GDD example: 60% of the pips in a 40-seat region gives 24 seats", () => {
@@ -184,5 +203,75 @@ describe("election night", () => {
     expect(validatePack({ ...withVoters, callOrder: ["city", "north"] }).map((i) => i.path)).toContain("callOrder");
     expect(validatePack({ ...withVoters, callOrder: ["city", "north", "north"] }).map((i) => i.path)).toContain("callOrder");
     expect(validatePack(withVoters)).toEqual([]);
+  });
+});
+
+describe("reserved seats", () => {
+  // Testland with Pakistan-style reserved seats: 10 for women shared by seats won on the Mainland, 3 nationwide.
+  const reservedPack: MapPack = {
+    ...testPack,
+    reservedSeats: [
+      { id: "women", name: "Women", seats: 10, group: "capital" },
+      { id: "minorities", name: "Non-Muslims", seats: 3 },
+    ],
+  };
+
+  it("counts reserved seats in the parliament and the majority", () => {
+    expect(totalSeats(reservedPack)).toBe(145 + 13);
+    expect(generalSeats(reservedPack)).toBe(145);
+    expect(majority(reservedPack)).toBe(80);
+  });
+
+  it("shares reserved seats out by general seats won in their scope, largest remainder", () => {
+    const s = newMatch(["a", "b"]);
+    setSteps(s, "city", "a", 3); // City: a 3 pips, b 2 pips of 75 seats -> 45 and 30
+    setSteps(s, "city", "b", 2);
+    setSteps(s, "north", "b", 1); // North: b alone, 40 seats
+    const won = regionSeats(reservedPack, s);
+    expect(won.city).toEqual({ a: 45, b: 30 });
+    const reserved = allocateReserved(reservedPack, s, won);
+    // Women follow the City only: 45 to 30 of 10 seats -> 6 and 4. Nationwide: a 45, b 70 of 3 -> 1 and 2.
+    expect(reserved).toEqual({ women: { a: 6, b: 4 }, minorities: { a: 1, b: 2 } });
+    expect(projectedSeats(reservedPack, s)).toEqual({ a: 45 + 6 + 1, b: 70 + 4 + 2 });
+  });
+
+  it("gives a party with no general seats in the scope no reserved seats", () => {
+    const s = newMatch(["a", "b"]);
+    setSteps(s, "north", "a", 2);
+    setSteps(s, "city", "b", 1);
+    expect(allocateReserved(reservedPack, s, regionSeats(reservedPack, s)).women).toEqual({ a: 0, b: 10 });
+  });
+
+  it("adds reserved seats to the count and declares them after every region on election night", () => {
+    const s = newMatch(["a", "b"]);
+    setSteps(s, "city", "a", 3);
+    setSteps(s, "city", "b", 2);
+    setSteps(s, "north", "b", 1);
+    setSteps(s, "south", "a", 1);
+    s.phase = "election";
+    const result = countElection(reservedPack, s);
+    // Nationwide a has 75 general seats to b's 70, so a takes 2 of the 3 non-Muslim seats on the larger remainder.
+    expect(result.seats).toEqual({ a: 45 + 30 + 6 + 2, b: 30 + 40 + 4 + 1 });
+    expect(result.reserved.women).toEqual({ a: 6, b: 4 });
+    const calls = electionCalls(reservedPack, s);
+    expect(calls.map((c) => c.regionId)).toEqual(["north", "south", "city", "women", "minorities"]);
+    expect(calls.slice(-2).every((c) => c.reserved)).toBe(true);
+    expect(calls.at(-1)!.totals).toEqual(result.seats);
+    // a passes 80 only once the women's seats are declared.
+    expect(calls.find((c) => c.majorityFor)?.regionId).toBe("women");
+  });
+
+  it("weights a region's general seats by the reserved seats they decide", () => {
+    expect(seatWeight(reservedPack, "city")).toBeCloseTo(1 + 10 / 75 + 3 / 145);
+    expect(seatWeight(reservedPack, "north")).toBeCloseTo(1 + 3 / 145);
+    expect(seatWeight(testPack, "city")).toBe(1);
+  });
+
+  it("checks reserved seat sets", () => {
+    const bad: MapPack = { ...reservedPack, reservedSeats: [{ id: "city", name: "", seats: 0, group: "unions" }] };
+    expect(validatePack(bad).map((i) => i.path)).toEqual(
+      expect.arrayContaining(["reservedSeats[0].id", "reservedSeats[0].name", "reservedSeats[0].seats", "reservedSeats[0].group"]),
+    );
+    expect(validatePack(reservedPack)).toEqual([]);
   });
 });

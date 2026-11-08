@@ -1,5 +1,5 @@
 /** Election night (suspense card, region-by-region calls, the tally racing to the majority) and the results panel. */
-import { controllers, majority, type AiLevel, type GameState } from "@majority-map/core";
+import { controllers, majority, totalSeats, type AiLevel, type GameState } from "@majority-map/core";
 import { groupName, money, pack, playerOf, trackName } from "./model";
 import type { ElectionNight as Night, GameApi } from "./useGame";
 
@@ -11,8 +11,11 @@ export type NightPhase = "suspense" | "calling" | "done";
 
 function Tally({ night, called }: { night: Night; called: number }) {
   const totals = called > 0 ? night.calls[called - 1]!.totals : Object.fromEntries(night.state.players.map((p) => [p.id, 0]));
-  const total = pack.regions.reduce((a, r) => a + r.seats, 0);
+  const total = totalSeats(pack);
   const need = majority(pack);
+  const regionCalls = night.calls.filter((c) => !c.reserved).length;
+  const regionsCalled = night.calls.slice(0, called).filter((c) => !c.reserved).length;
+  const reservedCalled = called - regionsCalled;
   return (
     <div className="night-tally" data-testid="night-tally">
       <div className="tally" role="img" aria-label={`Seats declared: ${night.state.players.map((p) => `${p.party.name} ${totals[p.id] ?? 0}`).join(", ")}`}>
@@ -25,7 +28,8 @@ function Tally({ night, called }: { night: Night; called: number }) {
       </div>
       <div className="tally-note">
         <span>
-          {called} of {night.calls.length} regions declared
+          {regionsCalled} of {regionCalls} regions declared
+          {reservedCalled > 0 ? ` · ${reservedCalled} of ${night.calls.length - regionCalls} reserved seat lists` : ""}
         </span>
         <span>{need} FOR A MAJORITY</span>
       </div>

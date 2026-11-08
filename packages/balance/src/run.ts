@@ -4,8 +4,9 @@
  *   pnpm balance                                   10,000 strategy matches plus difficulty line-ups; writes docs/balance/uk.md
  *   pnpm balance --games 2000 --out /tmp/uk.md     a quicker report somewhere else
  *   pnpm balance --rules contentionAt=4            try rule numbers before putting them in the pack
+ *   pnpm balance --costs 2 --income 0.5            try every step cost, or every group income, scaled
  *   pnpm balance --versus '{"spend":0.8}'          mirrored duels of AI settings against the plain Hard AI
- *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order
+ *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order (--tune '{...}' changes the Hard seats)
  *
  * The report run exits with an error when a strategy wins more than the limit of its duels against the competitive field.
  */
@@ -32,6 +33,12 @@ for (const pair of (args.get("rules") ?? "").split(",").filter(Boolean)) {
   const [key, value] = pair.split("=") as [keyof MapPack["rules"], string];
   if (!(key in pack.rules)) throw new Error(`Unknown rule "${key}"`);
   pack.rules[key] = Number(value);
+}
+
+for (const r of pack.regions) r.baseCost = Math.round(r.baseCost * Number(args.get("costs") ?? 1));
+for (const g of pack.groups) {
+  if (g.baseCost !== undefined) g.baseCost = Math.round(g.baseCost * Number(args.get("costs") ?? 1));
+  g.income = Math.round(g.income * Number(args.get("income") ?? 1));
 }
 
 /** Plays every match across the worker threads; records come back in schedule order. */
@@ -67,7 +74,8 @@ if (vs) {
   const r = versusResult(await playAll(versus(pack, JSON.parse(vs) as Partial<Tuning>, JSON.parse(against) as Partial<Tuning>, games, seed)));
   console.log(`${vs} vs ${against}: wins ${(r.share * 100).toFixed(1)}% ± ${(r.margin * 100).toFixed(1)} over ${games} games, ${r.turns.toFixed(1)} turns`);
 } else if (levels) {
-  const r = lineupResult(levels, await playAll(lineup(pack, levels, games, seed)));
+  const tune = args.get("tune");
+  const r = lineupResult(levels, await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined)));
   const even = (l: AiLevel) => levels.filter((x) => x === l).length / levels.length;
   const parts = (Object.entries(r.share) as [AiLevel, number][]).map(([l, s]) => `${l} ${(s * 100).toFixed(1)}% (even ${(even(l) * 100).toFixed(0)}%)`);
   console.log(`${levels.join(",")}: ${parts.join(", ")} over ${games} games`);

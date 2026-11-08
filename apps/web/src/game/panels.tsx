@@ -9,12 +9,13 @@ import {
   pickPool,
   projectedSeats,
   totalMoney,
+  totalSeats,
   type AiLevel,
   type GameState,
   type Plan,
 } from "@majority-map/core";
 import type { GameApi } from "./useGame";
-import { candidate, candidateName, groupName, money, pack, planLines, plannedPlayer, playerOf, trackName } from "./model";
+import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, trackName } from "./model";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const pct = (n: number) => `${n > 0 ? "+" : ""}${Math.round(n)}%`;
@@ -30,7 +31,7 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
   const state = game.stage === "recap" && game.report ? game.report.before : game.state;
   const { issues } = game;
   const seats = projectedSeats(pack, state);
-  const total = pack.regions.reduce((a, r) => a + r.seats, 0);
+  const total = totalSeats(pack);
   const contention = pack.regions.filter((r) => state.players.some((p) => meterOf(state, r.id, p.id).steps >= pack.rules.contentionAt)).length;
   const order = [...state.players].sort((a, b) => (a.id === game.viewer ? -1 : b.id === game.viewer ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
   const final = state.phase === "final";
@@ -52,7 +53,7 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
       )}
       <div className={`turn${final ? " final" : ""}`} data-testid="turn">
         <b>{game.stage === "results" ? "Result" : final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
-        <span>{state.round > 1 ? "Second round · " : ""}United Kingdom</span>
+        <span>{state.round > 1 ? "Second round · " : ""}{map.name}</span>
       </div>
       <div className="tally-wrap">
         <div className="tally" role="img" aria-label={`Projected seats: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>

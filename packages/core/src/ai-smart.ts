@@ -18,9 +18,9 @@
  * leads at the overtaking step) are kept as tuning switches, off by default, for testing on other maps.
  */
 import { groupModifier, moveCost, playerById } from "./costs.js";
-import { controllers, isRegion, nationalGroup, totalMoney, trackIds } from "./economy.js";
+import { controllers, isRegion, nationalGroup, pay, totalMoney, trackIds } from "./economy.js";
 import { nextRandom } from "./rng.js";
-import { meterOf, projectedSeats, regionLeader, regionRanking } from "./standing.js";
+import { meterOf, projectedSeats, regionLeader, regionRanking, seatWeight } from "./standing.js";
 import { canPick, pickPool, validatePlan } from "./turn.js";
 import type { GameState, MapPack, Plan } from "./types.js";
 import type { AiResult } from "./ai.js";
@@ -118,6 +118,7 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
   }
   const incomeWorth = (income: number) => t.groupBias * (t.plan_income ? income * turnsLeft * seatsPerPound * 0.6 : income / 15_000);
   const meanSeats = pack.regions.reduce((a, r) => a + r.seats, 0) / pack.regions.length;
+  const weight = new Map(pack.regions.map((r) => [r.id, seatWeight(pack, r.id)]));
 
   // Members: the candidate whose bonuses add most where this player is campaigning (seats in entered regions).
   if (canPick(pack, state, playerId)) {
@@ -166,7 +167,8 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
       const theirs = Math.max(others.reduce((a, id) => a + steps(track, id), 0), final ? 0 : others.length * t.anticipate);
       const share = (pips: number) => (pips + theirs === 0 ? 0 : pips / (pips + theirs));
       const from = steps(track, playerId);
-      let v = region.seats * (share(to) - share(from)) * (region.seats / meanSeats) ** t.seatBias;
+      // A general seat also brings its share of any reserved seats decided by seats won here.
+      let v = region.seats * weight.get(track)! * (share(to) - share(from)) * (region.seats / meanSeats) ** t.seatBias;
       // Taking the lead: worth part of every region group this region belongs to.
       const leader = regionLeader(state, track);
       const top = leader ? steps(track, leader) : 0;
@@ -195,35 +197,60 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
   const targets: Record<string, number> = {};
   let spent = 0;
 
-  // Greedy: keep adding the step (or two) with the best value per pound until the budget is used.
+  // Greedy: keep adding the step (or two) with the best value per pound until the budget is used. A track's options only
+  // change when a step is added there, so they are worked out once and again only for that track.
+  type Option = { to: number; cost: number; score: number };
+  const options = new Map<string, Option[]>();
+  const optionsFor = (id: string): Option[] => {
+    const known = options.get(id);
+    if (known) return known;
+    const m = meterOf(state, id, playerId);
+    const from = targets[id] ?? m.steps;
+    const out: Option[] = [];
+    for (const add of [1, 2]) {
+      const to = from + add;
+      if (to > pack.rules.steps || (!m.entered && to > pack.rules.firstEntryMax)) continue;
+      const gain = value(id, to) - value(id, from);
+      if (gain <= 0) continue;
+      const cost = moveCost(pack, payer, id, from, to);
+      out.push({ to, cost, score: (gain / cost) * jitter.get(id)! });
+    }
+    options.set(id, out);
+    return out;
+  };
+  // Steps are paid for from a scratch copy of the wallets as they are added; the whole plan is checked once at the end,
+  // because the real payment goes track by track in board order and group wallets only pay in their own places.
+  const wallet = structuredClone(payer);
+  const accepted: { id: string; before: number | undefined }[] = [];
   for (let guard = 0; guard < 400; guard++) {
-    let best: { id: string; to: number; cost: number; score: number } | null = null;
+    let best: ({ id: string } & Option) | null = null;
     for (const id of tracks) {
-      const m = meterOf(state, id, playerId);
-      const from = targets[id] ?? m.steps;
-      for (const add of [1, 2]) {
-        const to = from + add;
-        if (to > pack.rules.steps || (!m.entered && to > pack.rules.firstEntryMax)) continue;
-        const cost = moveCost(pack, payer, id, from, to);
-        if (spent + cost > budget) continue;
-        const gain = value(id, to) - value(id, from);
-        if (gain <= 0) continue;
-        const score = (gain / cost) * jitter.get(id)!;
-        if (!best || score > best.score) best = { id, to, cost, score };
+      for (const o of optionsFor(id)) {
+        if (spent + o.cost <= budget && (!best || o.score > best.score)) best = { id, ...o };
       }
     }
     if (!best) break;
-    const trial: Plan = { ...plan, steps: { ...plan.steps, [best.id]: best.to } };
-    if (validatePlan(pack, state, playerId, trial).length > 0) {
-      tracks.splice(tracks.indexOf(best.id), 1);
+    if (pay(pack, wallet, best.id, best.cost) === null) {
+      tracks.splice(tracks.indexOf(best.id), 1); // the money that can be spent here has run out
       continue;
     }
-    plan.steps = trial.steps!;
+    accepted.push({ id: best.id, before: targets[best.id] });
     targets[best.id] = best.to;
     spent += best.cost;
+    options.delete(best.id);
+  }
+  plan.steps = { ...targets };
+  // Rarely, paying in board order runs a group wallet dry where paying in the order above did not: drop the last steps.
+  while (accepted.length > 0 && validatePlan(pack, state, playerId, plan).length > 0) {
+    const { id, before } = accepted.pop()!;
+    if (before === undefined) delete targets[id];
+    else targets[id] = before;
+    plan.steps = { ...targets };
   }
 
-  // Conflicts: step around targets rivals are likely to aim for; Hard also defends leads against an overtake.
+  // Conflicts: step around targets rivals are likely to aim for; Hard also defends leads against an overtake. Moving a
+  // target pays the difference from the scratch wallets (a lower target always fits); the plan is checked once after.
+  const moved: { id: string; before: number }[] = [];
   for (const [id, to] of Object.entries({ ...plan.steps })) {
     const m = meterOf(state, id, playerId);
     const risky = new Set<number>();
@@ -249,10 +276,15 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
   }
 
   function tryTarget(id: string, to: number): boolean {
-    const trial: Plan = { ...plan, steps: { ...plan.steps, [id]: to } };
-    if (validatePlan(pack, state, playerId, trial).length > 0) return false;
-    plan.steps = trial.steps!;
+    const before = plan.steps![id]!;
+    if (to > before && pay(pack, wallet, id, moveCost(pack, payer, id, before, to)) === null) return false;
+    moved.push({ id, before });
+    plan.steps = { ...plan.steps, [id]: to };
     return true;
+  }
+  while (moved.length > 0 && validatePlan(pack, state, playerId, plan).length > 0) {
+    const { id, before } = moved.pop()!;
+    plan.steps = { ...plan.steps, [id]: before };
   }
 
   return { plan, rng };

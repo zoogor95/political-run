@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BoardView, type BoardData } from "@majority-map/board";
-import ukBoard from "@majority-map/content/maps/uk.json";
-import { boardStyles, electionStyles, pack, playerOf, trackName } from "./model";
+import { BoardView } from "@majority-map/board";
+import { board, boardStyles, electionStyles, pack, playerOf, trackName } from "./model";
 import { play } from "./audio";
 import { useSettings } from "./settings";
 import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
 import { GroupsPanel, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { useGame, type GameApi, type GameStart } from "./useGame";
-
-const board = ukBoard as unknown as BoardData;
 
 declare global {
   interface Window {
@@ -151,7 +148,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
       return;
     }
     if (onNight || game.stage === "results") {
-      view.select(onNight && nightPhase === "calling" && called > 0 ? night!.calls[called - 1]!.regionId : null);
+      const call = onNight && nightPhase === "calling" && called > 0 ? night!.calls[called - 1]! : null;
+      view.select(call && !call.reserved ? call.regionId : null);
       return;
     }
     const isRegion = selected !== null && board.regions.some((r) => r.id === selected);

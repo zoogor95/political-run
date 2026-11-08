@@ -118,6 +118,7 @@ export function markdown(pack: MapPack, report: Report): string {
   lines.push(`- Second rounds after a tie: ${pct(report.secondRounds / report.games)} of matches.`);
   lines.push(`- Matches that hit the ${pack.rules.turnCap}-turn cap: ${pct(report.capped / report.games)}.`);
   lines.push(`- The winner holds ${pct(report.winnerSeatShare)} of the seats on average; ${pct(report.majorityWins / report.games)} of winners have a majority.`);
+  lines.push(`- Money lost to clashes (two parties aiming for the same step): ${pct(report.lostShare)} of all spending.`);
   lines.push("");
   return lines.join("\n");
 }

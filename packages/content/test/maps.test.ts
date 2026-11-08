@@ -55,14 +55,15 @@ describe("board specifics", () => {
     expect(Object.fromEntries(board.regions.map((r) => [r.id, r.seats]))).toEqual(Object.fromEntries(pack.regions.map((r) => [r.id, r.seats])));
   });
 
-  it("Pakistan uses districts, greys out Jammu and Kashmir, and marks its seats as samples", () => {
+  it("Pakistan uses districts with the real 2023 seat counts and greys out Jammu and Kashmir", () => {
     const pk = load("pk");
     expect(pk.regions.length).toBeGreaterThan(90);
-    expect(pk.sampleSeats).toBe(true);
+    expect(pk.sampleSeats).toBe(false);
     expect(pk.greyed?.name).toBe("Jammu and Kashmir");
     expect(pk.areaBorders?.length).toBeGreaterThan(100);
     const byName = (n: string) => pk.regions.find((r) => r.name === n)!;
-    expect([byName("Karachi").seats, byName("Lahore").seats, byName("Islamabad").seats]).toEqual([22, 14, 3]);
+    expect([byName("Karachi").seats, byName("Lahore").seats, byName("Islamabad").seats, byName("Faisalabad").seats]).toEqual([22, 14, 3, 10]);
+    expect(byName("Larkana + Qambar Shahdadkot").seats).toBe(4);
     expect(byName("Islamabad").small).toBe(true);
     const provinceSeats: Record<string, number> = {};
     pk.regions.forEach((r) => (provinceSeats[r.area!] = (provinceSeats[r.area!] ?? 0) + r.seats));
