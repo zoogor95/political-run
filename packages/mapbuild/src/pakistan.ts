@@ -1,6 +1,7 @@
 /**
- * Pakistan district board with real seat counts: each region is a district, or districts that share a National Assembly
- * constituency, and holds that many of the 266 general seats (Election Commission of Pakistan, 2023 delimitation).
+ * Pakistan division board with real seat counts: each region is a division (33, Islamabad counted as one) and holds the
+ * 266 general seats of its districts (Election Commission of Pakistan, 2023 delimitation). A constituency shared by
+ * two districts always lies in one division; the build checks that.
  * Jammu and Kashmir (Azad Kashmir, Gilgit-Baltistan and the Indian-administered part) has no National Assembly seats; it
  * is drawn grey and not played.
  */
@@ -22,11 +23,10 @@ import {
   rewind,
   ringArea,
   round,
-  shortId,
   simplifyFeatures,
   tidyPath,
 } from "./geometry.ts";
-import { DISTRICT_DISPLAY, NA_CONSTITUENCIES, constituencyDistricts } from "./pakistan-seats.ts";
+import { DIVISION, NA_CONSTITUENCIES, constituencyDistricts } from "./pakistan-seats.ts";
 
 /** Natural Earth province name -> province code; X is not played. */
 const PROVINCE: Record<string, string> = {
@@ -60,7 +60,6 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
   const provinces = (admin1.features as AnyFeature[]).filter((f) => f.properties.adm0_a3 === "PAK");
 
   const feats: RegionFeature[] = [];
-  const km: number[] = [];
   /** The boundary file's name for each feature, which constituencies refer to. */
   const fileName: string[] = [];
   for (const f of d2) {
@@ -71,8 +70,7 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
     let prov = name === "Islamabad Capital Territory" ? "is" : undefined;
     if (!prov) prov = PROVINCE[String(provinces.find((p) => geoContains(p, pt))?.properties.name)];
     if (!prov || prov === "X") continue;
-    feats.push({ type: "Feature", properties: { id: "", name: DISTRICT_DISPLAY[name] ?? name, seats: 0, area: prov }, geometry: f.geometry });
-    km.push(geoArea(f));
+    feats.push({ type: "Feature", properties: { id: "", name, seats: 0, area: prov }, geometry: f.geometry });
     fileName.push(name);
   }
   const grey: AnyFeature[] = [
@@ -85,7 +83,7 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
   const projected = feats.map((f) => ({ ...f, geometry: project(f.geometry, proj) }));
   const s = simplifyFeatures(projected, opts.weight);
 
-  // Districts that share a constituency become one region; each region holds the constituencies inside it.
+  // Each division is one region holding the constituencies of its districts.
   const parent = projected.map((_, i) => i);
   const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
   const provOf = (i: number) => projected[i]!.properties.area!;
@@ -95,7 +93,18 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
     return i;
   };
   const constituencies = NA_CONSTITUENCIES.map((name) => constituencyDistricts(name).map(indexOf));
-  for (const ds of constituencies) for (const i of ds.slice(1)) parent[find(i)] = find(ds[0]!);
+  const divisionOf = (i: number) => {
+    const d = DIVISION[fileName[i]!];
+    if (!d) throw new Error(`No division for district "${fileName[i]}"`);
+    return d;
+  };
+  for (const ds of constituencies) {
+    if (new Set(ds.map(divisionOf)).size > 1) throw new Error(`A constituency crosses divisions: ${ds.map((i) => fileName[i]).join(", ")}`);
+  }
+  projected.forEach((_, i) => {
+    const first = projected.findIndex((_, j) => divisionOf(j) === divisionOf(i));
+    parent[find(i)] = find(first);
+  });
   const seats = new Map<number, number>();
   for (const ds of constituencies) seats.set(find(ds[0]!), (seats.get(find(ds[0]!)) ?? 0) + 1);
   const roots = [...new Set(projected.map((_, i) => find(i)))];
@@ -108,20 +117,17 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
     const got = roots.filter((g) => provOf(g) === pv).reduce((a, g) => a + seats.get(g)!, 0);
     if (got !== n) throw new Error(`${PROVINCE_NAME[pv]} has ${got} seats on the board, not ${n}`);
   }
-  const nameOf = (g: number) => projected[g]!.properties.name;
 
-  const used = new Set<string>();
   const regions: BoardRegion[] = roots.map((g) => {
     const members = projected.map((_, i) => i).filter((i) => find(i) === g);
-    const largest = members.slice().sort((a, b) => km[b]! - km[a]!)[0]!;
     const shape = mergeRegion(s, members, { speck: opts.speck, small: opts.small });
     return {
-      id: shortId(projected[largest]!.properties.name, used),
-      name: members.map((i) => projected[i]!.properties.name).join(" + "),
+      id: divisionOf(g).toLowerCase().replace(/[^a-z]+/g, "-"),
+      name: divisionOf(g),
       seats: seats.get(g)!,
       area: provOf(g),
       ...shape,
-      small: shape.small || ALWAYS_SMALL.has(nameOf(g)),
+      small: shape.small || ALWAYS_SMALL.has(divisionOf(g)),
     };
   });
 
@@ -151,7 +157,7 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
     credits,
     notes: [
       `Areas: ${Object.entries(PROVINCE_NAME).map(([k, v]) => `${k} = ${v}`).join(", ")}.`,
-      "Seats are the 266 general National Assembly seats of the Election Commission of Pakistan's 2023 delimitation. Districts that share a constituency are one region; districts created since the boundary file was drawn count in the district that holds them.",
+      "Regions are divisions. Seats are the 266 general National Assembly seats of the Election Commission of Pakistan's 2023 delimitation; districts created since the boundary file was drawn count in the district that holds them.",
       "Jammu and Kashmir is shown grey and is not in play.",
     ],
   };

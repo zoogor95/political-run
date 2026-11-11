@@ -5,7 +5,7 @@ import pkJson from "../packs/pk/pack.json" with { type: "json" };
 
 const pk = pkJson as MapPack;
 const board = JSON.parse(readFileSync(new URL("../maps/pk.json", import.meta.url), "utf8")) as { regions: { id: string; seats: number; area: string }[] };
-const PROVINCES: Record<string, string> = { pb: "punjab", sd: "sindh", kp: "kp", ba: "balochistan", is: "islamabad" };
+const PROVINCES: Record<string, string> = { pb: "punjab", sd: "sindh", kp: "kp", ba: "balochistan", is: "capital" };
 
 describe("Pakistan pack", () => {
   it("validates", () => {
