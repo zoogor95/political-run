@@ -82,6 +82,6 @@ test("tapping a seat badge selects its region", async ({ page }) => {
 
 test("small regions are tappable through their enlarged piece", async ({ page }) => {
   await open(page, "pk");
-  await tapAt(page, await pointOf(page, "isl", "piece"));
+  await tapAt(page, await pointOf(page, "islamabad", "piece"));
   await expect(page.getByTestId("region-card").locator("h2")).toHaveText("Islamabad");
 });

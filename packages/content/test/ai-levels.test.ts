@@ -78,16 +78,16 @@ describe("AI speed", () => {
     expect(timeFive(uk)).toBeLessThan(1000);
   });
 
-  it("five Hard AIs plan a turn on the 104-region Pakistan board in under a second", () => {
-    const board = JSON.parse(readFileSync(new URL("../maps/pk.json", import.meta.url), "utf8")) as { regions: { id: string; name: string; seats: number }[] };
-    const pk: MapPack = {
+  it("five Hard AIs plan a turn on the 51-region US board, the largest, in under a second", () => {
+    const board = JSON.parse(readFileSync(new URL("../maps/us.json", import.meta.url), "utf8")) as { regions: { id: string; name: string; seats: number }[] };
+    const big: MapPack = {
       ...uk,
-      id: "pk-sample",
+      id: "us-sample",
       rules: PARLIAMENTARY_RULES,
       regions: board.regions.map((r) => ({ id: r.id, name: r.name, seats: r.seats, baseCost: 5000 + 400 * r.seats })),
       groups: uk.groups.filter((g) => g.kind === "national"),
       candidates: uk.candidates.map((c) => ({ ...c, modifiers: Object.fromEntries(Object.entries(c.modifiers).filter(([g]) => uk.groups.find((x) => x.id === g)?.kind === "national")) })),
     };
-    expect(timeFive(pk)).toBeLessThan(1000);
+    expect(timeFive(big)).toBeLessThan(1000);
   });
 });

@@ -117,18 +117,6 @@ export const DISTRICT_ALIAS: Record<string, string> = {
   Wazirabad: "Gujranwala",
 };
 
-/** Boundary-file district names shown differently on the board: the boundary file's Qambar Shahdadkot also holds Larkana. */
-export const DISTRICT_DISPLAY: Record<string, string> = {
-  "Qambar Shahdadkot": "Larkana + Qambar Shahdadkot",
-  "Islamabad Capital Territory": "Islamabad",
-  Sheikhpura: "Sheikhupura",
-  Vihari: "Vehari",
-  Mirpurkhas: "Mirpur Khas",
-  "Naushehro Feroze": "Naushahro Feroze",
-  "Qilla Abdullah": "Killa Abdullah",
-  "Qilla Saifullah": "Killa Saifullah",
-};
-
 /** Boundary-file districts of a constituency, from its name. */
 export function constituencyDistricts(name: string): string[] {
   return name.split("-cum-").map((part) => {
@@ -137,3 +125,49 @@ export function constituencyDistricts(name: string): string[] {
     return DISTRICT_ALIAS[d] ?? d;
   });
 }
+
+/**
+ * Divisions, the board's regions: each boundary-file district's division. Punjab has 10 divisions (Gujrat division,
+ * made in 2022, included), Sindh 7, Khyber Pakhtunkhwa 7 (the merged tribal districts in theirs), Balochistan 8, and
+ * Islamabad is its own region. Districts made since the boundary file was drawn are inside these districts already.
+ */
+export const DIVISION: Record<string, string> = {
+  // Punjab
+  Bahawalpur: "Bahawalpur", Bahawalnagar: "Bahawalpur", "Rahim Yar Khan": "Bahawalpur",
+  "Dera Ghazi Khan": "Dera Ghazi Khan", Layyah: "Dera Ghazi Khan", Muzaffargarh: "Dera Ghazi Khan", Rajanpur: "Dera Ghazi Khan",
+  Faisalabad: "Faisalabad", Jhang: "Faisalabad", "Toba Tek Singh": "Faisalabad",
+  Gujranwala: "Gujranwala", Narowal: "Gujranwala", Sialkot: "Gujranwala",
+  Gujrat: "Gujrat", "Mandi Bahauddin": "Gujrat", Hafizabad: "Gujrat",
+  Lahore: "Lahore", Kasur: "Lahore", Sheikhpura: "Lahore",
+  Multan: "Multan", Khanewal: "Multan", Lodhran: "Multan", Vihari: "Multan",
+  Rawalpindi: "Rawalpindi", Attock: "Rawalpindi", Chakwal: "Rawalpindi", Jhelum: "Rawalpindi",
+  Sahiwal: "Sahiwal", Okara: "Sahiwal", Pakpattan: "Sahiwal",
+  Sargodha: "Sargodha", Bhakkar: "Sargodha", Khushab: "Sargodha", Mianwali: "Sargodha",
+  // Sindh
+  Karachi: "Karachi",
+  Hyderabad: "Hyderabad", Dadu: "Hyderabad", Jamshoro: "Hyderabad", Matiari: "Hyderabad", "Tando Allahyar": "Hyderabad", "Tando Muhammad Khan": "Hyderabad",
+  Thatta: "Banbhore", Badin: "Banbhore",
+  Mirpurkhas: "Mirpur Khas", Umerkot: "Mirpur Khas", Tharparkar: "Mirpur Khas",
+  Nawabshah: "Shaheed Benazirabad", "Naushehro Feroze": "Shaheed Benazirabad", Sanghar: "Shaheed Benazirabad",
+  Sukkur: "Sukkur", Khairpur: "Sukkur", Ghotki: "Sukkur",
+  "Qambar Shahdadkot": "Larkana", Shikarpur: "Larkana", Jacobabad: "Larkana", Kashmore: "Larkana",
+  // Khyber Pakhtunkhwa
+  Swat: "Malakand", "Upper Dir": "Malakand", "Lower Dir": "Malakand", Chitral: "Malakand", Malakand: "Malakand", Buner: "Malakand", Shangla: "Malakand", Bajaur: "Malakand",
+  Abbottabad: "Hazara", Haripur: "Hazara", Mansehra: "Hazara", Battagram: "Hazara", Kohistan: "Hazara",
+  Mardan: "Mardan", Swabi: "Mardan",
+  Peshawar: "Peshawar", Charsadda: "Peshawar", Nowshera: "Peshawar", Khyber: "Peshawar", Mohmand: "Peshawar",
+  Kohat: "Kohat", Hangu: "Kohat", Karak: "Kohat", Kurram: "Kohat", Orakzai: "Kohat",
+  Bannu: "Bannu", "Lakki Marwat": "Bannu", "North Waziristan": "Bannu",
+  "Dera Ismail Khan": "Dera Ismail Khan", Tank: "Dera Ismail Khan", "South Waziristan": "Dera Ismail Khan",
+  // Balochistan
+  Quetta: "Quetta", Pishin: "Quetta", "Qilla Abdullah": "Quetta",
+  Zhob: "Zhob", "Qilla Saifullah": "Zhob",
+  Loralai: "Loralai", Barkhan: "Loralai", Musakhel: "Loralai",
+  Sibi: "Sibi", Ziarat: "Sibi", Kohlu: "Sibi", "Dera Bugti": "Sibi",
+  Nasirabad: "Naseerabad", Jafarabad: "Naseerabad", "Jhal Magsi": "Naseerabad", Kachhi: "Naseerabad",
+  Kalat: "Kalat", Mastung: "Kalat", Khuzdar: "Kalat", Awaran: "Kalat", Lasbela: "Kalat",
+  Kech: "Makran", Gwadar: "Makran", Panjgur: "Makran",
+  Kharan: "Rakhshan", Nushki: "Rakhshan", Chagai: "Rakhshan",
+  // Islamabad Capital Territory
+  "Islamabad Capital Territory": "Islamabad",
+};
