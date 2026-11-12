@@ -8,6 +8,8 @@ import ukNews from "@majority-map/content/news/uk.json";
 import pkPack from "@majority-map/content/packs/pk/pack.json";
 import ukPack from "@majority-map/content/packs/uk/pack.json";
 import {
+  withCustomCandidates,
+  type CustomCandidate,
   totalSeats,
   type NewsTemplates,
   createMatch,
@@ -43,16 +45,17 @@ export const isMapId = (id: unknown): id is MapId => id === "uk" || id === "pk";
 
 /**
  * The map in play. Screens import these and read them while rendering; selectMap switches them before a match or the
- * setup screen draws, so every screen sees the same map.
+ * setup screen draws, so every screen sees the same map. In a match, `pack` also holds the custom candidates leading
+ * a party; `map.pack` is always the map's own.
  */
 export let map: MapEntry = MAPS.uk;
 export let pack: MapPack = map.pack;
 export let board: BoardData = map.board;
 export let news: NewsTemplates = map.news;
 
-export function selectMap(id: string): MapEntry {
+export function selectMap(id: string, customs: CustomCandidate[] = []): MapEntry {
   map = isMapId(id) ? MAPS[id] : MAPS.uk;
-  pack = map.pack;
+  pack = withCustomCandidates(map.pack, customs);
   board = map.board;
   news = map.news;
   return map;

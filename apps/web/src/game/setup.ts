@@ -1,6 +1,7 @@
 /** Match setup: who sits at the table (2 to 5 seats, human or computer), each party's name, colour, emblem and leader. */
 import type { AiLevel, PlayerSetup } from "@majority-map/core";
-import { map, pack, type MapId } from "./model";
+import type { CustomCandidate } from "@majority-map/core";
+import { map, type MapId } from "./model";
 
 export type Mode = "solo" | "hotseat";
 
@@ -19,6 +20,8 @@ export interface MatchConfig {
   /** The map; saves from before maps could be chosen are the UK. */
   map?: MapId;
   seats: Seat[];
+  /** Custom candidates leading a party, carried with the match so saves keep them. */
+  customs?: CustomCandidate[];
 }
 
 /** The colour palette from the designs: colours are first come, first served. */
@@ -55,15 +58,15 @@ const firstFree = <T,>(options: T[], used: T[]) => options.find((o) => !used.inc
 /** A computer seat with the next free made-up party name, colour, emblem and leader. */
 export function aiSeat(seats: Seat[], index: number, level: AiLevel = "normal"): Seat {
   // Computer parties default to leaders from real parties not yet at the table, so rivals feel distinct.
-  const usedAffiliations = new Set(seats.map((s) => pack.candidates.find((c) => c.id === s.leaderId)?.affiliation));
-  const leaders = [...pack.candidates.filter((c) => !usedAffiliations.has(c.affiliation)), ...pack.candidates].map((c) => c.id);
+  const usedAffiliations = new Set(seats.map((s) => map.pack.candidates.find((c) => c.id === s.leaderId)?.affiliation));
+  const leaders = [...map.pack.candidates.filter((c) => !usedAffiliations.has(c.affiliation)), ...map.pack.candidates].map((c) => c.id);
   return {
     id: `ai${index}`,
     kind: "ai",
     label: `Computer ${index}`,
     level,
     party: {
-      name: firstFree(pack.aiPartyNames, seats.map((s) => s.party.name)),
+      name: firstFree(map.pack.aiPartyNames, seats.map((s) => s.party.name)),
       color: firstFree(COLORS.map((c) => c.hex), seats.map((s) => s.party.color)),
       emblem: firstFree(EMBLEMS, seats.map((s) => s.party.emblem)),
     },
@@ -83,7 +86,7 @@ export function humanSeat(seats: Seat[], index: number): Seat {
       color: firstFree(COLORS.map((c) => c.hex), seats.map((s) => s.party.color)),
       emblem: firstFree(EMBLEMS, seats.map((s) => s.party.emblem)),
     },
-    leaderId: firstFree(first ? [map.defaultLeader, ...pack.candidates.map((c) => c.id)] : pack.candidates.map((c) => c.id), seats.map((s) => s.leaderId)),
+    leaderId: firstFree(first ? [map.defaultLeader, ...map.pack.candidates.map((c) => c.id)] : map.pack.candidates.map((c) => c.id), seats.map((s) => s.leaderId)),
   };
 }
 

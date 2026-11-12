@@ -487,5 +487,6 @@
     "sw",
     "lon",
     "se"
-  ]
+  ],
+  "customBudget": 8
 }

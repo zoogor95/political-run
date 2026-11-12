@@ -13,9 +13,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { Worker } from "node:worker_threads";
-import type { AiLevel, MapPack, Tuning } from "@majority-map/core";
-import { REPORT_LINEUPS, markdown, overLimit } from "./report.js";
-import { lineup, lineupResult, schedule, summarize, versus, versusResult, type MatchRecord, type ScheduledMatch } from "./sim.js";
+import { withCustomCandidates, type AiLevel, type MapPack, type Tuning } from "@majority-map/core";
+import { REPORT_LINEUPS, markdown, overLimit, strongCustoms } from "./report.js";
+import { customBuilds, customResults, customSchedule, lineup, lineupResult, schedule, summarize, versus, versusResult, type MatchRecord, type ScheduledMatch } from "./sim.js";
 
 const args = new Map<string, string>();
 for (let i = 2; i < process.argv.length; i++) {
@@ -42,7 +42,7 @@ for (const g of pack.groups) {
 }
 
 /** Plays every match across the worker threads; records come back in schedule order. */
-async function playAll(list: ScheduledMatch[]): Promise<MatchRecord[]> {
+async function playAll(list: ScheduledMatch[], on: MapPack = pack): Promise<MatchRecord[]> {
   const slices: number[][] = Array.from({ length: threads }, () => []);
   list.forEach((_, i) => slices[i % threads]!.push(i));
   const records: MatchRecord[] = new Array<MatchRecord>(list.length);
@@ -51,7 +51,7 @@ async function playAll(list: ScheduledMatch[]): Promise<MatchRecord[]> {
     slices.map(
       (indexes) =>
         new Promise<void>((resolve, reject) => {
-          const w = new Worker(new URL("./worker-boot.mjs", import.meta.url), { workerData: { pack, matches: indexes.map((i) => list[i]!) } });
+          const w = new Worker(new URL("./worker-boot.mjs", import.meta.url), { workerData: { pack: on, matches: indexes.map((i) => list[i]!) } });
           let k = 0;
           w.on("message", (record: MatchRecord) => {
             records[indexes[k++]!] = record;
@@ -88,6 +88,12 @@ if (vs) {
   const lineupGames = Math.max(30, Math.round(games / 12.5));
   report.lineups = [];
   for (const l of REPORT_LINEUPS) report.lineups.push(lineupResult(l, await playAll(lineup(pack, l, lineupGames, seed))));
+  // Custom candidates: the strongest legal builds against the pack's own leaders.
+  const builds = customBuilds(pack);
+  const withBuilds = withCustomCandidates(pack, builds);
+  const customList = customSchedule(pack, builds, Math.max(30, Math.round(games / 25)), seed);
+  const customRecords = await playAll(customList, withBuilds);
+  report.customs = customResults(builds, pack, customList.map((match, i) => ({ match, record: customRecords[i]! })));
   mkdirSync(new URL(".", out), { recursive: true });
   writeFileSync(out, markdown(pack, report));
   writeFileSync(new URL(out.href.replace(/\.md$/, ".json")), JSON.stringify(report, null, 2) + "\n");
@@ -95,6 +101,11 @@ if (vs) {
   const over = overLimit(report);
   if (over.length) {
     process.stderr.write(`Over the limit: ${over.join(", ")}\n`);
+    process.exitCode = 1;
+  }
+  const strong = strongCustoms(report);
+  if (strong.length) {
+    process.stderr.write(`Custom builds stronger than the leader band: ${strong.join(", ")}\n`);
     process.exitCode = 1;
   }
 }

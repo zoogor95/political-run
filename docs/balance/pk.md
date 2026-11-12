@@ -57,6 +57,31 @@ No leader is outside the band.
 | Bilawal Bhutto Zardari | 766 | 0.85× |
 | Ahsan Iqbal | 736 | 0.82× |
 
+## Custom candidates
+
+The strongest custom candidates a player can build within the 10-point budget, each leading a party against two or three of the map's own leaders. None should win more than 1.25×, the top of the leader band.
+
+**Pass:** no custom build wins more than the top of the leader band.
+
+| Build | Bonuses and penalties | Points | Matches | Wins vs even share |
+| --- | --- | ---: | ---: | ---: |
+| max-punjab | +5% Punjab, +5% Urban Sindh | 10 | 160 | 0.69× |
+| max-sindh | +15% Sindh, +5% Balochistan | 10 | 160 | 0.97× |
+| max-kp | +15% Khyber Pakhtunkhwa, +5% Balochistan | 10 | 160 | 0.76× |
+| max-balochistan | +15% Balochistan, +10% Sindh, +5% Islamabad | 10 | 160 | 1.05× |
+| max-capital | +15% Islamabad, +10% Sindh, +5% Balochistan | 10 | 160 | 0.73× |
+| max-south-punjab | +15% South Punjab, +5% Balochistan | 10 | 160 | 0.83× |
+| max-urban-sindh | +15% Urban Sindh, +5% Sindh, +5% Balochistan | 10 | 160 | 0.79× |
+| max-cities | +5% Big cities, +5% Urban Sindh | 10 | 160 | 0.81× |
+| max-farmers | +15% Farmers, +5% Sindh, +5% Balochistan | 10 | 160 | 0.95× |
+| max-traders | +15% Traders, +5% Sindh, +5% Balochistan | 10 | 160 | 1.17× |
+| max-youth | +15% Young voters, +5% Sindh, +5% Balochistan | 10 | 160 | 0.81× |
+| max-overseas | +15% Overseas Pakistanis, +5% Sindh, +5% Balochistan | 10 | 160 | 0.92× |
+| max-workers | +15% Workers, +5% Sindh, +5% Balochistan | 10 | 160 | 1.00× |
+| max-women | +15% Women voters, +5% Sindh, +5% Balochistan | 10 | 160 | 0.79× |
+| penalties-1 | −15% Punjab, +10% Big cities, +10% Sindh | 10 | 160 | 0.41× |
+| penalties-2 | −15% Punjab, −15% Big cities, +15% Sindh, +15% Khyber Pakhtunkhwa | -6 | 160 | 0.26× |
+
 ## Difficulty levels
 
 Each line-up is played in every seat order with random leaders, every party on the plain AI for its level.

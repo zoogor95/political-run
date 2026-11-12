@@ -30,6 +30,11 @@ export function fieldRate(report: Report, s: StrategyId): number {
   return rivals.length ? rivals.reduce((a, b) => a + pairRate(report, s, b), 0) / rivals.length : 0;
 }
 
+/** Custom builds that win more than the top of the leader band. */
+export function strongCustoms(report: Report): string[] {
+  return (report.customs ?? []).filter((c) => edge(c.tally) > LEADER_BAND[1]).map((c) => c.id);
+}
+
 /** Strategies that win more than the limit of their duels against the strategies that aren't dominated. */
 export function overLimit(report: Report): StrategyId[] {
   const out = new Set(dominated(report));
@@ -96,6 +101,26 @@ export function markdown(pack: MapPack, report: Report): string {
   lines.push("| Leader | Matches | Wins vs even share |", "| --- | ---: | ---: |");
   for (const [id, t] of Object.entries(report.leaders).sort(([, a], [, b]) => edge(b) - edge(a))) lines.push(`| ${leader(id)} | ${t.games} | ${edge(t).toFixed(2)}× |`);
   lines.push("");
+
+  if (report.customs?.length) {
+    const strong = strongCustoms(report);
+    const group = (id: string) => pack.groups.find((g) => g.id === id)?.name ?? id;
+    lines.push(
+      "## Custom candidates",
+      "",
+      `The strongest custom candidates a player can build within the ${pack.customBudget ?? 8}-point budget, each leading a party against two or three of the map's own leaders. None should win more than ${LEADER_BAND[1].toFixed(2)}×, the top of the leader band.`,
+      "",
+      strong.length ? `**Fail:** ${strong.join(", ")} win more than ${LEADER_BAND[1].toFixed(2)}×.` : "**Pass:** no custom build wins more than the top of the leader band.",
+      "",
+      "| Build | Bonuses and penalties | Points | Matches | Wins vs even share |",
+      "| --- | --- | ---: | ---: | ---: |",
+    );
+    for (const c of report.customs) {
+      const mods = Object.entries(c.modifiers).map(([g, p]) => `${p > 0 ? "+" : "−"}${Math.abs(p)}% ${group(g)}`).join(", ");
+      lines.push(`| ${c.id.replace(/^custom-/, "")} | ${mods} | ${c.points} | ${c.tally.games} | ${edge(c.tally).toFixed(2)}× |`);
+    }
+    lines.push("");
+  }
 
   if (report.lineups?.length) {
     const label = (l: string) => l[0]!.toUpperCase() + l.slice(1);

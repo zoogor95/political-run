@@ -92,6 +92,8 @@ export interface MapPack {
   callOrder?: string[];
   /** Reserved seats, declared after every region on election night. */
   reservedSeats?: ReservedSeatsDef[];
+  /** Points a custom candidate's bonuses may cost on this map (see custom.ts). */
+  customBudget?: number;
 }
 
 /** Match state. Plain JSON so it can be saved, sent over the network and replayed. */

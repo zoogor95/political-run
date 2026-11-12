@@ -365,5 +365,190 @@
         "normal": 0.325
       }
     }
+  ],
+  "customs": [
+    {
+      "id": "custom-max-north",
+      "modifiers": {
+        "north": 10
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 154,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-midlands",
+      "modifiers": {
+        "midlands": 15,
+        "london": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 141,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-south",
+      "modifiers": {
+        "south": 5,
+        "business": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 106,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-london",
+      "modifiers": {
+        "london": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 129,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-devolved",
+      "modifiers": {
+        "devolved": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 165,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-cities",
+      "modifiers": {
+        "cities": 5
+      },
+      "points": 7,
+      "tally": {
+        "games": 400,
+        "wins": 144,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-unions",
+      "modifiers": {
+        "unions": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 104,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-business",
+      "modifiers": {
+        "business": 10,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 118,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-pensioners",
+      "modifiers": {
+        "pensioners": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 111,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-students",
+      "modifiers": {
+        "students": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 101,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-farmers",
+      "modifiers": {
+        "farmers": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 99,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-max-commuters",
+      "modifiers": {
+        "commuters": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 107,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-penalties-1",
+      "modifiers": {
+        "cities": -15,
+        "south": 15,
+        "midlands": 5
+      },
+      "points": 8,
+      "tally": {
+        "games": 400,
+        "wins": 95,
+        "fair": 144.58333333333323
+      }
+    },
+    {
+      "id": "custom-penalties-2",
+      "modifiers": {
+        "cities": -15,
+        "north": -15,
+        "south": 15,
+        "business": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 400,
+        "wins": 64,
+        "fair": 144.58333333333323
+      }
+    }
   ]
 }

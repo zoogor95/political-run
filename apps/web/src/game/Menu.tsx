@@ -1,6 +1,11 @@
 /** Main menu, match setup (solo or pass and play) and settings. */
 import { useState } from "react";
-import { MAPS, isMapId, map, mapDetail, pack, selectMap, type MapId } from "./model";
+import type { CustomCandidate } from "@majority-map/core";
+import { CandidateCreator, UnlockCard } from "./Creator";
+import { loadCustoms, useCustoms } from "./customs";
+import { MAPS, isMapId, map, mapDetail, selectMap, type MapId } from "./model";
+import { Portrait, toAvatar } from "./Portrait";
+import { useOwns } from "./store";
 import { loadMatch } from "./saves";
 import { COLORS, EMBLEMS, EMBLEM_NAME, aiSeat, checkConfig, defaultConfig, humanSeat, type MatchConfig, type Mode, type Seat } from "./setup";
 import { updateSettings, useSettings } from "./settings";
@@ -41,7 +46,24 @@ export function MainMenu({ onContinue, onNew, onSettings }: { onContinue: () => 
   );
 }
 
-function SeatCard({ seat, config, mode, onChange, onRemove }: { seat: Seat; config: MatchConfig; mode: Mode; onChange: (s: Seat) => void; onRemove?: (() => void) | undefined }) {
+function SeatCard({
+  seat,
+  config,
+  mode,
+  customs,
+  onChange,
+  onRemove,
+  onCreate,
+}: {
+  seat: Seat;
+  config: MatchConfig;
+  mode: Mode;
+  customs: CustomCandidate[];
+  onChange: (s: Seat) => void;
+  onRemove?: (() => void) | undefined;
+  onCreate: (edit?: CustomCandidate) => void;
+}) {
+  const mine = customs.find((c) => c.id === seat.leaderId);
   const others = config.seats.filter((s) => s.id !== seat.id);
   const takenColor = new Map(others.map((s) => [s.party.color, s.party.name || s.label]));
   const takenEmblem = new Map(others.map((s) => [s.party.emblem, s.party.name || s.label]));
@@ -104,13 +126,37 @@ function SeatCard({ seat, config, mode, onChange, onRemove }: { seat: Seat; conf
         <label>
           <span>Leader</span>
           <select value={seat.leaderId} onChange={(e) => onChange({ ...seat, leaderId: e.target.value })} aria-label={`${seat.label} leader`}>
-            {pack.candidates.map((c) => (
-              <option key={c.id} value={c.id} disabled={takenLeader.has(c.id)}>
-                {c.name} · {c.affiliation}
-              </option>
-            ))}
+            {seat.kind === "human" && customs.length > 0 && (
+              <optgroup label="Your candidates">
+                {customs.map((c) => (
+                  <option key={c.id} value={c.id} disabled={takenLeader.has(c.id)}>
+                    {c.name} · Your candidate
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label={map.name}>
+              {map.pack.candidates.map((c) => (
+                <option key={c.id} value={c.id} disabled={takenLeader.has(c.id)}>
+                  {c.name} · {c.affiliation}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </label>
+        {seat.kind === "human" && (
+          <div className="custom-leader">
+            {mine && <Portrait avatar={toAvatar(mine.avatar)} size={44} label={`Portrait of ${mine.name}`} />}
+            {mine && (
+              <button type="button" onClick={() => onCreate(mine)} data-testid={`edit-candidate-${seat.id}`}>
+                Edit {mine.name}
+              </button>
+            )}
+            <button type="button" onClick={() => onCreate()} data-testid={`create-candidate-${seat.id}`}>
+              + Create a candidate
+            </button>
+          </div>
+        )}
         {seat.kind === "ai" && (
           <label>
             <span>Difficulty</span>
@@ -128,7 +174,23 @@ function SeatCard({ seat, config, mode, onChange, onRemove }: { seat: Seat; conf
 
 export function SetupScreen({ mode, onBack, onStart }: { mode: Mode; onBack: () => void; onStart: (config: MatchConfig) => void }) {
   const [config, setConfig] = useState<MatchConfig>(() => defaultConfig(mode));
+  const customs = useCustoms(map.id);
+  const owned = useOwns("candidate-creator");
+  // The creator opens over the setup screen, so the table being set up stays as it is.
+  const [creating, setCreating] = useState<{ seatId: string; edit?: CustomCandidate | undefined } | null>(null);
+  const [unlocking, setUnlocking] = useState<string | null>(null);
   const issues = checkConfig(config);
+  const openCreator = (seatId: string, edit?: CustomCandidate) => (owned ? setCreating({ seatId, edit }) : setUnlocking(seatId));
+  /** A seat whose custom leader was deleted goes back to a free leader of the map. */
+  const repairLeaders = (cfg: MatchConfig): MatchConfig => {
+    const known = new Set([...map.pack.candidates.map((c) => c.id), ...loadCustoms().map((c) => c.id)]);
+    const seats: Seat[] = [];
+    for (const s of cfg.seats) {
+      if (known.has(s.leaderId)) seats.push(s);
+      else seats.push({ ...s, leaderId: map.pack.candidates.map((c) => c.id).find((id) => !cfg.seats.some((x) => x.leaderId === id)) ?? map.pack.candidates[0]!.id });
+    }
+    return { ...cfg, seats };
+  };
   // Another map has other leaders and computer parties: seats keep their kind, colour and emblem, and people keep
   // their party names; leaders and computer party names come from the new map.
   const changeMap = (id: MapId) => {
@@ -193,6 +255,8 @@ export function SetupScreen({ mode, onBack, onStart }: { mode: Mode; onBack: () 
             config={config}
             mode={mode}
             onChange={update}
+            customs={customs}
+            onCreate={(edit) => openCreator(s.id, edit)}
             onRemove={config.seats.length > 2 && (mode === "hotseat" || i > 0) ? () => setConfig({ ...config, seats: config.seats.filter((x) => x.id !== s.id) }) : undefined}
           />
         ))}
@@ -209,9 +273,40 @@ export function SetupScreen({ mode, onBack, onStart }: { mode: Mode; onBack: () 
           ))}
         </ul>
       )}
-      <button type="button" className="primary start" disabled={issues.length > 0} onClick={() => onStart(config)} data-testid="start-match">
+      <button
+        type="button"
+        className="primary start"
+        disabled={issues.length > 0}
+        onClick={() => onStart({ ...config, customs: customs.filter((c) => config.seats.some((s) => s.leaderId === c.id)) })}
+        data-testid="start-match"
+      >
         Start the campaign
       </button>
+      {unlocking && (
+        <UnlockCard
+          onClose={() => setUnlocking(null)}
+          onUnlocked={() => {
+            setCreating({ seatId: unlocking });
+            setUnlocking(null);
+          }}
+        />
+      )}
+      {creating && (
+        <CandidateCreator
+          pack={map.pack}
+          initial={creating.edit}
+          onClose={() => {
+            setCreating(null);
+            setConfig(repairLeaders(config));
+          }}
+          onSave={(c) => {
+            setCreating(null);
+            // The new candidate leads the seat it was made from, unless another seat already has it.
+            const taken = config.seats.some((s) => s.id !== creating.seatId && s.leaderId === c.id);
+            setConfig(repairLeaders({ ...config, seats: config.seats.map((s) => (s.id === creating.seatId && !taken ? { ...s, leaderId: c.id } : s)) }));
+          }}
+        />
+      )}
     </main>
   );
 }
