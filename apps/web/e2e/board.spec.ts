@@ -56,13 +56,15 @@ test("tapping a piece lifts it and opens its region card; tapping again drops it
   await tapAt(page, await pointOf(page, "nw", "piece"));
   await expect(page.getByTestId("region-card").locator("h2")).toHaveText("North West");
   expect(await page.evaluate(() => (window as unknown as HookWindow).__board!.view.selection)).toBe("nw");
-  // Opening the card can resize the board on a phone; wait until the piece stops moving so the second tap lands on it.
-  let last = await pointOf(page, "nw", "piece");
+  // Opening the card shrinks the board on a phone, which lays the seat badges out again; a neighbour's badge can then
+  // sit over North West's piece. Badges are always on top, so the second tap goes to North West's own badge, once the
+  // board has stopped moving.
+  let last = await pointOf(page, "nw", "badge");
   let steady = 0;
   await expect
     .poll(
       async () => {
-        const now = await pointOf(page, "nw", "piece");
+        const now = await pointOf(page, "nw", "badge");
         steady = Math.abs(now.x - last.x) < 0.5 && Math.abs(now.y - last.y) < 0.5 ? steady + 1 : 0;
         last = now;
         return steady;
