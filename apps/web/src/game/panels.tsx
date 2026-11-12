@@ -14,6 +14,8 @@ import {
   type GameState,
   type Plan,
 } from "@majority-map/core";
+import type { CustomCandidate } from "@majority-map/core";
+import { Portrait, toAvatar } from "./Portrait";
 import type { GameApi } from "./useGame";
 import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, trackName } from "./model";
 
@@ -235,6 +237,15 @@ export function PartyPanel({ game }: { game: GameApi }) {
   return (
     <section data-testid="party-panel">
       <h3>{you.party.name}</h3>
+      {"custom" in leader && (
+        <div className="leader-card" data-testid="custom-leader">
+          <Portrait avatar={toAvatar((leader as CustomCandidate).avatar)} size={56} label={`Portrait of ${leader.name}`} />
+          <span>
+            <b>{leader.name}</b>
+            {(leader as CustomCandidate).bio && <small>{(leader as CustomCandidate).bio}</small>}
+          </span>
+        </div>
+      )}
       <p className="muted">
         Leader {leader.name} ({leader.affiliation}) · picks every {every} turns, next on turn {nextPick}
       </p>

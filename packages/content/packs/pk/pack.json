@@ -705,5 +705,6 @@
       "name": "Non-Muslims",
       "seats": 10
     }
-  ]
+  ],
+  "customBudget": 10
 }

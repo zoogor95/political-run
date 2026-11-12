@@ -5,7 +5,7 @@ import { Game } from "./game/Game";
 import { MainMenu, SettingsPanel, SetupScreen } from "./game/Menu";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
-import { isMapId, selectMap } from "./game/model";
+import { isMapId, map, selectMap } from "./game/model";
 import { useSettings } from "./game/settings";
 import type { GameStart } from "./game/useGame";
 import { Lab } from "./Lab";
@@ -43,10 +43,13 @@ function App() {
           onContinue={() => {
             const save = loadMatch();
             if (!save) return;
-            selectMap(isMapId(save.state.packId) ? save.state.packId : "uk");
+            selectMap(isMapId(save.state.packId) ? save.state.packId : "uk", save.config.customs ?? []);
             setScreen({ name: "game", start: { save }, key: Date.now() });
           }}
-          onNew={(mode) => setScreen({ name: "setup", mode })}
+          onNew={(mode) => {
+            selectMap(map.id); // the setup screen starts from the map's own leaders
+            setScreen({ name: "setup", mode });
+          }}
           onSettings={openSettings}
         />
       )}
@@ -55,7 +58,7 @@ function App() {
           mode={screen.mode}
           onBack={() => setScreen({ name: "menu" })}
           onStart={(config) => {
-            selectMap(config.map ?? "uk");
+            selectMap(config.map ?? "uk", config.customs ?? []);
             clearSave();
             setScreen({ name: "game", start: { config }, key: Date.now() });
           }}

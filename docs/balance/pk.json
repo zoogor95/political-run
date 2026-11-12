@@ -365,5 +365,227 @@
         "normal": 0.403125
       }
     }
+  ],
+  "customs": [
+    {
+      "id": "custom-max-punjab",
+      "modifiers": {
+        "punjab": 5,
+        "urban-sindh": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 40,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-sindh",
+      "modifiers": {
+        "sindh": 15,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 56,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-kp",
+      "modifiers": {
+        "kp": 15,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 44,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-balochistan",
+      "modifiers": {
+        "balochistan": 15,
+        "sindh": 10,
+        "capital": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 61,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-capital",
+      "modifiers": {
+        "capital": 15,
+        "sindh": 10,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 42,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-south-punjab",
+      "modifiers": {
+        "south-punjab": 15,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 48,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-urban-sindh",
+      "modifiers": {
+        "urban-sindh": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 46,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-cities",
+      "modifiers": {
+        "cities": 5,
+        "urban-sindh": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 47,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-farmers",
+      "modifiers": {
+        "farmers": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 55,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-traders",
+      "modifiers": {
+        "traders": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 68,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-youth",
+      "modifiers": {
+        "youth": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 47,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-overseas",
+      "modifiers": {
+        "overseas": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 53,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-workers",
+      "modifiers": {
+        "workers": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 58,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-women",
+      "modifiers": {
+        "women": 15,
+        "sindh": 5,
+        "balochistan": 5
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 46,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-penalties-1",
+      "modifiers": {
+        "punjab": -15,
+        "cities": 10,
+        "sindh": 10
+      },
+      "points": 10,
+      "tally": {
+        "games": 160,
+        "wins": 24,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-penalties-2",
+      "modifiers": {
+        "punjab": -15,
+        "cities": -15,
+        "sindh": 15,
+        "kp": 15
+      },
+      "points": -6,
+      "tally": {
+        "games": 160,
+        "wins": 15,
+        "fair": 57.91666666666671
+      }
+    }
   ]
 }

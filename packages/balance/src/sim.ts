@@ -2,6 +2,7 @@
  * Plays computer-vs-computer matches and tallies how each way of playing, each leader and each seat does.
  * Every match is seeded, so a schedule always gives the same results.
  */
+import { CUSTOM_RULES, customBudget, customCost, customPrice, customRefund, type CustomCandidate } from "@majority-map/core";
 import { STRATEGIES, totalSeats, createMatch, finishElection, nextRandom, planEasy, planSmart, resolveTurn, seedRng, type AiLevel, type GameState, type MapPack, type Plan, type StrategyId, type Tuning } from "@majority-map/core";
 
 export interface Entrant {
@@ -196,6 +197,93 @@ export function versusResult(records: MatchRecord[]): { share: number; margin: n
   return { share, margin: 1.96 * Math.sqrt((share * (1 - share)) / records.length), turns: records.reduce((a, r) => a + r.turns, 0) / records.length };
 }
 
+/**
+ * The strongest custom candidates a player could build on a pack: each group's bonus at its most, the rest of the
+ * budget spent on the biggest groups that still fit; and the same after taking the penalties that give the most points
+ * back. If none of these beats the pack's own leaders, no legal build does by much.
+ */
+export function customBuilds(pack: MapPack): CustomCandidate[] {
+  const budget = customBudget(pack);
+  const { step, maxPct, maxModifiers } = CUSTOM_RULES;
+  const groups = [...pack.groups].sort((a, b) => customPrice(pack, b.id) - customPrice(pack, a.id));
+  const fill = (mods: Record<string, number>) => {
+    for (const g of groups) {
+      if (Object.keys(mods).length >= maxModifiers) break;
+      if (mods[g.id] !== undefined) continue;
+      let pct = 0;
+      while (pct < maxPct && customCost(pack, { ...mods, [g.id]: pct + step }) <= budget) pct += step;
+      if (pct > 0) mods[g.id] = pct;
+    }
+    return mods;
+  };
+  const builds: { name: string; mods: Record<string, number> }[] = [];
+  for (const g of pack.groups) {
+    let pct = 0;
+    while (pct < maxPct && customCost(pack, { [g.id]: pct + step }) <= budget) pct += step;
+    if (pct > 0) builds.push({ name: `max-${g.id}`, mods: fill({ [g.id]: pct }) });
+  }
+  const refunders = pack.groups.filter((g) => customRefund(pack, g.id) > 0).sort((a, b) => customRefund(pack, b.id) - customRefund(pack, a.id));
+  for (const n of [1, 2]) {
+    if (refunders.length < n) break;
+    builds.push({ name: `penalties-${n}`, mods: fill(Object.fromEntries(refunders.slice(0, n).map((g) => [g.id, -maxPct]))) });
+  }
+  const seen = new Set<string>();
+  return builds
+    .filter((b) => {
+      const key = JSON.stringify(Object.entries(b.mods).sort());
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((b) => ({ id: `custom-${b.name}`, name: b.name, affiliation: "Custom", modifiers: b.mods, custom: true, packId: pack.id, bio: "", avatar: {} }));
+}
+
+/**
+ * Matches for custom builds: each build leads one party against two or three of the pack's own leaders, every party on
+ * the plain Hard AI, the build's seat rotating.
+ */
+export function customSchedule(pack: MapPack, builds: CustomCandidate[], perBuild: number, seed = 1): ScheduledMatch[] {
+  let rng = seedRng(seed * 31 + 7);
+  const rand = () => {
+    const [v, next] = nextRandom(rng);
+    rng = next;
+    return v;
+  };
+  const out: ScheduledMatch[] = [];
+  builds.forEach((b, k) => {
+    for (let i = 0; i < perBuild; i++) {
+      const n = 2 + (i % 3);
+      // Opponents are the pack's own leaders only, never another build.
+      const pool = pack.candidates.filter((c) => !builds.some((x) => x.id === c.id)).map((c) => c.id);
+      const leaders = Array.from({ length: n - 1 }, () => pool.splice(Math.floor(rand() * pool.length), 1)[0]!);
+      leaders.splice(i % n, 0, b.id);
+      out.push({ seed: seed * 1_000_000 + k * 10_000 + i, kind: "field", entrants: leaders.map((leaderId) => ({ strategy: "balanced" as const, leaderId })) });
+    }
+  });
+  return out;
+}
+
+export interface CustomResult {
+  id: string;
+  modifiers: Record<string, number>;
+  points: number;
+  tally: Tally;
+}
+
+export function customResults(builds: CustomCandidate[], pack: MapPack, matches: { match: ScheduledMatch; record: MatchRecord }[]): CustomResult[] {
+  return builds.map((b) => {
+    const t: Tally = { games: 0, wins: 0, fair: 0 };
+    for (const { match, record } of matches) {
+      const seat = match.entrants.findIndex((e) => e.leaderId === b.id);
+      if (seat < 0) continue;
+      t.games++;
+      t.fair += 1 / match.entrants.length;
+      if (record.ranking[0] === seat) t.wins++;
+    }
+    return { id: b.id, modifiers: b.modifiers, points: customCost(pack, b.modifiers), tally: t };
+  });
+}
+
 export interface Tally {
   games: number;
   wins: number;
@@ -223,6 +311,8 @@ export interface Report {
   lostShare: number;
   /** Difficulty line-ups, when the run included them. */
   lineups?: LineupResult[];
+  /** The strongest custom builds against the pack's own leaders, when the run included them. */
+  customs?: CustomResult[];
 }
 
 const tally = (): Tally => ({ games: 0, wins: 0, fair: 0 });

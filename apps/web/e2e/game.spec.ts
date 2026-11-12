@@ -147,8 +147,21 @@ test("after a turn: BREAKING card, region-by-region recap, then the turn summary
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
   await page.getByRole("button", { name: "2× speed" }).click();
   await expect(page.getByRole("button", { name: "2× speed" })).toHaveAttribute("aria-pressed", "true");
+  // At 2× the recap moves on quickly, so record every step it shows from the moment Replay is clicked (and only from
+  // then): it must start again from the first region.
+  await page.evaluate(() => {
+    const w = window as unknown as { __recapSteps: string[] };
+    w.__recapSteps = [];
+    let armed = false;
+    const el = document.querySelector('[data-testid="recap"]')!;
+    const replay = [...el.querySelectorAll("button")].find((b) => b.textContent === "Replay")!;
+    replay.addEventListener("click", () => (armed = true), { capture: true });
+    new MutationObserver(() => {
+      if (armed) w.__recapSteps.push(el.textContent?.match(/(\d+) \/ \d+/)?.[1] ?? "");
+    }).observe(el, { subtree: true, childList: true, characterData: true });
+  });
   await page.getByRole("button", { name: "Replay" }).click();
-  await expect(page.getByTestId("recap")).toContainText(/1 \/ \d+/);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __recapSteps: string[] }).__recapSteps[0])).toBe("1");
   await page.getByTestId("skip").click();
 
   const summary = page.getByTestId("summary");

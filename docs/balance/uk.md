@@ -57,6 +57,29 @@ Flagged: Clement Attlee.
 | Wes Streeting | 1899 | 0.85× |
 | Clement Attlee | 1833 | 0.79× |
 
+## Custom candidates
+
+The strongest custom candidates a player can build within the 8-point budget, each leading a party against two or three of the map's own leaders. None should win more than 1.25×, the top of the leader band.
+
+**Pass:** no custom build wins more than the top of the leader band.
+
+| Build | Bonuses and penalties | Points | Matches | Wins vs even share |
+| --- | --- | ---: | ---: | ---: |
+| max-north | +10% The North | 8 | 400 | 1.07× |
+| max-midlands | +15% The Midlands, +5% London | 8 | 400 | 0.98× |
+| max-south | +5% South and East, +5% Business owners | 8 | 400 | 0.73× |
+| max-london | +15% London, +5% The Midlands | 8 | 400 | 0.89× |
+| max-devolved | +15% Scotland, Wales and Northern Ireland, +5% The Midlands | 8 | 400 | 1.14× |
+| max-cities | +5% Big cities | 7 | 400 | 1.00× |
+| max-unions | +15% Trade unions, +5% The Midlands | 8 | 400 | 0.72× |
+| max-business | +10% Business owners, +5% The Midlands | 8 | 400 | 0.82× |
+| max-pensioners | +15% Pensioners, +5% The Midlands | 8 | 400 | 0.77× |
+| max-students | +15% Students, +5% The Midlands | 8 | 400 | 0.70× |
+| max-farmers | +15% Farmers, +5% The Midlands | 8 | 400 | 0.68× |
+| max-commuters | +15% Commuters, +5% The Midlands | 8 | 400 | 0.74× |
+| penalties-1 | −15% Big cities, +15% South and East, +5% The Midlands | 8 | 400 | 0.66× |
+| penalties-2 | −15% Big cities, −15% The North, +15% South and East, +10% Business owners | 6 | 400 | 0.44× |
+
 ## Difficulty levels
 
 Each line-up is played in every seat order with random leaders, every party on the plain AI for its level.
