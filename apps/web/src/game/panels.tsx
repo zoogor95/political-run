@@ -6,8 +6,10 @@ import {
   majority,
   meterOf,
   moveCost,
+  personality,
   pickPool,
   projectedSeats,
+  STRATEGIES,
   totalMoney,
   totalSeats,
   type AiLevel,
@@ -373,6 +375,16 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
                 Leader {candidateName(p.leaderId)} · {seats[p.id] ?? 0} seats projected · money at turn start {money(totalMoney(p))}
               </p>
               <p className="small">Groups: {groups.length ? groups.join(", ") : "none"}</p>
+              {(() => {
+                const level = game.levelOf(p.id);
+                if (!level || level === "easy") return null;
+                const style = personality(pack, state, p.id);
+                return (
+                  <p className="small" data-testid={`rival-style-${p.id}`}>
+                    Plays: {STRATEGIES[style.strategy].name} · home turf {style.favourites.map(groupName).join(" and ") || "everywhere"}
+                  </p>
+                );
+              })()}
               <button type="button" onClick={() => onHighlight(highlight === p.id ? null : p.id)}>
                 {highlight === p.id ? "Hide on map" : "Show what they lead"}
               </button>

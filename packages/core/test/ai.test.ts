@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { finishElection, likelyTargets, planAi, planEasy, resolveTurn, totalMoney, validatePlan } from "../src/index.js";
+import { PERSONALITY_STRATEGIES, finishElection, likelyTargets, personality, planAi, planEasy, resolveTurn, totalMoney, validatePlan } from "../src/index.js";
 import type { Plan } from "../src/index.js";
-import { newMatch, setSteps, testPack as pack } from "./fixtures.js";
+import { newMatch, setSteps, testPack, testPack as pack } from "./fixtures.js";
 
 describe("Easy AI", () => {
   it("plays a whole match with valid plans and spends most of its money", () => {
@@ -87,5 +87,36 @@ describe("Normal and Hard AI", () => {
     expect([...likelyTargets(pack, s, "b", "north")].sort()).toEqual([4, 5, 6]);
     s.locked.north = "c";
     expect(likelyTargets(pack, s, "b", "north").size).toBe(0);
+  });
+});
+
+describe("personalities", () => {
+  it("are fixed for a match, differ between players and matches, and favour real areas", () => {
+    const s = newMatch(["a", "b", "c"]);
+    const a = personality(testPack, s, "a");
+    expect(personality(testPack, s, "a")).toEqual(a);
+    expect(PERSONALITY_STRATEGIES).toContain(a.strategy);
+    // Testland's only area that covers half the map or less is the capital.
+    expect(a.favourites).toEqual(["capital"]);
+    expect(a.tuning.affinity!.city).toBeGreaterThan(1.2);
+    const all = Array.from({ length: 30 }, (_, i) => personality(testPack, { ...s, seed: i }, "b"));
+    expect(new Set(all.map((p) => p.strategy)).size).toBeGreaterThan(2);
+    expect(new Set(all.map((p) => p.tuning.affinity!.north)).size).toBe(30);
+  });
+
+  it("stay the same as the match goes on, and old saves without a seed still get one", () => {
+    const s = newMatch();
+    const later = { ...s, turn: 5, rng: 12345 };
+    expect(personality(testPack, later, "c")).toEqual(personality(testPack, s, "c"));
+    const old = { ...s };
+    delete old.seed;
+    expect(personality(testPack, old, "c")).toEqual(personality(testPack, { ...old, rng: 99 }, "c"));
+  });
+
+  it("make Hard bots in the same position plan differently from match to match", () => {
+    const s = newMatch(["a", "b", "c"]);
+    // The same position and the same random state; only the match seed (so the personality) changes.
+    const plans = Array.from({ length: 20 }, (_, seed) => JSON.stringify(planAi(testPack, { ...s, seed }, "a", "hard", 7).plan.steps));
+    expect(new Set(plans).size).toBeGreaterThan(1); // Testland has only three regions, so there is little room to differ
   });
 });

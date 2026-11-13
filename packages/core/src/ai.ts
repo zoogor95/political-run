@@ -5,11 +5,11 @@
  */
 import { moveCost, playerById } from "./costs.js";
 import { isRegion, totalMoney, trackIds } from "./economy.js";
-import { nextRandom } from "./rng.js";
+import { nextRandom, seedRng } from "./rng.js";
 import { meterOf, regionLeader } from "./standing.js";
 import { canPick, pickPool, validatePlan } from "./turn.js";
 import type { GameState, MapPack, Plan } from "./types.js";
-import { planSmart } from "./ai-smart.js";
+import { STRATEGIES, planSmart, type StrategyId, type Tuning } from "./ai-smart.js";
 
 export interface AiResult {
   plan: Plan;
@@ -84,7 +84,52 @@ export function planEasy(pack: MapPack, state: GameState, playerId: string, rng:
 
 export type AiLevel = "easy" | "normal" | "hard";
 
-/** Plans a turn for a computer player at the given difficulty. */
+/** Ways to play a personality can have: every strategy the balance simulator found competitive. */
+export const PERSONALITY_STRATEGIES: StrategyId[] = ["balanced", "big-regions", "small-regions", "groups", "rush"];
+
+export interface Personality {
+  strategy: StrategyId;
+  /** Region groups this player treats as home turf. */
+  favourites: string[];
+  tuning: Partial<Tuning>;
+}
+
+/** How much more a player values its favourite areas, and the random spread on every other track. */
+const HOME_BONUS = 0.3;
+const WOBBLE = 0.08;
+
+function hash(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+
+/**
+ * A Normal or Hard player's character for one match: a way to play and a couple of favourite areas it values more.
+ * Without one, bots that think alike chase the same regions every turn and clash. Fixed for the whole match: worked out
+ * from the match seed and the player's id, so it needs nothing saved.
+ */
+export function personality(pack: MapPack, state: GameState, playerId: string): Personality {
+  const table = state.seed ?? state.players.map((p) => `${p.leaderId}/${p.party.name}`).join("|");
+  let rng = seedRng(hash(`${table}:${playerId}`));
+  const rand = () => {
+    const [v, next] = nextRandom(rng);
+    rng = next;
+    return v;
+  };
+  const strategy = PERSONALITY_STRATEGIES[Math.floor(rand() * PERSONALITY_STRATEGIES.length)]!;
+  // Home turf: areas, not groups that cover most of the map.
+  const areas = pack.groups.filter((g) => g.kind === "state" && g.regions.length > 0 && g.regions.length <= pack.regions.length / 2).map((g) => g.id);
+  const favourites: string[] = [];
+  for (let i = 0; i < 2 && areas.length > 0; i++) favourites.push(areas.splice(Math.floor(rand() * areas.length), 1)[0]!);
+  const home = new Set(pack.groups.filter((g) => favourites.includes(g.id)).flatMap((g) => g.regions));
+  const affinity: Record<string, number> = {};
+  for (const id of trackIds(pack)) affinity[id] = (1 + WOBBLE * (2 * rand() - 1)) * (home.has(id) ? 1 + HOME_BONUS : 1);
+  return { strategy, favourites, tuning: { ...STRATEGIES[strategy].tuning, affinity } };
+}
+
+/** Plans a turn for a computer player at the given difficulty. Normal and Hard play to their personality. */
 export function planAi(pack: MapPack, state: GameState, playerId: string, level: AiLevel, rng: number): AiResult {
-  return level === "easy" ? planEasy(pack, state, playerId, rng) : planSmart(pack, state, playerId, level, rng);
+  if (level === "easy") return planEasy(pack, state, playerId, rng);
+  return planSmart(pack, state, playerId, level, rng, personality(pack, state, playerId).tuning);
 }

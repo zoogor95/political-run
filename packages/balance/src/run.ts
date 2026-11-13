@@ -6,7 +6,8 @@
  *   pnpm balance --rules contentionAt=4            try rule numbers before putting them in the pack
  *   pnpm balance --costs 2 --income 0.5            try every step cost, or every group income, scaled
  *   pnpm balance --versus '{"spend":0.8}'          mirrored duels of AI settings against the plain Hard AI
- *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order (--tune '{...}' changes the Hard seats)
+ *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order (--tune '{...}' changes the Hard seats,
+ *                                                  --personalities off plays every bot the same way)
  *
  * The report run exits with an error when a strategy wins more than the limit of its duels against the competitive field.
  */
@@ -75,10 +76,11 @@ if (vs) {
   console.log(`${vs} vs ${against}: wins ${(r.share * 100).toFixed(1)}% ± ${(r.margin * 100).toFixed(1)} over ${games} games, ${r.turns.toFixed(1)} turns`);
 } else if (levels) {
   const tune = args.get("tune");
-  const r = lineupResult(levels, await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined)));
+  const personalities = args.get("personalities") !== "off";
+  const r = lineupResult(levels, await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined, personalities)));
   const even = (l: AiLevel) => levels.filter((x) => x === l).length / levels.length;
   const parts = (Object.entries(r.share) as [AiLevel, number][]).map(([l, s]) => `${l} ${(s * 100).toFixed(1)}% (even ${(even(l) * 100).toFixed(0)}%)`);
-  console.log(`${levels.join(",")}: ${parts.join(", ")} over ${games} games`);
+  console.log(`${levels.join(",")}${personalities ? "" : " (no personalities)"}: ${parts.join(", ")} over ${games} games; ${(r.lost * 100).toFixed(1)}% of spending lost to clashes`);
 } else {
   const out = new URL(args.get("out") ?? `docs/balance/${packId}.md`, root);
   const list = schedule(pack, games, seed);

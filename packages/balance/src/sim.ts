@@ -3,7 +3,7 @@
  * Every match is seeded, so a schedule always gives the same results.
  */
 import { CUSTOM_RULES, customBudget, customCost, customPrice, customRefund, type CustomCandidate } from "@majority-map/core";
-import { STRATEGIES, totalSeats, createMatch, finishElection, nextRandom, planEasy, planSmart, resolveTurn, seedRng, type AiLevel, type GameState, type MapPack, type Plan, type StrategyId, type Tuning } from "@majority-map/core";
+import { STRATEGIES, personality, totalSeats, createMatch, finishElection, nextRandom, planEasy, planSmart, resolveTurn, seedRng, type AiLevel, type GameState, type MapPack, type Plan, type StrategyId, type Tuning } from "@majority-map/core";
 
 export interface Entrant {
   strategy: StrategyId;
@@ -12,6 +12,8 @@ export interface Entrant {
   tuning?: Partial<Tuning>;
   /** Difficulty level; Hard unless set. Strategies only change Normal and Hard. */
   level?: AiLevel;
+  /** Plays to a per-match personality (as computer players do in the game) instead of the strategy. */
+  personality?: boolean;
 }
 
 export interface MatchRecord {
@@ -70,7 +72,8 @@ export function playMatch(pack: MapPack, entrants: Entrant[], seed: number): Mat
     state.players.forEach((p, i) => {
       const e = entrants[i]!;
       const level = e.level ?? "hard";
-      const r = level === "easy" ? planEasy(pack, state, p.id, rng) : planSmart(pack, state, p.id, level, rng, { ...STRATEGIES[e.strategy].tuning, ...e.tuning });
+      const base = e.personality ? personality(pack, state, p.id).tuning : STRATEGIES[e.strategy].tuning;
+      const r = level === "easy" ? planEasy(pack, state, p.id, rng) : planSmart(pack, state, p.id, level, rng, { ...base, ...e.tuning });
       rng = r.rng;
       plans[p.id] = r.plan;
     });
@@ -155,8 +158,11 @@ export function versus(pack: MapPack, a: Partial<Tuning>, b: Partial<Tuning>, ga
   return out;
 }
 
-/** A difficulty line-up, e.g. hard, normal, normal, rotated through every seat, with random leaders. */
-export function lineup(pack: MapPack, levels: AiLevel[], games: number, seed = 1, hardTuning?: Partial<Tuning>): ScheduledMatch[] {
+/**
+ * A difficulty line-up, e.g. hard, normal, normal, rotated through every seat, with random leaders. Normal and Hard play
+ * to their personalities, as in the game, unless `personalities` is false.
+ */
+export function lineup(pack: MapPack, levels: AiLevel[], games: number, seed = 1, hardTuning?: Partial<Tuning>, personalities = true): ScheduledMatch[] {
   let rng = seedRng(seed);
   const rand = () => {
     const [v, next] = nextRandom(rng);
@@ -167,7 +173,12 @@ export function lineup(pack: MapPack, levels: AiLevel[], games: number, seed = 1
     const rot = g % levels.length;
     const order = [...levels.slice(rot), ...levels.slice(0, rot)];
     const pool = pack.candidates.map((c) => c.id);
-    const entrants: Entrant[] = order.map((level) => ({ strategy: "balanced" as const, level, leaderId: pool.splice(Math.floor(rand() * pool.length), 1)[0]! }));
+    const entrants: Entrant[] = order.map((level) => ({
+      strategy: "balanced" as const,
+      level,
+      leaderId: pool.splice(Math.floor(rand() * pool.length), 1)[0]!,
+      ...(personalities && level !== "easy" ? { personality: true } : {}),
+    }));
     if (hardTuning) for (const e of entrants) if (e.level === "hard") e.tuning = hardTuning;
     return { seed: seed * 100_000 + g, kind: "field" as const, entrants };
   });
@@ -178,6 +189,8 @@ export interface LineupResult {
   games: number;
   /** Share of matches won by each level. */
   share: Partial<Record<AiLevel, number>>;
+  /** Share of all money spent that was lost to clashes. */
+  lost: number;
 }
 
 export function lineupResult(levels: AiLevel[], records: MatchRecord[]): LineupResult {
@@ -187,7 +200,9 @@ export function lineupResult(levels: AiLevel[], records: MatchRecord[]): LineupR
     wins[level] = (wins[level] ?? 0) + 1;
   }
   const share = Object.fromEntries(Object.entries(wins).map(([l, n]) => [l, n / records.length]));
-  return { levels, games: records.length, share };
+  const spent = records.reduce((a, r) => a + r.spent.reduce((x, y) => x + y, 0), 0);
+  const lost = records.reduce((a, r) => a + r.lost.reduce((x, y) => x + y, 0), 0);
+  return { levels, games: records.length, share, lost: spent ? lost / spent : 0 };
 }
 
 /** Side A's share of wins in a versus schedule, with a 95% margin of error. */

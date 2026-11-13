@@ -62,8 +62,15 @@ describe("versus and line-ups", () => {
   it("rotates a line-up through every seat and credits wins to levels", () => {
     const list = lineup(uk, ["hard", "easy", "easy"], 6, 1);
     expect(list.map((m) => m.entrants.findIndex((e) => e.level === "hard"))).toEqual([0, 2, 1, 0, 2, 1]);
-    const records = list.map((m) => ({ entrants: m.entrants, ranking: [m.entrants.findIndex((e) => e.level === "hard")] }) as MatchRecord);
-    expect(lineupResult(["hard", "easy", "easy"], records).share).toEqual({ hard: 1 });
+    // Normal and Hard play to their personalities, as in the game; Easy has none.
+    expect(list.every((m) => m.entrants.every((e) => (e.personality === true) === (e.level !== "easy")))).toBe(true);
+    expect(lineup(uk, ["hard", "easy", "easy"], 3, 1, undefined, false).every((m) => m.entrants.every((e) => e.personality === undefined))).toBe(true);
+    const records = list.map(
+      (m) => ({ entrants: m.entrants, ranking: [m.entrants.findIndex((e) => e.level === "hard")], spent: [100, 100, 100], lost: [10, 20, 30] }) as MatchRecord,
+    );
+    const r = lineupResult(["hard", "easy", "easy"], records);
+    expect(r.share).toEqual({ hard: 1 });
+    expect(r.lost).toBeCloseTo(0.2);
   });
 });
 
