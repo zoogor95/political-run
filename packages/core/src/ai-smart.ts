@@ -48,6 +48,8 @@ export interface Tuning {
   groupBias: number;
   /** Strategy: extra value, in seats per seat of the region, for bringing a region into contention (ending the campaign sooner). */
   rush: number;
+  /** Personality: how much this player cares about each track (1 is neutral), so bots don't all chase the same places. */
+  affinity?: Record<string, number>;
 }
 
 const NEUTRAL = { seatBias: 0, groupBias: 1, rush: 0 };
@@ -161,9 +163,10 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
   const seatsNow = projectedSeats(pack, state);
   const ahead = others.every((o) => (seatsNow[playerId] ?? 0) > (seatsNow[o] ?? 0));
 
-  // Value of reaching a step on a track, holding everyone else still.
+  // Value of reaching a step on a track, holding everyone else still, scaled by how much this player cares about it.
   const steps = (track: string, id: string) => meterOf(state, track, id).steps;
-  const value = (track: string, to: number): number => {
+  const value = (track: string, to: number): number => baseValue(track, to) * (t.affinity?.[track] ?? 1);
+  const baseValue = (track: string, to: number): number => {
     if (isRegion(pack, track)) {
       const region = pack.regions.find((r) => r.id === track)!;
       const theirs = Math.max(others.reduce((a, id) => a + steps(track, id), 0), final ? 0 : others.length * t.anticipate);

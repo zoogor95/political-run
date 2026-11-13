@@ -162,6 +162,8 @@ export interface GameState {
   locked: Record<string, string>;
   /** Seeded random state, for AI and anything else that needs randomness. */
   rng: number;
+  /** The match's seed, which never changes (absent in saves from before it was kept). */
+  seed?: number;
 }
 
 /** What a player submits for one turn. */

@@ -45,6 +45,7 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
     meters,
     locked: {},
     rng: seedRng(setup.seed),
+    seed: setup.seed,
   };
 }
 

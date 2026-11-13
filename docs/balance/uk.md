@@ -86,10 +86,10 @@ Each line-up is played in every seat order with random leaders, every party on t
 
 | Line-up | Matches | Wins by level (even share) |
 | --- | ---: | --- |
-| Normal, Easy, Easy | 800 | Normal 53.5% (33.3%) · Easy 46.5% (66.7%) |
-| Hard, Easy, Easy | 800 | Hard 63.2% (33.3%) · Easy 36.8% (66.7%) |
-| Hard, Normal, Normal | 800 | Hard 68.6% (33.3%) · Normal 31.4% (66.7%) |
-| Hard, Hard, Normal | 800 | Hard 81.4% (66.7%) · Normal 18.6% (33.3%) |
+| Normal, Easy, Easy | 800 | Normal 57.6% (33.3%) · Easy 42.4% (66.7%) |
+| Hard, Easy, Easy | 800 | Hard 63.5% (33.3%) · Easy 36.5% (66.7%) |
+| Hard, Normal, Normal | 800 | Hard 59.5% (33.3%) · Normal 40.5% (66.7%) |
+| Hard, Hard, Normal | 800 | Hard 78.8% (66.7%) · Normal 21.3% (33.3%) |
 
 ## Seat order
 

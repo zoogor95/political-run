@@ -6,7 +6,8 @@
  *   pnpm balance --rules contentionAt=4            try rule numbers before putting them in the pack
  *   pnpm balance --costs 2 --income 0.5            try every step cost, or every group income, scaled
  *   pnpm balance --versus '{"spend":0.8}'          mirrored duels of AI settings against the plain Hard AI
- *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order (--tune '{...}' changes the Hard seats)
+ *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order (--tune '{...}' changes the Hard seats,
+ *                                                  --personalities off plays every bot the same way)
  *
  * The report run exits with an error when a strategy wins more than the limit of its duels against the competitive field.
  */
@@ -15,7 +16,7 @@ import { availableParallelism } from "node:os";
 import { Worker } from "node:worker_threads";
 import { withCustomCandidates, type AiLevel, type MapPack, type Tuning } from "@majority-map/core";
 import { REPORT_LINEUPS, markdown, overLimit, strongCustoms } from "./report.js";
-import { customBuilds, customResults, customSchedule, lineup, lineupResult, lostShare, schedule, summarize, versus, versusResult, type MatchRecord, type ScheduledMatch } from "./sim.js";
+import { customBuilds, customResults, customSchedule, lineup, lineupResult, schedule, summarize, versus, versusResult, type MatchRecord, type ScheduledMatch } from "./sim.js";
 
 const args = new Map<string, string>();
 for (let i = 2; i < process.argv.length; i++) {
@@ -75,12 +76,13 @@ if (vs) {
   console.log(`${vs} vs ${against}: wins ${(r.share * 100).toFixed(1)}% ± ${(r.margin * 100).toFixed(1)} over ${games} games, ${r.turns.toFixed(1)} turns, ${(r.lost * 100).toFixed(0)}% lost to clashes`);
 } else if (levels) {
   const tune = args.get("tune");
-  const records = await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined));
+  const personalities = args.get("personalities") !== "off";
+  const records = await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined, personalities));
   const r = lineupResult(levels, records);
   const even = (l: AiLevel) => levels.filter((x) => x === l).length / levels.length;
   const parts = (Object.entries(r.share) as [AiLevel, number][]).map(([l, s]) => `${l} ${(s * 100).toFixed(1)}% (even ${(even(l) * 100).toFixed(0)}%)`);
   const turns = records.reduce((a, x) => a + x.turns, 0) / records.length;
-  console.log(`${levels.join(",")}: ${parts.join(", ")} over ${games} games, ${turns.toFixed(1)} turns, ${(lostShare(records) * 100).toFixed(0)}% lost to clashes`);
+  console.log(`${levels.join(",")}${personalities ? "" : " (no personalities)"}: ${parts.join(", ")} over ${games} games, ${turns.toFixed(1)} turns, ${(r.lost * 100).toFixed(0)}% lost to clashes`);
 } else {
   const out = new URL(args.get("out") ?? `docs/balance/${packId}.md`, root);
   const list = schedule(pack, games, seed);
