@@ -1,0 +1,413 @@
+{
+ "source": "2024 United States presidential election, results by state (Wikipedia, compiled from certified state results), fetched 2026-11-13. Votes are total ballots for president; percentages are Trump/Vance (Republican) and Harris/Walz (Democratic). Maine and Nebraska use their statewide totals.",
+ "states": [
+  {
+   "id": "al",
+   "name": "Alabama",
+   "ev": 9,
+   "votes": 2265090,
+   "republican": 64.57,
+   "democratic": 34.1
+  },
+  {
+   "id": "ak",
+   "name": "Alaska",
+   "ev": 3,
+   "votes": 338177,
+   "republican": 54.54,
+   "democratic": 41.41
+  },
+  {
+   "id": "az",
+   "name": "Arizona",
+   "ev": 11,
+   "votes": 3390161,
+   "republican": 52.22,
+   "democratic": 46.69
+  },
+  {
+   "id": "ar",
+   "name": "Arkansas",
+   "ev": 6,
+   "votes": 1182676,
+   "republican": 64.2,
+   "democratic": 33.56
+  },
+  {
+   "id": "ca",
+   "name": "California",
+   "ev": 54,
+   "votes": 15865475,
+   "republican": 38.33,
+   "democratic": 58.47
+  },
+  {
+   "id": "co",
+   "name": "Colorado",
+   "ev": 10,
+   "votes": 3192745,
+   "republican": 43.14,
+   "democratic": 54.13
+  },
+  {
+   "id": "ct",
+   "name": "Connecticut",
+   "ev": 7,
+   "votes": 1759010,
+   "republican": 41.89,
+   "democratic": 56.4
+  },
+  {
+   "id": "de",
+   "name": "Delaware",
+   "ev": 3,
+   "votes": 512912,
+   "republican": 41.79,
+   "democratic": 56.49
+  },
+  {
+   "id": "dc",
+   "name": "District of Columbia",
+   "ev": 3,
+   "votes": 325869,
+   "republican": 6.47,
+   "democratic": 90.28
+  },
+  {
+   "id": "fl",
+   "name": "Florida",
+   "ev": 30,
+   "votes": 10893752,
+   "republican": 56.09,
+   "democratic": 42.99
+  },
+  {
+   "id": "ga",
+   "name": "Georgia",
+   "ev": 16,
+   "votes": 5250905,
+   "republican": 50.72,
+   "democratic": 48.53
+  },
+  {
+   "id": "hi",
+   "name": "Hawaii",
+   "ev": 4,
+   "votes": 516701,
+   "republican": 37.48,
+   "democratic": 60.59
+  },
+  {
+   "id": "id",
+   "name": "Idaho",
+   "ev": 4,
+   "votes": 905057,
+   "republican": 66.87,
+   "democratic": 30.38
+  },
+  {
+   "id": "il",
+   "name": "Illinois",
+   "ev": 19,
+   "votes": 5633310,
+   "republican": 43.47,
+   "democratic": 54.37
+  },
+  {
+   "id": "in",
+   "name": "Indiana",
+   "ev": 11,
+   "votes": 2936677,
+   "republican": 58.58,
+   "democratic": 39.62
+  },
+  {
+   "id": "ia",
+   "name": "Iowa",
+   "ev": 6,
+   "votes": 1663506,
+   "republican": 55.73,
+   "democratic": 42.52
+  },
+  {
+   "id": "ks",
+   "name": "Kansas",
+   "ev": 6,
+   "votes": 1327591,
+   "republican": 57.16,
+   "democratic": 41.04
+  },
+  {
+   "id": "ky",
+   "name": "Kentucky",
+   "ev": 8,
+   "votes": 2074530,
+   "republican": 64.47,
+   "democratic": 33.94
+  },
+  {
+   "id": "la",
+   "name": "Louisiana",
+   "ev": 8,
+   "votes": 2006975,
+   "republican": 60.22,
+   "democratic": 38.21
+  },
+  {
+   "id": "me",
+   "name": "Maine",
+   "ev": 4,
+   "votes": 831375,
+   "republican": 45.46,
+   "democratic": 52.4
+  },
+  {
+   "id": "md",
+   "name": "Maryland",
+   "ev": 10,
+   "votes": 3038334,
+   "republican": 34.08,
+   "democratic": 62.62
+  },
+  {
+   "id": "ma",
+   "name": "Massachusetts",
+   "ev": 11,
+   "votes": 3473668,
+   "republican": 36.02,
+   "democratic": 61.22
+  },
+  {
+   "id": "mi",
+   "name": "Michigan",
+   "ev": 15,
+   "votes": 5664186,
+   "republican": 49.73,
+   "democratic": 48.31
+  },
+  {
+   "id": "mn",
+   "name": "Minnesota",
+   "ev": 10,
+   "votes": 3253920,
+   "republican": 46.68,
+   "democratic": 50.92
+  },
+  {
+   "id": "ms",
+   "name": "Mississippi",
+   "ev": 6,
+   "votes": 1228008,
+   "republican": 60.89,
+   "democratic": 38.0
+  },
+  {
+   "id": "mo",
+   "name": "Missouri",
+   "ev": 10,
+   "votes": 2995327,
+   "republican": 58.49,
+   "democratic": 40.08
+  },
+  {
+   "id": "mt",
+   "name": "Montana",
+   "ev": 4,
+   "votes": 602990,
+   "republican": 58.39,
+   "democratic": 38.46
+  },
+  {
+   "id": "ne",
+   "name": "Nebraska",
+   "ev": 5,
+   "votes": 952182,
+   "republican": 59.32,
+   "democratic": 38.86
+  },
+  {
+   "id": "nv",
+   "name": "Nevada",
+   "ev": 6,
+   "votes": 1484840,
+   "republican": 50.59,
+   "democratic": 47.49
+  },
+  {
+   "id": "nh",
+   "name": "New Hampshire",
+   "ev": 4,
+   "votes": 826189,
+   "republican": 47.87,
+   "democratic": 50.65
+  },
+  {
+   "id": "nj",
+   "name": "New Jersey",
+   "ev": 14,
+   "votes": 4272725,
+   "republican": 46.06,
+   "democratic": 51.97
+  },
+  {
+   "id": "nm",
+   "name": "New Mexico",
+   "ev": 5,
+   "votes": 923403,
+   "republican": 45.85,
+   "democratic": 51.85
+  },
+  {
+   "id": "ny",
+   "name": "New York",
+   "ev": 28,
+   "votes": 8262495,
+   "republican": 43.31,
+   "democratic": 55.91
+  },
+  {
+   "id": "nc",
+   "name": "North Carolina",
+   "ev": 16,
+   "votes": 5699141,
+   "republican": 50.86,
+   "democratic": 47.65
+  },
+  {
+   "id": "nd",
+   "name": "North Dakota",
+   "ev": 3,
+   "votes": 368155,
+   "republican": 66.96,
+   "democratic": 30.51
+  },
+  {
+   "id": "oh",
+   "name": "Ohio",
+   "ev": 17,
+   "votes": 5767788,
+   "republican": 55.14,
+   "democratic": 43.93
+  },
+  {
+   "id": "ok",
+   "name": "Oklahoma",
+   "ev": 7,
+   "votes": 1566173,
+   "republican": 66.16,
+   "democratic": 31.9
+  },
+  {
+   "id": "or",
+   "name": "Oregon",
+   "ev": 8,
+   "votes": 2244493,
+   "republican": 40.97,
+   "democratic": 55.27
+  },
+  {
+   "id": "pa",
+   "name": "Pennsylvania",
+   "ev": 19,
+   "votes": 7058732,
+   "republican": 50.37,
+   "democratic": 48.66
+  },
+  {
+   "id": "ri",
+   "name": "Rhode Island",
+   "ev": 4,
+   "votes": 513386,
+   "republican": 41.76,
+   "democratic": 55.54
+  },
+  {
+   "id": "sc",
+   "name": "South Carolina",
+   "ev": 9,
+   "votes": 2548140,
+   "republican": 58.23,
+   "democratic": 40.36
+  },
+  {
+   "id": "sd",
+   "name": "South Dakota",
+   "ev": 3,
+   "votes": 428922,
+   "republican": 63.43,
+   "democratic": 34.24
+  },
+  {
+   "id": "tn",
+   "name": "Tennessee",
+   "ev": 11,
+   "votes": 3063942,
+   "republican": 64.19,
+   "democratic": 34.47
+  },
+  {
+   "id": "tx",
+   "name": "Texas",
+   "ev": 40,
+   "votes": 11388674,
+   "republican": 56.14,
+   "democratic": 42.46
+  },
+  {
+   "id": "ut",
+   "name": "Utah",
+   "ev": 6,
+   "votes": 1488494,
+   "republican": 59.38,
+   "democratic": 37.79
+  },
+  {
+   "id": "vt",
+   "name": "Vermont",
+   "ev": 3,
+   "votes": 369422,
+   "republican": 32.32,
+   "democratic": 63.83
+  },
+  {
+   "id": "va",
+   "name": "Virginia",
+   "ev": 13,
+   "votes": 4505941,
+   "republican": 46.05,
+   "democratic": 51.83
+  },
+  {
+   "id": "wa",
+   "name": "Washington",
+   "ev": 12,
+   "votes": 3924243,
+   "republican": 39.01,
+   "democratic": 57.23
+  },
+  {
+   "id": "wv",
+   "name": "West Virginia",
+   "ev": 4,
+   "votes": 762582,
+   "republican": 69.97,
+   "democratic": 28.1
+  },
+  {
+   "id": "wi",
+   "name": "Wisconsin",
+   "ev": 10,
+   "votes": 3422918,
+   "republican": 49.6,
+   "democratic": 48.74
+  },
+  {
+   "id": "wy",
+   "name": "Wyoming",
+   "ev": 3,
+   "votes": 269048,
+   "republican": 71.6,
+   "democratic": 25.84
+  }
+ ]
+}

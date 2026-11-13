@@ -1,0 +1,888 @@
+{
+  "id": "us",
+  "name": "United States",
+  "gameType": "presidential",
+  "currency": "$",
+  "rules": {
+    "steps": 10,
+    "contentionAt": 3,
+    "firstEntryMax": 2,
+    "costGrowth": 1,
+    "costClampMin": 0.5,
+    "costClampMax": 1.5,
+    "baseIncome": 250000,
+    "memberPickEvery": 0,
+    "memberSharePct": 20,
+    "freePipEvery": 3,
+    "secondRoundPipLoss": 5,
+    "turnCap": 40,
+    "moneyStep": 1000,
+    "runningMateTurn": 5
+  },
+  "regions": [
+    {
+      "id": "al",
+      "name": "Alabama",
+      "seats": 9,
+      "baseCost": 16000,
+      "voters": 2265090
+    },
+    {
+      "id": "ak",
+      "name": "Alaska",
+      "seats": 3,
+      "baseCost": 8000,
+      "voters": 338177
+    },
+    {
+      "id": "az",
+      "name": "Arizona",
+      "seats": 11,
+      "baseCost": 26000,
+      "voters": 3390161
+    },
+    {
+      "id": "ar",
+      "name": "Arkansas",
+      "seats": 6,
+      "baseCost": 11000,
+      "voters": 1182676
+    },
+    {
+      "id": "ca",
+      "name": "California",
+      "seats": 54,
+      "baseCost": 92000,
+      "voters": 15865475
+    },
+    {
+      "id": "co",
+      "name": "Colorado",
+      "seats": 10,
+      "baseCost": 22000,
+      "voters": 3192745
+    },
+    {
+      "id": "ct",
+      "name": "Connecticut",
+      "seats": 7,
+      "baseCost": 15000,
+      "voters": 1759010
+    },
+    {
+      "id": "de",
+      "name": "Delaware",
+      "seats": 3,
+      "baseCost": 8000,
+      "voters": 512912
+    },
+    {
+      "id": "dc",
+      "name": "District of Columbia",
+      "seats": 3,
+      "baseCost": 7000,
+      "voters": 325869
+    },
+    {
+      "id": "fl",
+      "name": "Florida",
+      "seats": 30,
+      "baseCost": 60000,
+      "voters": 10893752
+    },
+    {
+      "id": "ga",
+      "name": "Georgia",
+      "seats": 16,
+      "baseCost": 39000,
+      "voters": 5250905
+    },
+    {
+      "id": "hi",
+      "name": "Hawaii",
+      "seats": 4,
+      "baseCost": 8000,
+      "voters": 516701
+    },
+    {
+      "id": "id",
+      "name": "Idaho",
+      "seats": 4,
+      "baseCost": 8000,
+      "voters": 905057
+    },
+    {
+      "id": "il",
+      "name": "Illinois",
+      "seats": 19,
+      "baseCost": 40000,
+      "voters": 5633310
+    },
+    {
+      "id": "in",
+      "name": "Indiana",
+      "seats": 11,
+      "baseCost": 21000,
+      "voters": 2936677
+    },
+    {
+      "id": "ia",
+      "name": "Iowa",
+      "seats": 6,
+      "baseCost": 14000,
+      "voters": 1663506
+    },
+    {
+      "id": "ks",
+      "name": "Kansas",
+      "seats": 6,
+      "baseCost": 13000,
+      "voters": 1327591
+    },
+    {
+      "id": "ky",
+      "name": "Kentucky",
+      "seats": 8,
+      "baseCost": 14000,
+      "voters": 2074530
+    },
+    {
+      "id": "la",
+      "name": "Louisiana",
+      "seats": 8,
+      "baseCost": 15000,
+      "voters": 2006975
+    },
+    {
+      "id": "me",
+      "name": "Maine",
+      "seats": 4,
+      "baseCost": 11000,
+      "voters": 831375
+    },
+    {
+      "id": "md",
+      "name": "Maryland",
+      "seats": 10,
+      "baseCost": 17000,
+      "voters": 3038334
+    },
+    {
+      "id": "ma",
+      "name": "Massachusetts",
+      "seats": 11,
+      "baseCost": 19000,
+      "voters": 3473668
+    },
+    {
+      "id": "mi",
+      "name": "Michigan",
+      "seats": 15,
+      "baseCost": 37000,
+      "voters": 5664186
+    },
+    {
+      "id": "mn",
+      "name": "Minnesota",
+      "seats": 10,
+      "baseCost": 24000,
+      "voters": 3253920
+    },
+    {
+      "id": "ms",
+      "name": "Mississippi",
+      "seats": 6,
+      "baseCost": 11000,
+      "voters": 1228008
+    },
+    {
+      "id": "mo",
+      "name": "Missouri",
+      "seats": 10,
+      "baseCost": 19000,
+      "voters": 2995327
+    },
+    {
+      "id": "mt",
+      "name": "Montana",
+      "seats": 4,
+      "baseCost": 9000,
+      "voters": 602990
+    },
+    {
+      "id": "ne",
+      "name": "Nebraska",
+      "seats": 5,
+      "baseCost": 10000,
+      "voters": 952182
+    },
+    {
+      "id": "nv",
+      "name": "Nevada",
+      "seats": 6,
+      "baseCost": 16000,
+      "voters": 1484840
+    },
+    {
+      "id": "nh",
+      "name": "New Hampshire",
+      "seats": 4,
+      "baseCost": 11000,
+      "voters": 826189
+    },
+    {
+      "id": "nj",
+      "name": "New Jersey",
+      "seats": 14,
+      "baseCost": 33000,
+      "voters": 4272725
+    },
+    {
+      "id": "nm",
+      "name": "New Mexico",
+      "seats": 5,
+      "baseCost": 13000,
+      "voters": 923403
+    },
+    {
+      "id": "ny",
+      "name": "New York",
+      "seats": 28,
+      "baseCost": 56000,
+      "voters": 8262495
+    },
+    {
+      "id": "nc",
+      "name": "North Carolina",
+      "seats": 16,
+      "baseCost": 39000,
+      "voters": 5699141
+    },
+    {
+      "id": "nd",
+      "name": "North Dakota",
+      "seats": 3,
+      "baseCost": 7000,
+      "voters": 368155
+    },
+    {
+      "id": "oh",
+      "name": "Ohio",
+      "seats": 17,
+      "baseCost": 36000,
+      "voters": 5767788
+    },
+    {
+      "id": "ok",
+      "name": "Oklahoma",
+      "seats": 7,
+      "baseCost": 13000,
+      "voters": 1566173
+    },
+    {
+      "id": "or",
+      "name": "Oregon",
+      "seats": 8,
+      "baseCost": 17000,
+      "voters": 2244493
+    },
+    {
+      "id": "pa",
+      "name": "Pennsylvania",
+      "seats": 19,
+      "baseCost": 46000,
+      "voters": 7058732
+    },
+    {
+      "id": "ri",
+      "name": "Rhode Island",
+      "seats": 4,
+      "baseCost": 10000,
+      "voters": 513386
+    },
+    {
+      "id": "sc",
+      "name": "South Carolina",
+      "seats": 9,
+      "baseCost": 18000,
+      "voters": 2548140
+    },
+    {
+      "id": "sd",
+      "name": "South Dakota",
+      "seats": 3,
+      "baseCost": 7000,
+      "voters": 428922
+    },
+    {
+      "id": "tn",
+      "name": "Tennessee",
+      "seats": 11,
+      "baseCost": 19000,
+      "voters": 3063942
+    },
+    {
+      "id": "tx",
+      "name": "Texas",
+      "seats": 40,
+      "baseCost": 78000,
+      "voters": 11388674
+    },
+    {
+      "id": "ut",
+      "name": "Utah",
+      "seats": 6,
+      "baseCost": 12000,
+      "voters": 1488494
+    },
+    {
+      "id": "vt",
+      "name": "Vermont",
+      "seats": 3,
+      "baseCost": 7000,
+      "voters": 369422
+    },
+    {
+      "id": "va",
+      "name": "Virginia",
+      "seats": 13,
+      "baseCost": 30000,
+      "voters": 4505941
+    },
+    {
+      "id": "wa",
+      "name": "Washington",
+      "seats": 12,
+      "baseCost": 23000,
+      "voters": 3924243
+    },
+    {
+      "id": "wv",
+      "name": "West Virginia",
+      "seats": 4,
+      "baseCost": 8000,
+      "voters": 762582
+    },
+    {
+      "id": "wi",
+      "name": "Wisconsin",
+      "seats": 10,
+      "baseCost": 26000,
+      "voters": 3422918
+    },
+    {
+      "id": "wy",
+      "name": "Wyoming",
+      "seats": 3,
+      "baseCost": 7000,
+      "voters": 269048
+    }
+  ],
+  "groups": [
+    {
+      "id": "new-england",
+      "name": "New England",
+      "kind": "state",
+      "regions": [
+        "me",
+        "nh",
+        "vt",
+        "ma",
+        "ri",
+        "ct"
+      ],
+      "income": 33000
+    },
+    {
+      "id": "mid-atlantic",
+      "name": "Mid-Atlantic",
+      "kind": "state",
+      "regions": [
+        "ny",
+        "nj",
+        "pa",
+        "de",
+        "md",
+        "dc",
+        "va"
+      ],
+      "income": 56000
+    },
+    {
+      "id": "rust-belt",
+      "name": "Rust Belt",
+      "kind": "state",
+      "regions": [
+        "pa",
+        "oh",
+        "mi",
+        "wi",
+        "in",
+        "il"
+      ],
+      "income": 56000
+    },
+    {
+      "id": "old-south",
+      "name": "Old South",
+      "kind": "state",
+      "regions": [
+        "al",
+        "ga",
+        "ms",
+        "la",
+        "sc",
+        "ar",
+        "tn",
+        "ky"
+      ],
+      "income": 49000
+    },
+    {
+      "id": "sun-belt",
+      "name": "Sun Belt",
+      "kind": "state",
+      "regions": [
+        "fl",
+        "ga",
+        "nc",
+        "az",
+        "nv",
+        "tx"
+      ],
+      "income": 68000
+    },
+    {
+      "id": "farm-belt",
+      "name": "Farm Belt",
+      "kind": "state",
+      "regions": [
+        "ia",
+        "ne",
+        "ks",
+        "nd",
+        "sd",
+        "mn",
+        "mo"
+      ],
+      "income": 37000
+    },
+    {
+      "id": "mountain-west",
+      "name": "Mountain West",
+      "kind": "state",
+      "regions": [
+        "co",
+        "ut",
+        "id",
+        "mt",
+        "wy",
+        "nv",
+        "nm",
+        "az"
+      ],
+      "income": 40000
+    },
+    {
+      "id": "pacific",
+      "name": "Pacific Coast",
+      "kind": "state",
+      "regions": [
+        "ca",
+        "or",
+        "wa",
+        "hi",
+        "ak"
+      ],
+      "income": 52000
+    },
+    {
+      "id": "energy",
+      "name": "Energy Belt",
+      "kind": "state",
+      "regions": [
+        "tx",
+        "ok",
+        "la",
+        "nd",
+        "wy",
+        "wv",
+        "ak",
+        "nm"
+      ],
+      "income": 49000
+    },
+    {
+      "id": "unions",
+      "name": "Labor unions",
+      "kind": "national",
+      "regions": [],
+      "income": 50000,
+      "baseCost": 70000
+    },
+    {
+      "id": "business",
+      "name": "Small business",
+      "kind": "national",
+      "regions": [],
+      "income": 50000,
+      "baseCost": 70000
+    },
+    {
+      "id": "seniors",
+      "name": "Seniors",
+      "kind": "national",
+      "regions": [],
+      "income": 50000,
+      "baseCost": 70000
+    },
+    {
+      "id": "youth",
+      "name": "Young voters",
+      "kind": "national",
+      "regions": [],
+      "income": 40000,
+      "baseCost": 70000
+    },
+    {
+      "id": "veterans",
+      "name": "Veterans",
+      "kind": "national",
+      "regions": [],
+      "income": 40000,
+      "baseCost": 70000
+    },
+    {
+      "id": "faith",
+      "name": "Faith voters",
+      "kind": "national",
+      "regions": [],
+      "income": 50000,
+      "baseCost": 70000
+    }
+  ],
+  "candidates": [
+    {
+      "id": "donald-trump",
+      "name": "Donald Trump",
+      "affiliation": "Republican",
+      "modifiers": {
+        "rust-belt": 10,
+        "sun-belt": 10,
+        "old-south": 5,
+        "pacific": -5,
+        "new-england": -5
+      },
+      "notes": {
+        "rust-belt": "Carried Michigan, Wisconsin and Pennsylvania in 2016 and 2024",
+        "sun-belt": "Florida resident; carried every Sun Belt swing state in 2024",
+        "old-south": "Carried every Old South state in all three of his elections",
+        "pacific": "Lost every Pacific Coast state except Alaska in all three elections",
+        "new-england": "Lost New England by wide margins outside Maine's 2nd district"
+      }
+    },
+    {
+      "id": "jd-vance",
+      "name": "JD Vance",
+      "affiliation": "Republican",
+      "modifiers": {
+        "rust-belt": 15,
+        "faith": 5,
+        "pacific": -5
+      },
+      "notes": {
+        "rust-belt": "Senator from Ohio; raised in Ohio with Kentucky roots",
+        "faith": "Catholic convert who speaks often about faith",
+        "pacific": "Republican tickets have lost the Pacific Coast since 1988"
+      }
+    },
+    {
+      "id": "ron-desantis",
+      "name": "Ron DeSantis",
+      "affiliation": "Republican",
+      "modifiers": {
+        "sun-belt": 15,
+        "seniors": 5,
+        "new-england": -5
+      },
+      "notes": {
+        "sun-belt": "Governor of Florida, re-elected by 19 points in 2022",
+        "seniors": "Florida has one of the oldest electorates",
+        "new-england": "Finished far behind in New England primaries in 2024"
+      }
+    },
+    {
+      "id": "nikki-haley",
+      "name": "Nikki Haley",
+      "affiliation": "Republican",
+      "modifiers": {
+        "old-south": 10,
+        "business": 5
+      },
+      "notes": {
+        "old-south": "Two-term governor of South Carolina",
+        "business": "Ran on fiscal restraint; strongest with college-educated primary voters"
+      }
+    },
+    {
+      "id": "ronald-reagan",
+      "name": "Ronald Reagan",
+      "affiliation": "Republican",
+      "modifiers": {
+        "pacific": 10,
+        "mountain-west": 5,
+        "faith": 5,
+        "unions": -5
+      },
+      "notes": {
+        "pacific": "Two-term governor of California",
+        "mountain-west": "Carried every Mountain West state in 1980 and 1984",
+        "faith": "Built the coalition with evangelical voters",
+        "unions": "Fired the striking air traffic controllers in 1981"
+      }
+    },
+    {
+      "id": "abraham-lincoln",
+      "name": "Abraham Lincoln",
+      "affiliation": "Republican",
+      "modifiers": {
+        "rust-belt": 10,
+        "new-england": 10,
+        "veterans": 5,
+        "old-south": -10
+      },
+      "notes": {
+        "rust-belt": "Illinois lawyer; carried the Old Northwest in 1860",
+        "new-england": "His strongest region in 1860",
+        "veterans": "Commander in chief through the Civil War",
+        "old-south": "Not on the ballot in most Southern states in 1860"
+      }
+    },
+    {
+      "id": "theodore-roosevelt",
+      "name": "Theodore Roosevelt",
+      "affiliation": "Republican",
+      "modifiers": {
+        "mountain-west": 10,
+        "farm-belt": 5,
+        "mid-atlantic": 5,
+        "business": -5
+      },
+      "notes": {
+        "mountain-west": "Dakota rancher; won western states for the Progressives in 1912",
+        "farm-belt": "Championed conservation and farmers",
+        "mid-atlantic": "Governor of New York",
+        "business": "The trust-buster"
+      }
+    },
+    {
+      "id": "kamala-harris",
+      "name": "Kamala Harris",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "pacific": 15,
+        "youth": 5,
+        "rust-belt": -5
+      },
+      "notes": {
+        "pacific": "Senator from and attorney general of California",
+        "youth": "Won voters under 30 in 2024",
+        "rust-belt": "Lost Michigan, Wisconsin and Pennsylvania in 2024"
+      }
+    },
+    {
+      "id": "joe-biden",
+      "name": "Joe Biden",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "mid-atlantic": 10,
+        "rust-belt": 5,
+        "unions": 5,
+        "youth": -5
+      },
+      "notes": {
+        "mid-atlantic": "Senator from Delaware for 36 years",
+        "rust-belt": "Born in Scranton; won Michigan, Wisconsin and Pennsylvania in 2020",
+        "unions": "Union-backed throughout his career",
+        "youth": "Weaker with young voters than recent Democratic nominees"
+      }
+    },
+    {
+      "id": "tim-walz",
+      "name": "Tim Walz",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "farm-belt": 10,
+        "unions": 5,
+        "veterans": 5,
+        "sun-belt": -5
+      },
+      "notes": {
+        "farm-belt": "Governor of Minnesota; represented a rural farm district",
+        "unions": "Former teacher and union member",
+        "veterans": "24 years in the Army National Guard",
+        "sun-belt": "Little profile in the Sun Belt"
+      }
+    },
+    {
+      "id": "barack-obama",
+      "name": "Barack Obama",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "youth": 10,
+        "rust-belt": 5,
+        "sun-belt": 5,
+        "energy": -5
+      },
+      "notes": {
+        "youth": "Won two thirds of voters under 30 in 2008",
+        "rust-belt": "Senator from Illinois; carried the Rust Belt twice",
+        "sun-belt": "Carried Florida, Nevada and North Carolina in 2008",
+        "energy": "Lost every Energy Belt state except New Mexico twice"
+      }
+    },
+    {
+      "id": "franklin-roosevelt",
+      "name": "Franklin D. Roosevelt",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "unions": 10,
+        "seniors": 5,
+        "mid-atlantic": 5,
+        "business": -5
+      },
+      "notes": {
+        "unions": "Signed the Wagner Act protecting the right to organize",
+        "seniors": "Created Social Security",
+        "mid-atlantic": "Governor of New York",
+        "business": "Fought business over the New Deal"
+      }
+    },
+    {
+      "id": "john-f-kennedy",
+      "name": "John F. Kennedy",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "new-england": 10,
+        "faith": 5,
+        "youth": 5,
+        "farm-belt": -5
+      },
+      "notes": {
+        "new-england": "Senator from Massachusetts",
+        "faith": "First Catholic president; carried Catholic voters by wide margins",
+        "youth": "The youngest person elected president",
+        "farm-belt": "Lost most of the Farm Belt in 1960"
+      }
+    },
+    {
+      "id": "josh-shapiro",
+      "name": "Josh Shapiro",
+      "affiliation": "Democratic",
+      "modifiers": {
+        "mid-atlantic": 10,
+        "rust-belt": 5
+      },
+      "notes": {
+        "mid-atlantic": "Governor of Pennsylvania, elected by 15 points",
+        "rust-belt": "Pennsylvania is the largest Rust Belt state"
+      }
+    },
+    {
+      "id": "bernie-sanders",
+      "name": "Bernie Sanders",
+      "affiliation": "Independent",
+      "modifiers": {
+        "new-england": 10,
+        "youth": 10,
+        "business": -5
+      },
+      "notes": {
+        "new-england": "Senator from Vermont",
+        "youth": "Won voters under 30 in the 2016 and 2020 primaries",
+        "business": "Campaigns against corporate power"
+      }
+    },
+    {
+      "id": "george-washington",
+      "name": "George Washington",
+      "affiliation": "Independent",
+      "modifiers": {
+        "veterans": 10,
+        "old-south": 5
+      },
+      "notes": {
+        "veterans": "Commanded the Continental Army",
+        "old-south": "Virginia planter; elected unopposed twice"
+      }
+    },
+    {
+      "id": "ross-perot",
+      "name": "Ross Perot",
+      "affiliation": "Independent",
+      "modifiers": {
+        "business": 10,
+        "sun-belt": 5
+      },
+      "notes": {
+        "business": "Texas businessman; founded EDS",
+        "sun-belt": "Texan; his best results outside New England came in the West and Sun Belt"
+      }
+    }
+  ],
+  "aiPartyNames": [],
+  "callOrder": [
+    "ga",
+    "in",
+    "ky",
+    "sc",
+    "vt",
+    "va",
+    "nc",
+    "oh",
+    "wv",
+    "al",
+    "ct",
+    "de",
+    "dc",
+    "fl",
+    "il",
+    "me",
+    "md",
+    "ma",
+    "ms",
+    "mo",
+    "nh",
+    "nj",
+    "ok",
+    "pa",
+    "ri",
+    "tn",
+    "ar",
+    "az",
+    "co",
+    "ks",
+    "la",
+    "mi",
+    "mn",
+    "ne",
+    "nm",
+    "ny",
+    "nd",
+    "sd",
+    "tx",
+    "wi",
+    "wy",
+    "ia",
+    "mt",
+    "nv",
+    "ut",
+    "ca",
+    "id",
+    "or",
+    "wa",
+    "hi",
+    "ak"
+  ],
+  "customBudget": 8
+}
