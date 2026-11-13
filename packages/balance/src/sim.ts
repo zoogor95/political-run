@@ -35,9 +35,10 @@ export interface MatchRecord {
 }
 
 /** Plays one match to its result, every seat played by the Hard AI with its strategy's changes. */
-export function playMatch(pack: MapPack, entrants: Entrant[], seed: number): MatchRecord {
+export function playMatch(pack: MapPack, entrants: Entrant[], seed: number, luck = false): MatchRecord {
   let state: GameState = createMatch(pack, {
     seed,
+    luck,
     players: entrants.map((e, i) => ({ id: `p${i}`, leaderId: e.leaderId, party: { name: `P${i}`, color: `#00000${i}`, emblem: `e${i}` } })),
   });
   let rng = seedRng(seed * 7919 + 1);

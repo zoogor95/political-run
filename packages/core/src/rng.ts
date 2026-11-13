@@ -13,3 +13,10 @@ export function nextRandom(state: number): [value: number, next: number] {
   const value = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   return [value, next];
 }
+
+/** A 32-bit hash of a string (FNV-1a), for seeding a generator from names. */
+export function hashString(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}

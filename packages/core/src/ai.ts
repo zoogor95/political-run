@@ -5,8 +5,8 @@
  */
 import { moveCost, playerById } from "./costs.js";
 import { isRegion, totalMoney, trackIds } from "./economy.js";
-import { nextRandom, seedRng } from "./rng.js";
-import { meterOf, regionLeader } from "./standing.js";
+import { hashString, nextRandom, seedRng } from "./rng.js";
+import { matchKey, meterOf, regionLeader } from "./standing.js";
 import { canPick, pickPool, validatePlan } from "./turn.js";
 import type { GameState, MapPack, Plan } from "./types.js";
 import { STRATEGIES, planSmart, type StrategyId, type Tuning } from "./ai-smart.js";
@@ -98,20 +98,14 @@ export interface Personality {
 const HOME_BONUS = 0.3;
 const WOBBLE = 0.08;
 
-function hash(text: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
-  return h >>> 0;
-}
-
 /**
  * A Normal or Hard player's character for one match: a way to play and a couple of favourite areas it values more.
  * Without one, bots that think alike chase the same regions every turn and clash. Fixed for the whole match: worked out
  * from the match seed and the player's id, so it needs nothing saved.
  */
 export function personality(pack: MapPack, state: GameState, playerId: string): Personality {
-  const table = state.seed ?? state.players.map((p) => `${p.leaderId}/${p.party.name}`).join("|");
-  let rng = seedRng(hash(`${table}:${playerId}`));
+  const table = matchKey(state);
+  let rng = seedRng(hashString(`${table}:${playerId}`));
   const rand = () => {
     const [v, next] = nextRandom(rng);
     rng = next;

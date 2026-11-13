@@ -109,8 +109,8 @@ export interface GameApi {
 }
 
 function startState(start: GameStart, config: MatchConfig): GameState {
-  if (start.scenario) return scenarioGame(start.scenario);
-  return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config) });
+  if (start.scenario) return { ...scenarioGame(start.scenario), ...(config.luck ? { luck: true } : {}) };
+  return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config), ...(config.luck ? { luck: true } : {}) });
 }
 
 export function useGame(start: GameStart): GameApi {
@@ -287,7 +287,7 @@ export function useGame(start: GameStart): GameApi {
 
   const restart = useCallback((next?: AiLevel) => {
     const nextConfig: MatchConfig = next ? { ...config, seats: config.seats.map((s) => (s.kind === "ai" ? { ...s, level: next } : s)) } : config;
-    const fresh = createMatch(pack, { seed: Date.now() % 1_000_000, players: playersOf(nextConfig) });
+    const fresh = createMatch(pack, { seed: Date.now() % 1_000_000, players: playersOf(nextConfig), ...(nextConfig.luck ? { luck: true } : {}) });
     setConfig(nextConfig);
     setState(fresh);
     setPlans({});

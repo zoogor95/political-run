@@ -1,5 +1,5 @@
 import { grantIncome } from "./economy.js";
-import { allocateReserved, majority, meterOf, regionSeats as seatsByRegion, splitSeats, totalPips } from "./standing.js";
+import { allocateReserved, countedSeats, majority, meterOf, splitSeats, totalPips } from "./standing.js";
 import type { GameState, MapPack } from "./types.js";
 
 export interface ElectionResult {
@@ -32,13 +32,14 @@ export interface Government {
 }
 
 /**
- * Counts the election (Parliamentary): each region's seats are split by pip share. Most seats wins.
+ * Counts the election (Parliamentary): each region's seats are split by pip share, or drawn at random by luck weight
+ * when the luck factor is on. Most seats wins.
  * A tie for most seats in the first round means a second round (see startSecondRound). In later rounds
  * a tie is broken by total pips, then by less money spent.
  */
 export function countElection(pack: MapPack, state: GameState): ElectionResult {
   if (pack.gameType !== "parliamentary") throw new Error("Presidential elections are not implemented yet");
-  const regionSeats = seatsByRegion(pack, state);
+  const regionSeats = countedSeats(pack, state);
   const reserved = allocateReserved(pack, state, regionSeats);
   const seats: Record<string, number> = {};
   state.players.forEach((p) => (seats[p.id] = 0));
@@ -114,7 +115,7 @@ export function electionCalls(pack: MapPack, state: GameState): ElectionCall[] {
     }
     return c;
   };
-  const won = seatsByRegion(pack, state);
+  const won = countedSeats(pack, state);
   const calls = order.map((regionId) => call(regionId, won[regionId]!, false));
   const reserved = allocateReserved(pack, state, won);
   for (const def of pack.reservedSeats ?? []) calls.push(call(def.id, reserved[def.id]!, true));

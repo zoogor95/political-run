@@ -7,6 +7,8 @@ import type { GameState, MapPack, Plan, PlayerSetup, TurnEvent } from "./types.j
 export interface MatchSetup {
   players: PlayerSetup[];
   seed: number;
+  /** Luck factor: seats are drawn at random at the count (see GameState.luck). */
+  luck?: boolean;
 }
 
 /** Starts a match on an empty board. Every player gets the first turn's base money. */
@@ -46,6 +48,7 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
     locked: {},
     rng: seedRng(setup.seed),
     seed: setup.seed,
+    ...(setup.luck ? { luck: true } : {}),
   };
 }
 

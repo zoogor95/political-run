@@ -1,3 +1,4 @@
+import { hashString, nextRandom, seedRng } from "./rng.js";
 import type { GameState, MapPack, Meter, ReservedSeatsDef } from "./types.js";
 
 export function meterOf(state: GameState, regionId: string, playerId: string): Meter {
@@ -71,9 +72,63 @@ export function splitSeats(state: GameState, regionId: string, seats: number): R
   return Object.fromEntries(ranked.map((id, i) => [id, shares[i]!]));
 }
 
-/** Seats each player wins in each region if the election were held now. */
+/**
+ * Luck factor: each player's chance weight for every seat in a region. Each pip counts once up to the fewest pips any
+ * player there has, and every pip of lead beyond that counts double: 2 x pips - fewest. With 9, 6 and 3 pips that is
+ * 15, 9 and 3, so chances of 15/27, 9/27 and 3/27. Players with no pips have no chance. Listed in standing order.
+ */
+export function luckWeights(state: GameState, regionId: string): Record<string, number> {
+  const ranked = regionRanking(state, regionId).filter((id) => meterOf(state, regionId, id).steps > 0);
+  const fewest = Math.min(...ranked.map((id) => meterOf(state, regionId, id).steps));
+  return Object.fromEntries(ranked.map((id) => [id, 2 * meterOf(state, regionId, id).steps - fewest]));
+}
+
+/** Expected seats under the luck factor: the region's seats shared out by luck weight. */
+function expectedSeats(state: GameState, regionId: string, seats: number): Record<string, number> {
+  const weights = luckWeights(state, regionId);
+  const ranked = regionRanking(state, regionId);
+  const shares = shareOut(seats, ranked.map((id) => weights[id] ?? 0));
+  return Object.fromEntries(ranked.map((id, i) => [id, shares[i]!]));
+}
+
+/** A key that stays the same for the whole match: its seed, or for old saves its leaders and party names. */
+export function matchKey(state: GameState): string {
+  return String(state.seed ?? state.players.map((p) => `${p.leaderId}/${p.party.name}`).join("|"));
+}
+
+/**
+ * Luck factor: draws each of a region's seats at random by luck weight. Seeded from the match, the round and the region,
+ * so the same count always comes out the same (and election night agrees with the result).
+ */
+export function drawSeats(state: GameState, regionId: string, seats: number): Record<string, number> {
+  const weights = luckWeights(state, regionId);
+  const out: Record<string, number> = Object.fromEntries(regionRanking(state, regionId).map((id) => [id, 0]));
+  const entries = Object.entries(weights);
+  const total = entries.reduce((a, [, w]) => a + w, 0);
+  if (total === 0) return out;
+  let rng = seedRng(hashString(`${matchKey(state)}:${state.round}:${regionId}`));
+  for (let k = 0; k < seats; k++) {
+    const [v, next] = nextRandom(rng);
+    rng = next;
+    let at = v * total;
+    const hit = entries.find(([, w]) => (at -= w) < 0) ?? entries[entries.length - 1]!;
+    out[hit[0]]! += 1;
+  }
+  return out;
+}
+
+/**
+ * Seats each player wins in each region if the election were held now. With the luck factor on these are the expected
+ * seats; the count itself draws them (countedSeats).
+ */
 export function regionSeats(pack: MapPack, state: GameState): Record<string, Record<string, number>> {
-  return Object.fromEntries(pack.regions.map((r) => [r.id, splitSeats(state, r.id, r.seats)]));
+  return Object.fromEntries(pack.regions.map((r) => [r.id, state.luck ? expectedSeats(state, r.id, r.seats) : splitSeats(state, r.id, r.seats)]));
+}
+
+/** Seats won in each region at the count: the pip-share split, or with the luck factor on, a draw. */
+export function countedSeats(pack: MapPack, state: GameState): Record<string, Record<string, number>> {
+  if (!state.luck) return regionSeats(pack, state);
+  return Object.fromEntries(pack.regions.map((r) => [r.id, drawSeats(state, r.id, r.seats)]));
 }
 
 /** The regions whose general seats decide a set of reserved seats. */

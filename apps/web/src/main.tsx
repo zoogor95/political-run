@@ -16,7 +16,7 @@ import "./game/game.css";
 
 type Screen = { name: "menu" } | { name: "profile" } | { name: "setup"; mode: Mode } | { name: "game"; start: GameStart; key: number };
 
-/** Links with ?seed=, ?ai=, ?map= or ?scenario= go straight into a solo match (used by tests and shared links). */
+/** Links with ?seed=, ?ai=, ?map= or ?scenario= go straight into a solo match (used by tests and shared links); &luck turns on the luck factor. */
 function directStart(): GameStart | null {
   const params = new URLSearchParams(location.search);
   if (!params.has("seed") && !params.has("ai") && !params.has("scenario") && !params.has("map")) return null;
@@ -25,7 +25,9 @@ function directStart(): GameStart | null {
   const scenario = params.get("scenario");
   // The scenarios are set up on the UK board.
   selectMap(scenario ? "uk" : (params.get("map") ?? "uk"));
-  const start: GameStart = { config: defaultConfig("solo", level) };
+  const config = defaultConfig("solo", level);
+  if (params.has("luck")) config.luck = true;
+  const start: GameStart = { config };
   const seed = Number(params.get("seed"));
   if (seed) start.seed = seed;
   if (scenario === "hung" || scenario === "tie") start.scenario = scenario;

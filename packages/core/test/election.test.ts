@@ -16,6 +16,8 @@ import {
   seedRng,
   splitSeats,
   totalSeats,
+  drawSeats,
+  luckWeights,
   validatePack,
   type MapPack,
 } from "../src/index.js";
@@ -273,5 +275,60 @@ describe("reserved seats", () => {
       expect.arrayContaining(["reservedSeats[0].id", "reservedSeats[0].name", "reservedSeats[0].seats", "reservedSeats[0].group"]),
     );
     expect(validatePack(reservedPack)).toEqual([]);
+  });
+});
+
+describe("luck factor", () => {
+  it("weights: each pip of lead over the fewest counts double (the 9, 6, 3 example is 15, 9, 3)", () => {
+    const s = newMatch();
+    setSteps(s, "north", "a", 9);
+    setSteps(s, "north", "b", 6);
+    setSteps(s, "north", "c", 3);
+    expect(luckWeights(s, "north")).toEqual({ a: 15, b: 9, c: 3 });
+    setSteps(s, "south", "b", 4);
+    expect(luckWeights(s, "south")).toEqual({ b: 4 }); // alone: every seat
+    expect(luckWeights(s, "city")).toEqual({});
+  });
+
+  it("projects the expected seats and draws the real ones at the count, the same way every time", () => {
+    const s = { ...newMatch(), luck: true };
+    setSteps(s, "north", "a", 9);
+    setSteps(s, "north", "b", 6);
+    setSteps(s, "north", "c", 3);
+    // 40 seats at 15/27, 9/27, 3/27: 22.2, 13.3, 4.4 expected; the spare seat goes to the biggest remainder.
+    expect(regionSeats(pack, s).north).toEqual({ a: 22, b: 13, c: 5 });
+    const drawn = drawSeats(s, "north", 40);
+    expect(Object.values(drawn).reduce((x, y) => x + y, 0)).toBe(40);
+    expect(drawSeats(s, "north", 40)).toEqual(drawn);
+    expect(countElection(pack, s).regionSeats.north).toEqual(drawn);
+    expect(electionCalls(pack, s).find((c) => c.regionId === "north")!.seats).toEqual(drawn);
+    // Nobody campaigned in the city: nobody wins it, luck or not.
+    expect(countElection(pack, s).regionSeats.city).toEqual({ a: 0, b: 0, c: 0 });
+  });
+
+  it("draws close to the weights over many matches, and differently from match to match", () => {
+    const totals = { a: 0, b: 0, c: 0 };
+    const draws = new Set<string>();
+    for (let seed = 0; seed < 200; seed++) {
+      const s = { ...newMatch(), luck: true, seed };
+      setSteps(s, "north", "a", 9);
+      setSteps(s, "north", "b", 6);
+      setSteps(s, "north", "c", 3);
+      const d = drawSeats(s, "north", 40);
+      draws.add(JSON.stringify(d));
+      for (const id of ["a", "b", "c"] as const) totals[id] += d[id]!;
+    }
+    expect(draws.size).toBeGreaterThan(50);
+    expect(totals.a / 8000).toBeCloseTo(15 / 27, 1);
+    expect(totals.b / 8000).toBeCloseTo(9 / 27, 1);
+    expect(totals.c / 8000).toBeCloseTo(3 / 27, 1);
+  });
+
+  it("is off unless the match turns it on", () => {
+    expect(newMatch().luck).toBeUndefined();
+    const s = newMatch();
+    setSteps(s, "north", "a", 6);
+    setSteps(s, "north", "b", 4);
+    expect(countElection(pack, s).regionSeats.north).toEqual({ a: 24, b: 16, c: 0 });
   });
 });
