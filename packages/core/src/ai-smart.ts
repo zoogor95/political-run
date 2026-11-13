@@ -54,12 +54,14 @@ export interface Tuning {
 
 const NEUTRAL = { seatBias: 0, groupBias: 1, rush: 0 };
 
-// Hard's settings won the simulator's mirrored matches against their neighbours, and hold up in mixed line-ups: Hard
-// wins about half of its matches against two Normals, and two Hards win about their even share against a Normal.
+// Hard's settings won the simulator's mirrored matches against their neighbours, and hold up in mixed line-ups.
+// Noise: clashes cost 30-55% of all spending, and the player whose choices differ from the others' avoids most of them,
+// so a fair amount of randomness is worth more than precision. Both levels use 0.6 (a track's value can swing 60% either
+// way each turn): Hard then beats two Normals 68% of the time on the UK and 40% on Pakistan (33% is even).
 const TUNING: Record<SmartLevel, Tuning> = {
-  normal: { spend: 0.88, noise: 0.35, dodge: 0.5, defend: false, plan_income: false, timing: false, anticipate: 0.75, ...NEUTRAL },
+  normal: { spend: 0.88, noise: 0.6, dodge: 0.5, defend: false, plan_income: false, timing: false, anticipate: 0.75, ...NEUTRAL },
   // Income planning stays off: it overvalued national groups and lost to Normal almost every game.
-  hard: { spend: 1, noise: 0.3, dodge: 0.55, defend: false, plan_income: false, timing: false, anticipate: 1.75, ...NEUTRAL },
+  hard: { spend: 1, noise: 0.6, dodge: 0.55, defend: false, plan_income: false, timing: false, anticipate: 1.75, ...NEUTRAL },
 };
 
 export type StrategyId = "balanced" | "big-regions" | "small-regions" | "groups" | "rush" | "hoard";
