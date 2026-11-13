@@ -1,5 +1,6 @@
 import { grantIncome } from "./economy.js";
-import { allocateReserved, countedSeats, majority, meterOf, splitSeats, totalPips } from "./standing.js";
+import { allInContention, allocateReserved, countedSeats, majority, meterOf, regionLeader, splitSeats, totalPips } from "./standing.js";
+import { activePlayers } from "./turn.js";
 import type { GameState, MapPack } from "./types.js";
 
 export interface ElectionResult {
@@ -13,6 +14,11 @@ export interface ElectionResult {
   ranking: string[];
   /** True when two or more players tied for most seats in the first round, which starts a second round. */
   secondRound: boolean;
+  /**
+   * Presidential, when nobody has a majority: the candidate eliminated (fewest electoral votes; ties go to fewer pips,
+   * then less money spent). The campaign goes on without them.
+   */
+  eliminated: string | null;
   /** Government formation, for display only. */
   government: Government;
   /** Votes by player: each region's voters split by pip share. Shown on election night; never affects the result. */
@@ -38,7 +44,7 @@ export interface Government {
  * a tie is broken by total pips, then by less money spent.
  */
 export function countElection(pack: MapPack, state: GameState): ElectionResult {
-  if (pack.gameType !== "parliamentary") throw new Error("Presidential elections are not implemented yet");
+  if (pack.gameType === "presidential") return countPresidential(pack, state);
   const regionSeats = countedSeats(pack, state);
   const reserved = allocateReserved(pack, state, regionSeats);
   const seats: Record<string, number> = {};
@@ -62,7 +68,50 @@ export function countElection(pack: MapPack, state: GameState): ElectionResult {
       seatOrder.indexOf(a) - seatOrder.indexOf(b),
   );
 
-  return { regionSeats, reserved, seats, ranking, secondRound, government: formGovernment(ranking, seats, majority(pack)), popularVote: popularVote(pack, state) };
+  return { regionSeats, reserved, seats, ranking, secondRound, eliminated: null, government: formGovernment(ranking, seats, majority(pack)), popularVote: popularVote(pack, state) };
+}
+
+/**
+ * Counts a Presidential election: each region's electoral votes go to its leader, and a majority of all electoral votes
+ * wins. Without a majority, the candidate with the fewest electoral votes is eliminated; a tie for fewest goes to fewer
+ * pips across the map, then less money spent, then the later seat. Eliminated candidates rank last, the most recently
+ * eliminated first.
+ */
+function countPresidential(pack: MapPack, state: GameState): ElectionResult {
+  const regionSeats = countedSeats(pack, state);
+  const seats: Record<string, number> = {};
+  state.players.forEach((p) => (seats[p.id] = 0));
+  for (const split of Object.values(regionSeats)) for (const [id, n] of Object.entries(split)) seats[id] = (seats[id] ?? 0) + n;
+
+  const seatOrder = state.players.map((p) => p.id);
+  const player = (id: string) => state.players.find((p) => p.id === id)!;
+  const active = activePlayers(state).map((p) => p.id);
+  // Best first: electoral votes, then pips, then more money spent, then the earlier seat.
+  const better = (a: string, b: string) =>
+    seats[b]! - seats[a]! || totalPips(pack, state, b) - totalPips(pack, state, a) || player(b).spent - player(a).spent || seatOrder.indexOf(a) - seatOrder.indexOf(b);
+  const standing = [...active].sort(better);
+  const out = state.players.filter((p) => p.eliminated !== undefined).sort((a, b) => b.eliminated! - a.eliminated! || seatOrder.indexOf(a.id) - seatOrder.indexOf(b.id));
+  const ranking = [...standing, ...out.map((p) => p.id)];
+  const needed = majority(pack);
+  const hasMajority = (seats[standing[0]!] ?? 0) >= needed;
+  const eliminated = hasMajority || standing.length < 2 ? null : standing[standing.length - 1]!;
+  const government: Government = { members: [standing[0]!], opposition: standing[1] ?? null, outside: standing.slice(2), seats: seats[standing[0]!] ?? 0, hasMajority };
+  return { regionSeats, reserved: {}, seats, ranking, secondRound: false, eliminated, government, popularVote: popularVote(pack, state) };
+}
+
+/**
+ * Presidential: takes a candidate out of the race. All their pips come off the map, including regions they had locked
+ * (which open again). They get no more income and plan no more turns.
+ */
+export function eliminate(pack: MapPack, before: GameState, playerId: string): GameState {
+  const state = structuredClone(before);
+  for (const meters of Object.values(state.meters)) {
+    const m = meters[playerId];
+    if (m) Object.assign(m, { steps: 0, reached: [], entered: false });
+  }
+  for (const [track, owner] of Object.entries(state.locked)) if (owner === playerId) delete state.locked[track];
+  state.players.find((p) => p.id === playerId)!.eliminated = state.turn;
+  return state;
 }
 
 /** Each region's voters split by pip share (largest remainder). Regions without a voter count are skipped. */
@@ -71,6 +120,12 @@ export function popularVote(pack: MapPack, state: GameState): Record<string, num
   state.players.forEach((p) => (votes[p.id] = 0));
   for (const r of pack.regions) {
     if (!r.voters) continue;
+    if (pack.gameType === "presidential") {
+      // Presidential: the region's voters all count for its winner.
+      const leader = regionLeader(state, r.id);
+      if (leader) votes[leader] = (votes[leader] ?? 0) + r.voters;
+      continue;
+    }
     for (const [id, n] of Object.entries(splitSeats(state, r.id, r.voters))) votes[id] = (votes[id] ?? 0) + n;
   }
   return votes;
@@ -167,5 +222,16 @@ export function finishElection(pack: MapPack, state: GameState): { state: GameSt
   if (state.phase !== "election") throw new Error("The election hasn't started");
   const result = countElection(pack, state);
   if (result.secondRound) return { state: startSecondRound(pack, state), result };
+  if (result.eliminated !== null) {
+    const next = eliminate(pack, state, result.eliminated);
+    // The last candidate standing wins.
+    if (activePlayers(next).length < 2) return { state: { ...next, phase: "finished" }, result };
+    // Everyone gets at least one more turn: a final turn if every region is still in contention, otherwise the campaign
+    // goes on until it is, then a final turn.
+    next.round += 1;
+    next.phase = allInContention(pack, next) ? "final" : "campaign";
+    grantIncome(pack, next, []);
+    return { state: next, result };
+  }
   return { state: { ...structuredClone(state), phase: "finished" }, result };
 }
