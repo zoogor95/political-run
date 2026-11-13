@@ -53,10 +53,11 @@ describe("versus and line-ups", () => {
   });
 
   it("scores side A by the game's parity", () => {
-    const win = (first: number) => ({ ranking: [first, 1 - first] }) as MatchRecord;
+    const win = (first: number) => ({ ranking: [first, 1 - first], turns: 6, spent: [100, 100], lost: [25, 25] }) as MatchRecord;
     // Side A sits first in even games and second in odd games: it wins games 0 and 1 here, loses 2 and 3.
     expect(versusResult([win(0), win(1), win(1), win(0)]).share).toBe(0.5);
     expect(versusResult([win(0), win(1)]).share).toBe(1);
+    expect(versusResult([win(0), win(1)]).lost).toBe(0.25);
   });
 
   it("rotates a line-up through every seat and credits wins to levels", () => {
