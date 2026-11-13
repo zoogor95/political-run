@@ -57,7 +57,7 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
         <b>{game.stage === "results" ? "Result" : final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
         <span>{state.round > 1 ? "Second round · " : ""}{map.name}</span>
       </div>
-      <div className="tally-wrap">
+      <div className="tally-wrap" data-testid="tally">
         <div className="tally" role="img" aria-label={`Projected seats: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>
           {order.map((p) => (
             <div key={p.id} style={{ width: `${(100 * (seats[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: seats[p.id] ? 8 : 0 }}>
@@ -71,7 +71,7 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
           <span>{majority(pack)} FOR A MAJORITY</span>
         </div>
       </div>
-      <div className="contention">
+      <div className="contention" data-testid="contention">
         <span>IN CONTENTION</span>
         <b>
           {contention} / {pack.regions.length}
