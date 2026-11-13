@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PERSONALITY_STRATEGIES, finishElection, likelyTargets, personality, planAi, planEasy, resolveTurn, totalMoney, validatePlan } from "../src/index.js";
+import { PERSONALITY_STRATEGIES, validatePack, finishElection, likelyTargets, personality, planAi, planEasy, resolveTurn, totalMoney, validatePlan } from "../src/index.js";
 import type { Plan } from "../src/index.js";
 import { newMatch, setSteps, testPack, testPack as pack } from "./fixtures.js";
 
@@ -118,5 +118,15 @@ describe("personalities", () => {
     // The same position and the same random state; only the match seed (so the personality) changes.
     const plans = Array.from({ length: 20 }, (_, seed) => JSON.stringify(planAi(testPack, { ...s, seed }, "a", "hard", 7).plan.steps));
     expect(new Set(plans).size).toBeGreaterThan(1); // Testland has only three regions, so there is little room to differ
+  });
+});
+
+describe("map AI settings", () => {
+  it("validate, and change how the map's computer players plan", () => {
+    expect(validatePack({ ...testPack, aiTuning: { hard: { noise: 0.9 } } })).toEqual([]);
+    expect(validatePack({ ...testPack, aiTuning: { hard: { noise: 2 } } }).map((i) => i.path)).toEqual(["aiTuning.hard.noise"]);
+    const s = newMatch(["a", "b", "c"]);
+    const calm = Array.from({ length: 20 }, (_, r) => JSON.stringify(planAi({ ...testPack, aiTuning: { hard: { noise: 0 } } }, s, "a", "hard", r).plan.steps));
+    expect(new Set(calm).size).toBe(1); // no noise: the same plan whatever the random state
   });
 });

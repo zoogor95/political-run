@@ -136,6 +136,11 @@ export function validatePack(pack: MapPack): PackIssue[] {
     if (d.group !== undefined && pack.groups.find((g) => g.id === d.group)?.kind !== "state") add(`${p}.group`, `must be a state group, not "${d.group}"`);
   });
 
+  for (const level of ["normal", "hard"] as const) {
+    const noise = pack.aiTuning?.[level]?.noise;
+    if (noise !== undefined && !(noise >= 0 && noise <= 1)) add(`aiTuning.${level}.noise`, "must be between 0 and 1");
+  }
+
   if (pack.customBudget !== undefined && (!Number.isInteger(pack.customBudget) || pack.customBudget < 1)) add("customBudget", "must be a whole number of at least 1");
 
   if (pack.aiPartyNames.length < 4) add("aiPartyNames", "needs at least 4 names, one per AI seat");

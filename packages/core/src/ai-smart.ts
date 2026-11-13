@@ -94,7 +94,7 @@ export function likelyTargets(pack: MapPack, state: GameState, playerId: string,
 }
 
 export function planSmart(pack: MapPack, state: GameState, playerId: string, level: SmartLevel, rng: number, tuning?: Partial<Tuning>): AiResult {
-  const t = { ...TUNING[level], ...tuning };
+  const t = { ...TUNING[level], ...pack.aiTuning?.[level], ...tuning };
   const rand = () => {
     const [v, next] = nextRandom(rng);
     rng = next;
