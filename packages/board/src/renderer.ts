@@ -3,6 +3,9 @@
  * pip bars, small regions enlarged in place with a halo, and lifts the selected piece. It only draws: the game decides
  * colours through setStyles and reacts to taps through onTap.
  */
+// Pixi normally builds shader code with new Function; this swaps in versions that don't, so the board draws under a
+// strict content security policy (embedded players such as Discord activities and hosted previews forbid eval).
+import "pixi.js/unsafe-eval";
 import { Application, Container, Graphics, Text } from "pixi.js";
 import { layoutBoard, type BadgeLayout, type BoardLayout, type LayoutOptions, type PieceLayout } from "./layout.js";
 import { CREAM, EMPTY, GOLD, GREY_LAND, INK } from "./palette.js";
