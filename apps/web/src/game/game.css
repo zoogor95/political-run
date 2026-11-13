@@ -1907,6 +1907,10 @@
   background: var(--cream);
 }
 
+.seat-map.night {
+  padding-top: 96px;
+}
+
 .seat-map svg {
   flex: 1;
   min-height: 0;

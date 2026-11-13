@@ -58,7 +58,9 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const onNight = game.stage === "election" && night !== null;
   const [nightPhase, setNightPhase] = useState<NightPhase>("suspense");
   const [called, setCalled] = useState(0);
-  const [replay, setReplay] = useState(0);
+  // The results' replay slider: null means the final result, so the results open on it without waiting for an effect.
+  const [replayAt, setReplay] = useState<number | null>(null);
+  const replay = replayAt ?? game.boards.length - 1;
   const [coaching, setCoaching] = useState(() => game.config.tutorial === true);
   // Election night and results show the seat map; results can switch back to the campaign board.
   const [seatView, setSeatView] = useState(true);
@@ -84,7 +86,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     return () => clearTimeout(t);
   }, [onNight, night, nightPhase, called]);
   useEffect(() => {
-    if (game.stage === "results") setReplay(game.boards.length - 1);
+    if (game.stage === "results") setReplay(null);
   }, [game.stage, game.boards.length]);
   const skipNight = useCallback(() => {
     if (!night) return;
@@ -212,6 +214,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
               state={seatMap.state}
               seats={seatMap.seats}
               highlight={seatHighlight}
+              night={onNight}
               reserved={(pack.reservedSeats ?? []).map((d) => ({ ...d, ...(seatMap.reservedWon[d.id] ? { won: seatMap.reservedWon[d.id]! } : {}) }))}
             />
           )}

@@ -41,9 +41,11 @@ interface Props {
   /** Reserved seat lists below the map: seats by player once declared. */
   reserved?: { id: string; name: string; seats: number; won?: Record<string, number> }[];
   onRegion?: (regionId: string) => void;
+  /** Election night: leave room at the top for the call banner. */
+  night?: boolean;
 }
 
-export const SeatMap = memo(function SeatMap({ state, seats, highlight, reserved, onRegion }: Props) {
+export const SeatMap = memo(function SeatMap({ state, seats, highlight, reserved, onRegion, night }: Props) {
   const layout = useMemo(() => seatMapLayout(board), []);
   const colors = useMemo(() => cellColors(layout, state, seats), [layout, state, seats]);
   const lit = new Set(highlight);
@@ -51,7 +53,7 @@ export const SeatMap = memo(function SeatMap({ state, seats, highlight, reserved
   const [x, y, w, h] = layout.viewBox;
   const label = `Seat map: ${declared} of ${board.regions.length} regions declared${highlight.length ? `; showing ${highlight.map(trackName).join(", ")}` : ""}.`;
   return (
-    <div className="seat-map" data-testid="seat-map" data-kind={layout.kind}>
+    <div className={`seat-map${night ? " night" : ""}`} data-testid="seat-map" data-kind={layout.kind}>
       <svg viewBox={`${x} ${y} ${w} ${h}`} role="img" aria-label={label}>
         {layout.kind === "units" && board.greyed && <path d={board.greyed.d} className="seat-grey" />}
         {board.regions.map((r) => (
