@@ -144,7 +144,8 @@ export function validatePack(pack: MapPack): PackIssue[] {
 
   if (pack.customBudget !== undefined && (!Number.isInteger(pack.customBudget) || pack.customBudget < 1)) add("customBudget", "must be a whole number of at least 1");
 
-  if (pack.aiPartyNames.length < 4) add("aiPartyNames", "needs at least 4 names, one per AI seat");
+  // Parliamentary computer players lead made-up parties; Presidential ones run under their candidate's real party.
+  if (pack.gameType === "parliamentary" && pack.aiPartyNames.length < 4) add("aiPartyNames", "needs at least 4 names, one per AI seat");
   if (new Set(pack.aiPartyNames.map((n) => n.toLowerCase())).size !== pack.aiPartyNames.length) add("aiPartyNames", "lists a name twice");
 
   return issues;

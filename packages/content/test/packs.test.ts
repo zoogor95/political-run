@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   createMatch,
@@ -160,5 +161,75 @@ describe("a UK match between Easy AIs", () => {
     expect(campaignTurns).toBeGreaterThanOrEqual(5);
     expect(campaignTurns).toBeLessThanOrEqual(30);
     expect(state.players.every((p) => p.members.length >= 1)).toBe(true);
+  });
+});
+
+describe("US pack", () => {
+  const us = JSON.parse(readFileSync(new URL("../packs/us/pack.json", import.meta.url), "utf8")) as MapPack;
+  const results = JSON.parse(readFileSync(new URL("../packs/us/results-2024.json", import.meta.url), "utf8")) as {
+    states: { id: string; ev: number; votes: number; republican: number; democratic: number }[];
+  };
+
+  it("validates as a Presidential pack with 538 electoral votes and 270 to win", () => {
+    expect(validatePack(us)).toEqual([]);
+    expect(us.gameType).toBe("presidential");
+    expect(us.regions).toHaveLength(51);
+    expect(totalSeats(us)).toBe(538);
+    expect(majority(us)).toBe(270);
+    expect(us.rules.steps).toBe(10);
+    expect(us.rules.costGrowth).toBe(1);
+    expect(us.rules.runningMateTurn).toBe(5);
+  });
+
+  it("matches the board and the 2024 results: electoral votes, voters and step costs", () => {
+    const board = JSON.parse(readFileSync(new URL("../maps/us.json", import.meta.url), "utf8")) as { regions: { id: string; seats: number }[] };
+    for (const r of us.regions) {
+      const row = results.states.find((s) => s.id === r.id)!;
+      expect(board.regions.find((b) => b.id === r.id)?.seats).toBe(r.seats);
+      expect(row.ev).toBe(r.seats);
+      expect(r.voters).toBe(row.votes);
+      const margin = Math.abs(row.republican - row.democratic);
+      const comp = 1 + 0.6 * Math.max(0, 1 - margin / 25);
+      expect(r.baseCost).toBe(Math.round((2000 + 1500 * r.seats * comp) / 1000) * 1000);
+    }
+    expect(us.regions.reduce((a, r) => a + (r.voters ?? 0), 0)).toBe(155_240_955);
+  });
+
+  it("puts every state in a state group and calls every state once, east to west", () => {
+    const grouped = new Set(us.groups.filter((g) => g.kind === "state").flatMap((g) => g.regions));
+    expect(us.regions.filter((r) => !grouped.has(r.id))).toEqual([]);
+    expect([...us.callOrder!].sort()).toEqual(us.regions.map((r) => r.id).sort());
+    expect(us.callOrder!.slice(0, 2)).toEqual(["ga", "in"]);
+    expect(us.callOrder!.at(-1)).toBe("ak");
+  });
+
+  it("gives every candidate a party and a reason for every modifier", () => {
+    for (const c of us.candidates) {
+      expect(["Republican", "Democratic", "Independent"]).toContain(c.affiliation);
+      expect(Object.keys(c.notes ?? {}).sort()).toEqual(Object.keys(c.modifiers).sort());
+    }
+  });
+
+  it("plays a whole Easy match through to a winner", () => {
+    let s = createMatch(us, {
+      seed: 3,
+      players: ["a", "b", "c"].map((id, i) => ({ id, leaderId: us.candidates[i * 5]!.id, party: { name: id, color: `#00000${i}`, emblem: `e${i}` } })),
+    });
+    let rng = 3;
+    for (let guard = 0; guard < 300 && s.phase !== "finished"; guard++) {
+      if (s.phase === "election") {
+        s = finishElection(us, s).state;
+        continue;
+      }
+      const plans: Record<string, Plan> = {};
+      for (const p of s.players) {
+        const r = planEasy(us, s, p.id, rng);
+        rng = r.rng;
+        expect(validatePlan(us, s, p.id, r.plan)).toEqual([]);
+        plans[p.id] = r.plan;
+      }
+      s = resolveTurn(us, s, plans).state;
+    }
+    expect(s.phase).toBe("finished");
   });
 });
