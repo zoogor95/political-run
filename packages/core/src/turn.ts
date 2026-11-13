@@ -52,16 +52,35 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
   };
 }
 
+/** True on a turn with a pick: every Nth turn for party members (Parliamentary), or the running mate turn (Presidential). */
 export function isPickTurn(pack: MapPack, state: GameState): boolean {
+  const mate = pack.rules.runningMateTurn;
+  if (mate !== undefined) return state.turn === mate;
   const every = pack.rules.memberPickEvery;
   return every > 0 && state.turn % every === 0;
 }
 
-/** True when the player may pick a party member this turn: a pick turn on which they haven't used their pick. */
+/** Picks a player is allowed by this turn: one running mate, or one party member per Nth turn. */
+function picksAllowed(pack: MapPack, state: GameState): number {
+  if (pack.rules.runningMateTurn !== undefined) return state.turn >= pack.rules.runningMateTurn ? 1 : 0;
+  return pack.rules.memberPickEvery > 0 ? Math.floor(state.turn / pack.rules.memberPickEvery) : 0;
+}
+
+/** Members are assigned to regions and bring free pips (Parliamentary); running mates are not (Presidential). */
+export function assignsMembers(pack: MapPack): boolean {
+  return pack.rules.runningMateTurn === undefined;
+}
+
+/** True when the player may pick a party member or running mate this turn: a pick turn on which they haven't picked yet. */
 export function canPick(pack: MapPack, state: GameState, playerId: string): boolean {
-  if (!isPickTurn(pack, state)) return false;
-  const allowed = Math.floor(state.turn / pack.rules.memberPickEvery);
-  return playerById(state, playerId).members.length < allowed;
+  const player = playerById(state, playerId);
+  if (player.eliminated !== undefined || !isPickTurn(pack, state)) return false;
+  return player.members.length < picksAllowed(pack, state);
+}
+
+/** Candidates still in the race (Presidential eliminates the last-placed candidate when nobody has a majority). */
+export function activePlayers(state: GameState): GameState["players"] {
+  return state.players.filter((p) => p.eliminated === undefined);
 }
 
 /** Candidates a player may pick as a member: anyone except themselves, other parties' leaders and members they already have. */
@@ -82,7 +101,8 @@ export interface PlanIssue {
     | "not_enough_money"
     | "not_pick_turn"
     | "bad_pick"
-    | "bad_assign";
+    | "bad_assign"
+    | "eliminated";
   message: string;
 }
 
@@ -95,17 +115,21 @@ export function validatePlan(pack: MapPack, state: GameState, playerId: string, 
     add("not_campaigning", "The campaign is over");
     return issues;
   }
+  if (player.eliminated !== undefined) {
+    if (plan.pick !== undefined || Object.keys(plan.steps ?? {}).length > 0 || Object.keys(plan.assign ?? {}).length > 0) add("eliminated", "You've been eliminated");
+    return issues;
+  }
+  const mate = pack.rules.runningMateTurn !== undefined;
 
   // Picks come first so a member picked this turn already shapes this turn's costs.
   const members = player.members.map((m) => m.candidateId);
   if (plan.pick !== undefined) {
     const picksSoFar = player.members.length;
-    const picksAllowed = pack.rules.memberPickEvery > 0 ? Math.floor(state.turn / pack.rules.memberPickEvery) : 0;
-    if (!isPickTurn(pack, state)) add("not_pick_turn", `Party members are picked every ${pack.rules.memberPickEvery} turns`);
-    else if (picksSoFar >= picksAllowed) add("bad_pick", "You've already picked a member this turn");
+    if (!isPickTurn(pack, state)) add("not_pick_turn", mate ? `The running mate is picked on turn ${pack.rules.runningMateTurn}` : `Party members are picked every ${pack.rules.memberPickEvery} turns`);
+    else if (picksSoFar >= picksAllowed(pack, state)) add("bad_pick", mate ? "You already have a running mate" : "You've already picked a member this turn");
     else if (!pack.candidates.some((c) => c.id === plan.pick)) add("bad_pick", "Unknown candidate");
     else if (plan.pick === player.leaderId) add("bad_pick", "Your leader can't also be a member");
-    else if (state.players.some((p) => p.id !== playerId && p.leaderId === plan.pick)) add("bad_pick", "Another party's leader can't be picked");
+    else if (state.players.some((p) => p.id !== playerId && p.leaderId === plan.pick)) add("bad_pick", mate ? "Another candidate can't be your running mate" : "Another party's leader can't be picked");
     else if (members.includes(plan.pick)) add("bad_pick", "Already in your party");
     else members.push(plan.pick);
   }
@@ -136,6 +160,10 @@ export function validatePlan(pack: MapPack, state: GameState, playerId: string, 
 
   const usedRegions = new Set(player.members.map((m) => m.regionId).filter((r): r is string => r !== null));
   for (const [candidateId, regionId] of Object.entries(plan.assign ?? {})) {
+    if (!assignsMembers(pack)) {
+      add("bad_assign", "Running mates aren't assigned to regions");
+      continue;
+    }
     const existing = player.members.find((m) => m.candidateId === candidateId);
     const isNewPick = plan.pick === candidateId && members.includes(candidateId);
     if (!existing && !isNewPick) add("bad_assign", `${candidateId} isn't one of your members`);

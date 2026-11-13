@@ -7,7 +7,7 @@ import { moveCost, playerById } from "./costs.js";
 import { isRegion, totalMoney, trackIds } from "./economy.js";
 import { hashString, nextRandom, seedRng } from "./rng.js";
 import { matchKey, meterOf, regionLeader } from "./standing.js";
-import { canPick, pickPool, validatePlan } from "./turn.js";
+import { assignsMembers, canPick, pickPool, validatePlan } from "./turn.js";
 import type { GameState, MapPack, Plan } from "./types.js";
 import { STRATEGIES, planSmart, type StrategyId, type Tuning } from "./ai-smart.js";
 
@@ -24,6 +24,7 @@ export function planEasy(pack: MapPack, state: GameState, playerId: string, rng:
     return v;
   };
   const player = playerById(state, playerId);
+  if (player.eliminated !== undefined) return { plan: {}, rng };
   const plan: Plan = { steps: {} };
 
   if (canPick(pack, state, playerId)) {
@@ -37,10 +38,12 @@ export function planEasy(pack: MapPack, state: GameState, playerId: string, rng:
   const free = pack.regions
     .filter((r) => meterOf(state, r.id, playerId).entered && !withMember.has(r.id) && state.locked[r.id] === undefined)
     .sort((a, b) => b.seats - a.seats);
-  waiting.forEach((candidateId, i) => {
-    const r = free[i];
-    if (r) (plan.assign ??= {})[candidateId] = r.id;
-  });
+  if (assignsMembers(pack)) {
+    waiting.forEach((candidateId, i) => {
+      const r = free[i];
+      if (r) (plan.assign ??= {})[candidateId] = r.id;
+    });
+  }
 
   // Score every track by seats per pound for its next step, with plenty of randomness. National groups count as
   // a few seats' worth, for their income.
@@ -124,6 +127,7 @@ export function personality(pack: MapPack, state: GameState, playerId: string): 
 
 /** Plans a turn for a computer player at the given difficulty. Normal and Hard play to their personality. */
 export function planAi(pack: MapPack, state: GameState, playerId: string, level: AiLevel, rng: number): AiResult {
+  if (playerById(state, playerId).eliminated !== undefined) return { plan: {}, rng };
   if (level === "easy") return planEasy(pack, state, playerId, rng);
   return planSmart(pack, state, playerId, level, rng, personality(pack, state, playerId).tuning);
 }

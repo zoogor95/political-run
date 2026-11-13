@@ -21,7 +21,7 @@ import { groupModifier, moveCost, playerById } from "./costs.js";
 import { controllers, isRegion, nationalGroup, pay, totalMoney, trackIds } from "./economy.js";
 import { nextRandom } from "./rng.js";
 import { meterOf, projectedSeats, regionLeader, regionRanking, seatWeight } from "./standing.js";
-import { canPick, pickPool, validatePlan } from "./turn.js";
+import { assignsMembers, canPick, pickPool, validatePlan } from "./turn.js";
 import type { GameState, MapPack, Plan } from "./types.js";
 import type { AiResult } from "./ai.js";
 
@@ -101,7 +101,9 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
     return v;
   };
   const player = playerById(state, playerId);
-  const others = state.players.filter((p) => p.id !== playerId).map((p) => p.id);
+  if (player.eliminated !== undefined) return { plan: {}, rng };
+  const presidential = pack.gameType === "presidential";
+  const others = state.players.filter((p) => p.id !== playerId && p.eliminated === undefined).map((p) => p.id);
   const plan: Plan = { steps: {} };
   const final = state.phase === "final";
 
@@ -150,10 +152,12 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
       return m.entered && m.steps < pack.rules.steps && !withMember.has(r.id) && state.locked[r.id] === undefined;
     })
     .sort((a, b) => b.seats - a.seats);
-  waiting.forEach((candidateId, i) => {
-    const r = open[i];
-    if (r) (plan.assign ??= {})[candidateId] = r.id;
-  });
+  if (assignsMembers(pack)) {
+    waiting.forEach((candidateId, i) => {
+      const r = open[i];
+      if (r) (plan.assign ??= {})[candidateId] = r.id;
+    });
+  }
   const payer = structuredClone(player);
   if (plan.pick) payer.members.push({ candidateId: plan.pick, regionId: null, assignedTurn: null });
 
@@ -172,8 +176,19 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
       const theirs = Math.max(others.reduce((a, id) => a + steps(track, id), 0), final ? 0 : others.length * t.anticipate);
       const share = (pips: number) => (pips + theirs === 0 ? 0 : pips / (pips + theirs));
       const from = steps(track, playerId);
+      // Presidential: the leader takes every electoral vote, so a step is worth the chance of holding the lead it adds.
+      // On the final turn only a strict lead holds (an equal rival got there first); before that, rivals are expected
+      // to climb a little, and a full meter locks the region for good.
+      const rivalTop = Math.max(0, ...others.map((id) => steps(track, id)));
+      const hold = (pips: number) => {
+        if (pips <= 0) return 0;
+        if (pips >= pack.rules.steps) return 1;
+        if (final) return pips > rivalTop ? 1 : 0;
+        return Math.min(1, Math.max(0, 0.5 + 0.3 * (pips - rivalTop - t.anticipate / 2)));
+      };
+      const gain = presidential ? hold(to) - hold(from) : share(to) - share(from);
       // A general seat also brings its share of any reserved seats decided by seats won here.
-      let v = region.seats * weight.get(track)! * (share(to) - share(from)) * (region.seats / meanSeats) ** t.seatBias;
+      let v = region.seats * weight.get(track)! * gain * (region.seats / meanSeats) ** t.seatBias;
       // Taking the lead: worth part of every region group this region belongs to.
       const leader = regionLeader(state, track);
       const top = leader ? steps(track, leader) : 0;

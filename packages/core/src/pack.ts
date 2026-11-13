@@ -20,6 +20,7 @@ export const PRESIDENTIAL_RULES: RulesConfig = {
   steps: 10,
   costGrowth: 1,
   memberPickEvery: 0,
+  runningMateTurn: 5,
 };
 
 export function defaultRules(gameType: GameType): RulesConfig {

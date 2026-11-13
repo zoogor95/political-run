@@ -105,6 +105,7 @@ export function incomeMultiplier(pack: MapPack, player: PlayerState, groupId: st
 export function grantIncome(pack: MapPack, state: GameState, events: TurnEvent[]): void {
   const ctrl = controllers(pack, state);
   for (const player of state.players) {
+    if (player.eliminated !== undefined) continue;
     player.money += pack.rules.baseIncome;
     const groups: Record<string, number> = {};
     for (const g of pack.groups) {

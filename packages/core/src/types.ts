@@ -28,6 +28,8 @@ export interface RulesConfig {
   turnCap: number;
   /** Every cost and income is rounded to a whole number of this (1,000: £1K, Rs 1K). Absent: 1,000. */
   moneyStep?: number;
+  /** Presidential: the turn on which each candidate picks a running mate (5). Running mates are never assigned to regions. */
+  runningMateTurn?: number;
 }
 
 export interface RegionDef {
@@ -136,6 +138,8 @@ export interface PlayerState {
   wallets: Record<string, number>;
   /** Total money spent so far, including money lost in conflicts. Used for tiebreaks. */
   spent: number;
+  /** Presidential: the turn on which this candidate was eliminated (fewest electoral votes with no majority). */
+  eliminated?: number;
 }
 
 /**

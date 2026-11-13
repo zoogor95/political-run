@@ -122,12 +122,19 @@ export function drawSeats(state: GameState, regionId: string, seats: number): Re
  * seats; the count itself draws them (countedSeats).
  */
 export function regionSeats(pack: MapPack, state: GameState): Record<string, Record<string, number>> {
+  if (pack.gameType === "presidential") return Object.fromEntries(pack.regions.map((r) => [r.id, leaderTakesAll(state, r.id, r.seats)]));
   return Object.fromEntries(pack.regions.map((r) => [r.id, state.luck ? expectedSeats(state, r.id, r.seats) : splitSeats(state, r.id, r.seats)]));
+}
+
+/** Presidential: all of a region's electoral votes go to its leader (nobody's, if nobody has a step there). */
+function leaderTakesAll(state: GameState, regionId: string, votes: number): Record<string, number> {
+  const leader = regionLeader(state, regionId);
+  return Object.fromEntries(regionRanking(state, regionId).map((id) => [id, id === leader ? votes : 0]));
 }
 
 /** Seats won in each region at the count: the pip-share split, or with the luck factor on, a draw. */
 export function countedSeats(pack: MapPack, state: GameState): Record<string, Record<string, number>> {
-  if (!state.luck) return regionSeats(pack, state);
+  if (!state.luck || pack.gameType === "presidential") return regionSeats(pack, state);
   return Object.fromEntries(pack.regions.map((r) => [r.id, drawSeats(state, r.id, r.seats)]));
 }
 
