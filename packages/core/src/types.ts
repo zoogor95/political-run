@@ -96,6 +96,11 @@ export interface MapPack {
   reservedSeats?: ReservedSeatsDef[];
   /** Points a custom candidate's bonuses may cost on this map (see custom.ts). */
   customBudget?: number;
+  /**
+   * Computer player settings for this map, on top of the defaults (see TUNING in ai-smart.ts). Maps differ: the right
+   * amount of randomness depends on how many regions there are to choose between. Set from the balance simulator.
+   */
+  aiTuning?: { normal?: { noise?: number }; hard?: { noise?: number } };
 }
 
 /** Match state. Plain JSON so it can be saved, sent over the network and replayed. */
