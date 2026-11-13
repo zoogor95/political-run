@@ -59,4 +59,12 @@ test("a whole Pakistan match: reserved seats are declared last and the count rea
   const reserved = night.calls.filter((c) => c.reserved).map((c) => c.regionId);
   expect(reserved).toEqual(["women-punjab", "women-sindh", "women-kp", "women-balochistan", "non-muslims"]);
   expect(night.calls.slice(-5).every((c) => c.reserved)).toBe(true);
+
+  // The seat map: every general seat drawn, and the reserved seat lists under it, all declared.
+  const map = page.getByTestId("seat-map");
+  await expect(map.locator(".seat-cell")).toHaveCount(266);
+  await expect(map.getByTestId("seat-reserved").locator("li")).toHaveCount(5);
+  await expect(map.getByTestId("seat-reserved").locator("i")).toHaveCount(70);
+  await page.getByTestId("result-group-sindh").click();
+  await expect(map.getByTestId("seat-lit").first()).toBeVisible();
 });
