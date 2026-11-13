@@ -74,3 +74,19 @@ describe("board specifics", () => {
     expect(load("in").notes.join(" ")).toMatch(/Survey of India/);
   });
 });
+
+describe("Pakistan result units", () => {
+  const board = JSON.parse(readFileSync(new URL("../maps/pk.json", import.meta.url), "utf8")) as Board & {
+    units: { id: string; name: string; region: string; seats: number; d: string; label: [number, number] }[];
+  };
+  const pack = JSON.parse(readFileSync(new URL("../packs/pk/pack.json", import.meta.url), "utf8")) as MapPack;
+
+  it("matches the pack's units exactly", () => {
+    expect(pack.units).toEqual(board.units.map(({ id, name, region, seats }) => ({ id, name, region, seats })));
+  });
+
+  it("covers every region's seats with drawn districts", () => {
+    for (const r of board.regions) expect(board.units.filter((u) => u.region === r.id).reduce((a, u) => a + u.seats, 0)).toBe(r.seats);
+    for (const u of board.units) expect(u.d).toMatch(/^M[\d.\- LZM]+Z$/);
+  });
+});

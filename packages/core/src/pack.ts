@@ -129,6 +129,23 @@ export function validatePack(pack: MapPack): PackIssue[] {
     if (d.group !== undefined && pack.groups.find((g) => g.id === d.group)?.kind !== "state") add(`${p}.group`, `must be a state group, not "${d.group}"`);
   });
 
+  const unitIds = new Set<string>();
+  const unitSeats = new Map<string, number>();
+  (pack.units ?? []).forEach((u, i) => {
+    const p = `units[${i}]`;
+    if (!ID.test(u.id)) add(`${p}.id`, "must be lowercase letters, digits and hyphens");
+    if (unitIds.has(u.id)) add(`${p}.id`, `duplicate id "${u.id}"`);
+    unitIds.add(u.id);
+    if (!u.name) add(`${p}.name`, "is required");
+    if (!regionIds.has(u.region)) add(`${p}.region`, `unknown region "${u.region}"`);
+    if (!Number.isInteger(u.seats) || u.seats < 1) add(`${p}.seats`, "must be a whole number of at least 1");
+    unitSeats.set(u.region, (unitSeats.get(u.region) ?? 0) + u.seats);
+  });
+  for (const [region, n] of unitSeats) {
+    const r = pack.regions.find((x) => x.id === region);
+    if (r && r.seats !== n) add("units", `units in "${region}" hold ${n} seats, not the region's ${r.seats}`);
+  }
+
   if (pack.customBudget !== undefined && (!Number.isInteger(pack.customBudget) || pack.customBudget < 1)) add("customBudget", "must be a whole number of at least 1");
 
   if (pack.aiPartyNames.length < 4) add("aiPartyNames", "needs at least 4 names, one per AI seat");

@@ -16,6 +16,7 @@ import {
   seedRng,
   splitSeats,
   totalSeats,
+  unitWinners,
   validatePack,
   type MapPack,
 } from "../src/index.js";
@@ -273,5 +274,58 @@ describe("reserved seats", () => {
       expect.arrayContaining(["reservedSeats[0].id", "reservedSeats[0].name", "reservedSeats[0].seats", "reservedSeats[0].group"]),
     );
     expect(validatePack(reservedPack)).toEqual([]);
+  });
+});
+
+describe("result units", () => {
+  // North's 40 seats come in four districts that each go to one party as a whole.
+  const unitPack: MapPack = {
+    ...testPack,
+    units: [
+      { id: "n-big", name: "Big", region: "north", seats: 20 },
+      { id: "n-mid", name: "Mid", region: "north", seats: 10 },
+      { id: "n-a", name: "A", region: "north", seats: 6 },
+      { id: "n-b", name: "B", region: "north", seats: 4 },
+    ],
+  };
+
+  it("validates: units must cover their region's seats exactly", () => {
+    expect(validatePack(unitPack)).toEqual([]);
+    const bad = { ...unitPack, units: unitPack.units!.slice(1) };
+    expect(validatePack(bad).map((i) => i.path)).toContain("units");
+  });
+
+  it("hands whole units out by share: the leader takes the biggest", () => {
+    const s = newMatch();
+    setSteps(s, "north", "a", 6); // 24 of 40 by share
+    setSteps(s, "north", "b", 4); // 16
+    expect(unitWinners(unitPack, s, "north")).toEqual({ "n-big": "a", "n-mid": "b", "n-a": "b", "n-b": "a" });
+    expect(regionSeats(unitPack, s).north).toEqual({ a: 24, b: 16, c: 0 });
+  });
+
+  it("can only match the share as closely as the units allow", () => {
+    const s = newMatch();
+    setSteps(s, "north", "a", 5); // 20
+    setSteps(s, "north", "b", 3); // 12
+    setSteps(s, "north", "c", 2); // 8
+    expect(unitWinners(unitPack, s, "north")).toEqual({ "n-big": "a", "n-mid": "b", "n-a": "c", "n-b": "b" });
+    expect(regionSeats(unitPack, s).north).toEqual({ a: 20, b: 14, c: 6 });
+  });
+
+  it("gives nobody anything where nobody campaigned, and leaves regions without units alone", () => {
+    const s = newMatch();
+    setSteps(s, "south", "a", 2);
+    expect(Object.values(unitWinners(unitPack, s, "north"))).toEqual([null, null, null, null]);
+    expect(regionSeats(unitPack, s).north).toEqual({ a: 0, b: 0, c: 0 });
+    expect(regionSeats(unitPack, s).south).toEqual(splitSeats(s, "south", 30));
+  });
+
+  it("election night and the count agree", () => {
+    const s = newMatch();
+    setSteps(s, "north", "a", 2);
+    setSteps(s, "north", "b", 7);
+    setSteps(s, "city", "c", 3);
+    const calls = electionCalls(unitPack, s);
+    expect(calls.find((c) => c.regionId === "north")!.seats).toEqual(countElection(unitPack, s).regionSeats.north);
   });
 });

@@ -29,6 +29,16 @@ export interface BoardRegion {
   small: boolean;
 }
 
+/** A result unit: part of a region that goes to one party as a whole on election night (Pakistan's districts). */
+export interface BoardUnit {
+  id: string;
+  name: string;
+  region: string;
+  seats: number;
+  d: string;
+  label: [number, number];
+}
+
 export interface Board {
   id: string;
   width: number;
@@ -41,6 +51,8 @@ export interface Board {
   areaBorders?: string;
   /** Land shown but not in play (Jammu and Kashmir on the Pakistan board). */
   greyed?: { d: string; label: [number, number]; name: string };
+  /** Result units, when a region's seats are won in whole blocks rather than one by one. */
+  units?: BoardUnit[];
   /** True when region seat counts are sample values, not real ones. */
   sampleSeats?: boolean;
   credits: string[];

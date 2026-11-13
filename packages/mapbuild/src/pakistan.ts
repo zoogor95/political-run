@@ -13,6 +13,7 @@ import type { GeometryCollection } from "topojson-specification";
 import {
   type Board,
   type BoardRegion,
+  type BoardUnit,
   type RegionFeature,
   type Shape,
   fitProjection,
@@ -131,6 +132,32 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
     };
   });
 
+  // Result units: districts, with districts that share a constituency joined so no seat is split between two units.
+  const uparent = projected.map((_, i) => i);
+  const ufind = (i: number): number => (uparent[i] === i ? i : (uparent[i] = ufind(uparent[i]!)));
+  for (const ds of constituencies) for (const i of ds) uparent[ufind(i)] = ufind(ds[0]!);
+  const useats = new Map<number, number>();
+  for (const ds of constituencies) useats.set(ufind(ds[0]!), (useats.get(ufind(ds[0]!)) ?? 0) + 1);
+  const regionId = (i: number) => divisionOf(i).toLowerCase().replace(/[^a-z]+/g, "-");
+  const kebab = (n: string) => n.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+  const unitRoots = [...new Set(projected.map((_, i) => ufind(i)))];
+  const units: BoardUnit[] = [];
+  for (const u of unitRoots) {
+    const members = projected.map((_, i) => i).filter((i) => ufind(i) === u);
+    const seatsHere = useats.get(u) ?? 0;
+    if (seatsHere === 0) {
+      // A district with no constituency of its own: drawn with its region's biggest unit (handled below).
+      continue;
+    }
+    const names = members.map((i) => fileName[i]!).sort();
+    const shape = mergeRegion(s, members, { speck: opts.speck, small: 0 });
+    units.push({ id: kebab(names[0]!), name: names.join(" & "), region: regionId(u), seats: seatsHere, d: shape.d, label: shape.label });
+  }
+  const unplaced = unitRoots.filter((u) => !useats.get(u));
+  if (unplaced.length) throw new Error(`Districts with no constituency: ${unplaced.map((u) => fileName[u]).join(", ")}`);
+  units.sort((a, b) => a.region.localeCompare(b.region) || b.seats - a.seats || a.id.localeCompare(b.id));
+  if (new Set(units.map((u) => u.id)).size !== units.length) throw new Error("Two result units share an id");
+
   const geoms = s.geometries;
   const areaBorders = tidyPath(
     geoPath()(
@@ -154,11 +181,13 @@ export function buildPakistan(districts: FeatureCollection, admin1: FeatureColle
     areaBorders,
     greyed: { d: tidyPath(geoPath()(gm)), label: [round(gl[0]!), round(gl[1]!)], name: "Jammu and Kashmir" },
     sampleSeats: false,
+    units,
     credits,
     notes: [
       `Areas: ${Object.entries(PROVINCE_NAME).map(([k, v]) => `${k} = ${v}`).join(", ")}.`,
       "Regions are divisions. Seats are the 266 general National Assembly seats of the Election Commission of Pakistan's 2023 delimitation; districts created since the boundary file was drawn count in the district that holds them.",
       "Jammu and Kashmir is shown grey and is not in play.",
+      "Election results are drawn by district: each district (districts that share a constituency are joined) goes to one party with all its seats.",
     ],
   };
 }

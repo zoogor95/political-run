@@ -706,5 +706,583 @@
       "seats": 10
     }
   ],
-  "customBudget": 10
+  "customBudget": 10,
+  "units": [
+    {
+      "id": "rahim-yar-khan",
+      "name": "Rahim Yar Khan",
+      "region": "bahawalpur",
+      "seats": 6
+    },
+    {
+      "id": "bahawalpur",
+      "name": "Bahawalpur",
+      "region": "bahawalpur",
+      "seats": 5
+    },
+    {
+      "id": "bahawalnagar",
+      "name": "Bahawalnagar",
+      "region": "bahawalpur",
+      "seats": 4
+    },
+    {
+      "id": "badin",
+      "name": "Badin",
+      "region": "banbhore",
+      "seats": 2
+    },
+    {
+      "id": "thatta",
+      "name": "Thatta",
+      "region": "banbhore",
+      "seats": 2
+    },
+    {
+      "id": "bannu",
+      "name": "Bannu",
+      "region": "bannu",
+      "seats": 1
+    },
+    {
+      "id": "lakki-marwat",
+      "name": "Lakki Marwat",
+      "region": "bannu",
+      "seats": 1
+    },
+    {
+      "id": "north-waziristan",
+      "name": "North Waziristan",
+      "region": "bannu",
+      "seats": 1
+    },
+    {
+      "id": "muzaffargarh",
+      "name": "Muzaffargarh",
+      "region": "dera-ghazi-khan",
+      "seats": 6
+    },
+    {
+      "id": "dera-ghazi-khan",
+      "name": "Dera Ghazi Khan",
+      "region": "dera-ghazi-khan",
+      "seats": 4
+    },
+    {
+      "id": "rajanpur",
+      "name": "Rajanpur",
+      "region": "dera-ghazi-khan",
+      "seats": 3
+    },
+    {
+      "id": "layyah",
+      "name": "Layyah",
+      "region": "dera-ghazi-khan",
+      "seats": 2
+    },
+    {
+      "id": "dera-ismail-khan",
+      "name": "Dera Ismail Khan & Tank",
+      "region": "dera-ismail-khan",
+      "seats": 3
+    },
+    {
+      "id": "south-waziristan",
+      "name": "South Waziristan",
+      "region": "dera-ismail-khan",
+      "seats": 1
+    },
+    {
+      "id": "faisalabad",
+      "name": "Faisalabad",
+      "region": "faisalabad",
+      "seats": 10
+    },
+    {
+      "id": "jhang",
+      "name": "Jhang",
+      "region": "faisalabad",
+      "seats": 5
+    },
+    {
+      "id": "toba-tek-singh",
+      "name": "Toba Tek Singh",
+      "region": "faisalabad",
+      "seats": 3
+    },
+    {
+      "id": "gujranwala",
+      "name": "Gujranwala",
+      "region": "gujranwala",
+      "seats": 6
+    },
+    {
+      "id": "sialkot",
+      "name": "Sialkot",
+      "region": "gujranwala",
+      "seats": 5
+    },
+    {
+      "id": "narowal",
+      "name": "Narowal",
+      "region": "gujranwala",
+      "seats": 2
+    },
+    {
+      "id": "gujrat",
+      "name": "Gujrat",
+      "region": "gujrat",
+      "seats": 4
+    },
+    {
+      "id": "mandi-bahauddin",
+      "name": "Mandi Bahauddin",
+      "region": "gujrat",
+      "seats": 2
+    },
+    {
+      "id": "hafizabad",
+      "name": "Hafizabad",
+      "region": "gujrat",
+      "seats": 1
+    },
+    {
+      "id": "abbottabad",
+      "name": "Abbottabad",
+      "region": "hazara",
+      "seats": 2
+    },
+    {
+      "id": "mansehra",
+      "name": "Mansehra",
+      "region": "hazara",
+      "seats": 2
+    },
+    {
+      "id": "battagram",
+      "name": "Battagram",
+      "region": "hazara",
+      "seats": 1
+    },
+    {
+      "id": "haripur",
+      "name": "Haripur",
+      "region": "hazara",
+      "seats": 1
+    },
+    {
+      "id": "kohistan",
+      "name": "Kohistan",
+      "region": "hazara",
+      "seats": 1
+    },
+    {
+      "id": "hyderabad",
+      "name": "Hyderabad",
+      "region": "hyderabad",
+      "seats": 3
+    },
+    {
+      "id": "dadu",
+      "name": "Dadu",
+      "region": "hyderabad",
+      "seats": 2
+    },
+    {
+      "id": "jamshoro",
+      "name": "Jamshoro",
+      "region": "hyderabad",
+      "seats": 1
+    },
+    {
+      "id": "matiari",
+      "name": "Matiari",
+      "region": "hyderabad",
+      "seats": 1
+    },
+    {
+      "id": "tando-allahyar",
+      "name": "Tando Allahyar",
+      "region": "hyderabad",
+      "seats": 1
+    },
+    {
+      "id": "tando-muhammad-khan",
+      "name": "Tando Muhammad Khan",
+      "region": "hyderabad",
+      "seats": 1
+    },
+    {
+      "id": "islamabad-capital-territory",
+      "name": "Islamabad Capital Territory",
+      "region": "islamabad",
+      "seats": 3
+    },
+    {
+      "id": "awaran",
+      "name": "Awaran & Lasbela",
+      "region": "kalat",
+      "seats": 1
+    },
+    {
+      "id": "kalat",
+      "name": "Kalat & Mastung",
+      "region": "kalat",
+      "seats": 1
+    },
+    {
+      "id": "khuzdar",
+      "name": "Khuzdar",
+      "region": "kalat",
+      "seats": 1
+    },
+    {
+      "id": "karachi",
+      "name": "Karachi",
+      "region": "karachi",
+      "seats": 22
+    },
+    {
+      "id": "hangu",
+      "name": "Hangu & Orakzai",
+      "region": "kohat",
+      "seats": 1
+    },
+    {
+      "id": "karak",
+      "name": "Karak",
+      "region": "kohat",
+      "seats": 1
+    },
+    {
+      "id": "kohat",
+      "name": "Kohat",
+      "region": "kohat",
+      "seats": 1
+    },
+    {
+      "id": "kurram",
+      "name": "Kurram",
+      "region": "kohat",
+      "seats": 1
+    },
+    {
+      "id": "lahore",
+      "name": "Lahore",
+      "region": "lahore",
+      "seats": 14
+    },
+    {
+      "id": "sheikhpura",
+      "name": "Sheikhpura",
+      "region": "lahore",
+      "seats": 6
+    },
+    {
+      "id": "kasur",
+      "name": "Kasur",
+      "region": "lahore",
+      "seats": 4
+    },
+    {
+      "id": "jacobabad",
+      "name": "Jacobabad & Kashmore & Shikarpur",
+      "region": "larkana",
+      "seats": 4
+    },
+    {
+      "id": "qambar-shahdadkot",
+      "name": "Qambar Shahdadkot",
+      "region": "larkana",
+      "seats": 4
+    },
+    {
+      "id": "barkhan",
+      "name": "Barkhan & Loralai & Musakhel",
+      "region": "loralai",
+      "seats": 1
+    },
+    {
+      "id": "gwadar",
+      "name": "Gwadar & Kech & Panjgur",
+      "region": "makran",
+      "seats": 2
+    },
+    {
+      "id": "swat",
+      "name": "Swat",
+      "region": "malakand",
+      "seats": 3
+    },
+    {
+      "id": "lower-dir",
+      "name": "Lower Dir",
+      "region": "malakand",
+      "seats": 2
+    },
+    {
+      "id": "bajaur",
+      "name": "Bajaur",
+      "region": "malakand",
+      "seats": 1
+    },
+    {
+      "id": "buner",
+      "name": "Buner",
+      "region": "malakand",
+      "seats": 1
+    },
+    {
+      "id": "chitral",
+      "name": "Chitral",
+      "region": "malakand",
+      "seats": 1
+    },
+    {
+      "id": "malakand",
+      "name": "Malakand",
+      "region": "malakand",
+      "seats": 1
+    },
+    {
+      "id": "shangla",
+      "name": "Shangla",
+      "region": "malakand",
+      "seats": 1
+    },
+    {
+      "id": "upper-dir",
+      "name": "Upper Dir",
+      "region": "malakand",
+      "seats": 1
+    },
+    {
+      "id": "mardan",
+      "name": "Mardan",
+      "region": "mardan",
+      "seats": 3
+    },
+    {
+      "id": "swabi",
+      "name": "Swabi",
+      "region": "mardan",
+      "seats": 2
+    },
+    {
+      "id": "mirpurkhas",
+      "name": "Mirpurkhas",
+      "region": "mirpur-khas",
+      "seats": 2
+    },
+    {
+      "id": "tharparkar",
+      "name": "Tharparkar",
+      "region": "mirpur-khas",
+      "seats": 2
+    },
+    {
+      "id": "umerkot",
+      "name": "Umerkot",
+      "region": "mirpur-khas",
+      "seats": 1
+    },
+    {
+      "id": "multan",
+      "name": "Multan",
+      "region": "multan",
+      "seats": 6
+    },
+    {
+      "id": "khanewal",
+      "name": "Khanewal",
+      "region": "multan",
+      "seats": 4
+    },
+    {
+      "id": "vihari",
+      "name": "Vihari",
+      "region": "multan",
+      "seats": 4
+    },
+    {
+      "id": "lodhran",
+      "name": "Lodhran",
+      "region": "multan",
+      "seats": 2
+    },
+    {
+      "id": "jafarabad",
+      "name": "Jafarabad & Jhal Magsi & Kachhi & Nasirabad",
+      "region": "naseerabad",
+      "seats": 2
+    },
+    {
+      "id": "peshawar",
+      "name": "Peshawar",
+      "region": "peshawar",
+      "seats": 5
+    },
+    {
+      "id": "charsadda",
+      "name": "Charsadda",
+      "region": "peshawar",
+      "seats": 2
+    },
+    {
+      "id": "nowshera",
+      "name": "Nowshera",
+      "region": "peshawar",
+      "seats": 2
+    },
+    {
+      "id": "khyber",
+      "name": "Khyber",
+      "region": "peshawar",
+      "seats": 1
+    },
+    {
+      "id": "mohmand",
+      "name": "Mohmand",
+      "region": "peshawar",
+      "seats": 1
+    },
+    {
+      "id": "quetta",
+      "name": "Quetta",
+      "region": "quetta",
+      "seats": 3
+    },
+    {
+      "id": "pishin",
+      "name": "Pishin",
+      "region": "quetta",
+      "seats": 1
+    },
+    {
+      "id": "qilla-abdullah",
+      "name": "Qilla Abdullah",
+      "region": "quetta",
+      "seats": 1
+    },
+    {
+      "id": "chagai",
+      "name": "Chagai & Kharan & Nushki",
+      "region": "rakhshan",
+      "seats": 1
+    },
+    {
+      "id": "rawalpindi",
+      "name": "Rawalpindi",
+      "region": "rawalpindi",
+      "seats": 7
+    },
+    {
+      "id": "attock",
+      "name": "Attock",
+      "region": "rawalpindi",
+      "seats": 2
+    },
+    {
+      "id": "chakwal",
+      "name": "Chakwal",
+      "region": "rawalpindi",
+      "seats": 2
+    },
+    {
+      "id": "jhelum",
+      "name": "Jhelum",
+      "region": "rawalpindi",
+      "seats": 2
+    },
+    {
+      "id": "okara",
+      "name": "Okara",
+      "region": "sahiwal",
+      "seats": 4
+    },
+    {
+      "id": "sahiwal",
+      "name": "Sahiwal",
+      "region": "sahiwal",
+      "seats": 3
+    },
+    {
+      "id": "pakpattan",
+      "name": "Pakpattan",
+      "region": "sahiwal",
+      "seats": 2
+    },
+    {
+      "id": "sargodha",
+      "name": "Sargodha",
+      "region": "sargodha",
+      "seats": 5
+    },
+    {
+      "id": "bhakkar",
+      "name": "Bhakkar",
+      "region": "sargodha",
+      "seats": 2
+    },
+    {
+      "id": "khushab",
+      "name": "Khushab",
+      "region": "sargodha",
+      "seats": 2
+    },
+    {
+      "id": "mianwali",
+      "name": "Mianwali",
+      "region": "sargodha",
+      "seats": 2
+    },
+    {
+      "id": "naushehro-feroze",
+      "name": "Naushehro Feroze",
+      "region": "shaheed-benazirabad",
+      "seats": 2
+    },
+    {
+      "id": "nawabshah",
+      "name": "Nawabshah",
+      "region": "shaheed-benazirabad",
+      "seats": 2
+    },
+    {
+      "id": "sanghar",
+      "name": "Sanghar",
+      "region": "shaheed-benazirabad",
+      "seats": 2
+    },
+    {
+      "id": "dera-bugti",
+      "name": "Dera Bugti & Kohlu & Sibi & Ziarat",
+      "region": "sibi",
+      "seats": 1
+    },
+    {
+      "id": "khairpur",
+      "name": "Khairpur",
+      "region": "sukkur",
+      "seats": 3
+    },
+    {
+      "id": "ghotki",
+      "name": "Ghotki",
+      "region": "sukkur",
+      "seats": 2
+    },
+    {
+      "id": "sukkur",
+      "name": "Sukkur",
+      "region": "sukkur",
+      "seats": 2
+    },
+    {
+      "id": "qilla-saifullah",
+      "name": "Qilla Saifullah & Zhob",
+      "region": "zhob",
+      "seats": 1
+    }
+  ]
 }

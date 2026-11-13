@@ -1,4 +1,4 @@
-import type { GameState, MapPack, Meter, ReservedSeatsDef } from "./types.js";
+import type { GameState, MapPack, Meter, ReservedSeatsDef, UnitDef } from "./types.js";
 
 export function meterOf(state: GameState, regionId: string, playerId: string): Meter {
   const m = state.meters[regionId]?.[playerId];
@@ -71,9 +71,58 @@ export function splitSeats(state: GameState, regionId: string, seats: number): R
   return Object.fromEntries(ranked.map((id, i) => [id, shares[i]!]));
 }
 
+/** A region's result units, biggest first (ties by id); empty when its seats are split one by one. */
+export function regionUnits(pack: MapPack, regionId: string): UnitDef[] {
+  let byRegion = unitsByRegion.get(pack);
+  if (!byRegion) {
+    byRegion = new Map();
+    for (const u of pack.units ?? []) byRegion.set(u.region, [...(byRegion.get(u.region) ?? []), u]);
+    for (const list of byRegion.values()) list.sort((a, b) => b.seats - a.seats || (a.id < b.id ? -1 : 1));
+    unitsByRegion.set(pack, byRegion);
+  }
+  return byRegion.get(regionId) ?? [];
+}
+
+const unitsByRegion = new WeakMap<MapPack, Map<string, UnitDef[]>>();
+
+/**
+ * Who takes each of a region's units. Seats are first shared out by pip share (splitSeats); then, biggest unit first,
+ * each unit goes to the player furthest short of that share, so the leader takes the biggest unit. Ties go to the
+ * higher standing. Players with no pips take nothing; with nobody campaigning every unit is null.
+ */
+export function unitWinners(pack: MapPack, state: GameState, regionId: string): Record<string, string | null> {
+  const region = pack.regions.find((r) => r.id === regionId)!;
+  const entitled = splitSeats(state, regionId, region.seats);
+  const ranked = Object.keys(entitled).filter((id) => meterOf(state, regionId, id).steps > 0);
+  const short = new Map(ranked.map((id) => [id, entitled[id]!]));
+  const out: Record<string, string | null> = {};
+  for (const u of regionUnits(pack, regionId)) {
+    let best: string | null = null;
+    for (const id of ranked) if (best === null || short.get(id)! > short.get(best)!) best = id;
+    out[u.id] = best;
+    if (best !== null) short.set(best, short.get(best)! - u.seats);
+  }
+  return out;
+}
+
+/** Seats each player wins in a region: split one by one, or in whole units where the region has them. */
+export function wonInRegion(pack: MapPack, state: GameState, regionId: string): Record<string, number> {
+  const region = pack.regions.find((r) => r.id === regionId)!;
+  const units = regionUnits(pack, regionId);
+  const split = splitSeats(state, regionId, region.seats);
+  if (units.length === 0) return split;
+  const winners = unitWinners(pack, state, regionId);
+  for (const id of Object.keys(split)) split[id] = 0;
+  for (const u of units) {
+    const w = winners[u.id];
+    if (w) split[w] = (split[w] ?? 0) + u.seats;
+  }
+  return split;
+}
+
 /** Seats each player wins in each region if the election were held now. */
 export function regionSeats(pack: MapPack, state: GameState): Record<string, Record<string, number>> {
-  return Object.fromEntries(pack.regions.map((r) => [r.id, splitSeats(state, r.id, r.seats)]));
+  return Object.fromEntries(pack.regions.map((r) => [r.id, wonInRegion(pack, state, r.id)]));
 }
 
 /** The regions whose general seats decide a set of reserved seats. */

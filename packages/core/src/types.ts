@@ -65,6 +65,17 @@ export interface ReservedSeatsDef {
   group?: string;
 }
 
+/**
+ * A result unit: part of a region won as a whole (Pakistan's districts). A region with units hands out its seats in whole
+ * units: each party's proportional share decides which units it takes (see unitWinners).
+ */
+export interface UnitDef {
+  id: string;
+  name: string;
+  region: string;
+  seats: number;
+}
+
 export interface CandidateDef {
   id: string;
   name: string;
@@ -94,6 +105,8 @@ export interface MapPack {
   reservedSeats?: ReservedSeatsDef[];
   /** Points a custom candidate's bonuses may cost on this map (see custom.ts). */
   customBudget?: number;
+  /** Result units; a region with none splits its seats one by one. */
+  units?: UnitDef[];
 }
 
 /** Match state. Plain JSON so it can be saved, sent over the network and replayed. */
