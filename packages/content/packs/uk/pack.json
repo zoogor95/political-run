@@ -10,7 +10,7 @@
     "costGrowth": 1.1,
     "costClampMin": 0.5,
     "costClampMax": 1.5,
-    "baseIncome": 250000,
+    "baseIncome": 175000,
     "memberPickEvery": 5,
     "memberSharePct": 20,
     "freePipEvery": 3,
