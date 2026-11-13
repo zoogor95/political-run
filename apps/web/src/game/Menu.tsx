@@ -6,19 +6,39 @@ import { loadCustoms, useCustoms } from "./customs";
 import { MAPS, isMapId, map, mapDetail, selectMap, type MapId } from "./model";
 import { Portrait, toAvatar } from "./Portrait";
 import { useOwns } from "./store";
+import { tutorialDone } from "./tutorial";
 import { loadMatch } from "./saves";
 import { COLORS, EMBLEMS, EMBLEM_NAME, aiSeat, checkConfig, defaultConfig, humanSeat, type MatchConfig, type Mode, type Seat } from "./setup";
 import { updateSettings, useSettings } from "./settings";
 import { applyVolumes, play, startMusic, stopMusic } from "./audio";
 
-export function MainMenu({ onContinue, onNew, onSettings }: { onContinue: () => void; onNew: (mode: Mode) => void; onSettings: () => void }) {
+export function MainMenu({
+  onContinue,
+  onNew,
+  onTutorial,
+  onSettings,
+}: {
+  onContinue: () => void;
+  onNew: (mode: Mode) => void;
+  onTutorial: () => void;
+  onSettings: () => void;
+}) {
   const save = loadMatch();
+  // New players see Learn to play first; once it's done or skipped, it moves down the list.
+  const newcomer = !tutorialDone() && !save;
+  const learn = (
+    <button type="button" className={`menu-big${newcomer ? " primary" : ""}`} onClick={onTutorial} data-testid="learn">
+      Learn to play
+      <small>{newcomer ? "New here? A guided first match, about 5 minutes" : "A guided match against one easy party"}</small>
+    </button>
+  );
   const when = save ? new Date(save.savedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";
   return (
     <main className="menu" data-testid="main-menu">
       <h1>Majority Map</h1>
       <p className="tagline">A cartoon election strategy game</p>
       <div className="menu-buttons">
+        {newcomer && learn}
         {save && (
           <button type="button" className="menu-big primary" onClick={onContinue} data-testid="continue-match">
             Continue match
@@ -35,6 +55,7 @@ export function MainMenu({ onContinue, onNew, onSettings }: { onContinue: () => 
           Pass and play
           <small>2 to 5 players on one device</small>
         </button>
+        {!newcomer && learn}
         <button type="button" className="menu-big" onClick={onSettings} data-testid="open-settings">
           Settings
         </button>

@@ -22,6 +22,8 @@ export interface MatchConfig {
   seats: Seat[];
   /** Custom candidates leading a party, carried with the match so saves keep them. */
   customs?: CustomCandidate[];
+  /** The Learn to play match: the coach runs over it. */
+  tutorial?: boolean;
 }
 
 /** The colour palette from the designs: colours are first come, first served. */

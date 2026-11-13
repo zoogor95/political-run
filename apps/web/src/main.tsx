@@ -6,6 +6,7 @@ import { MainMenu, SettingsPanel, SetupScreen } from "./game/Menu";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
 import { isMapId, map, selectMap } from "./game/model";
+import { restartTutorial, tutorialConfig } from "./game/tutorial";
 import { useSettings } from "./game/settings";
 import type { GameStart } from "./game/useGame";
 import { Lab } from "./Lab";
@@ -45,6 +46,12 @@ function App() {
             if (!save) return;
             selectMap(isMapId(save.state.packId) ? save.state.packId : "uk", save.config.customs ?? []);
             setScreen({ name: "game", start: { save }, key: Date.now() });
+          }}
+          onTutorial={() => {
+            selectMap("uk");
+            restartTutorial();
+            clearSave();
+            setScreen({ name: "game", start: { config: tutorialConfig() }, key: Date.now() });
           }}
           onNew={(mode) => {
             selectMap(map.id); // the setup screen starts from the map's own leaders

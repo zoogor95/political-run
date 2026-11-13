@@ -6,6 +6,7 @@ import { useSettings } from "./settings";
 import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
 import { GroupsPanel, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
+import { Coach } from "./Coach";
 import { useGame, type GameApi, type GameStart } from "./useGame";
 
 declare global {
@@ -56,6 +57,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const [nightPhase, setNightPhase] = useState<NightPhase>("suspense");
   const [called, setCalled] = useState(0);
   const [replay, setReplay] = useState(0);
+  const [coaching, setCoaching] = useState(() => game.config.tutorial === true);
   useEffect(() => {
     if (!onNight) return;
     setNightPhase("suspense");
@@ -170,7 +172,10 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
       )}
       {game.secondRound && <div className="banner">Tie for most seats! Second round: everyone loses 5 pips in every region and the campaign goes on.</div>}
       <main className="game-body">
-        <div className="board" ref={host} data-testid="board" />
+        <div className="board-wrap">
+          <div className="board" ref={host} data-testid="board" />
+          {coaching && game.stage !== "results" && <Coach context={{ game, selected, tab }} onClose={() => setCoaching(false)} />}
+        </div>
         <aside className="panel game-panel">
           {game.stage === "results" && night ? (
             <ResultsPanel game={game} replay={replay} onReplay={setReplay} />
