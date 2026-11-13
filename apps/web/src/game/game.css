@@ -1889,3 +1889,155 @@
 .ach-toast b {
   font: 400 20px "Lilita One", sans-serif;
 }
+
+/* Seat map: election night and results. Covers the campaign board, which stays mounted underneath. */
+.board.under {
+  visibility: hidden;
+}
+
+.seat-map {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  box-sizing: border-box;
+  background: var(--cream);
+}
+
+.seat-map.night {
+  padding-top: 96px;
+}
+
+.seat-map svg {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.seat-cell {
+  stroke: #fffaf0;
+  stroke-width: 0.6;
+  transition: fill 0.35s ease;
+}
+
+.seat-map[data-kind="units"] .seat-cell {
+  stroke-width: 0.4;
+}
+
+.seat-grey {
+  fill: #d9d2bf;
+  stroke: #fffaf0;
+  stroke-width: 0.6;
+}
+
+.seat-region {
+  transition: opacity 0.3s ease;
+}
+
+.seat-region.dim {
+  opacity: 0.35;
+}
+
+.seat-border {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.seat-border.lit {
+  stroke: var(--ink);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 3px var(--gold)) drop-shadow(0 0 3px var(--gold));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-cell,
+  .seat-region {
+    transition: none;
+  }
+}
+
+.seat-reserved {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  font-size: 12px;
+}
+
+.seat-reserved li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.3s ease;
+}
+
+.seat-reserved li.dim {
+  opacity: 0.35;
+}
+
+.seat-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-width: 180px;
+}
+
+.seat-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  border: 1px solid rgba(43, 33, 24, 0.35);
+}
+
+.seat-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  font: 800 13px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--ink);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.result-groups {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-groups button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.result-groups button[aria-pressed="true"] {
+  outline: 3px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.rg-seats {
+  color: var(--muted);
+  text-align: right;
+}

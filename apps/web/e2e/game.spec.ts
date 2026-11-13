@@ -231,6 +231,36 @@ test("election night ending in a hung parliament forms a coalition government", 
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
 });
 
+test("the seat map fills as regions are declared and lights up the called region and picked groups", async ({ page }) => {
+  await toElectionNight(page, "hung");
+  await expect(page.getByTestId("call-banner")).toContainText("North East");
+  const map = page.getByTestId("seat-map");
+  await expect(map).toBeVisible();
+  await expect(map.locator('[data-region="ne"]')).toHaveAttribute("data-called", "true");
+  await expect(map.locator(".seat-region.dim")).toHaveCount(11); // everything but the region being called
+  await expect(map.locator(".seat-cell")).toHaveCount(650); // one hex per seat
+  await page.getByTestId("night-skip").click();
+  await page.getByTestId("night-done").click();
+
+  await expect(map).toBeVisible();
+  await expect(map.locator('[data-called="false"]')).toHaveCount(0);
+  await expect(map.locator(".seat-region.dim")).toHaveCount(0);
+  const north = page.getByTestId("result-group-north");
+  await expect(north).toContainText("Tea Break Party");
+  await north.click();
+  await expect(north).toHaveAttribute("aria-pressed", "true");
+  await expect(map.locator(".seat-region.dim")).toHaveCount(9); // the North is three regions
+  await expect(map.getByTestId("seat-lit")).toHaveCount(3);
+  await north.click();
+  await expect(map.locator(".seat-region.dim")).toHaveCount(0);
+
+  await page.getByTestId("seatmap-toggle").click();
+  await expect(map).toHaveCount(0);
+  await expect(page.getByTestId("board")).not.toHaveClass(/under/);
+  await page.getByTestId("seatmap-toggle").click();
+  await expect(page.getByTestId("seat-map")).toBeVisible();
+});
+
 test("a tie for most seats starts a second round that plays through to a result", async ({ page }) => {
   test.setTimeout(180_000); // a whole second round, recaps included
   await toElectionNight(page, "tie");

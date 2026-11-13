@@ -73,14 +73,16 @@ const levels = args.get("lineup")?.split(",") as AiLevel[] | undefined;
 if (vs) {
   const against = args.get("against") ?? "{}";
   const r = versusResult(await playAll(versus(pack, JSON.parse(vs) as Partial<Tuning>, JSON.parse(against) as Partial<Tuning>, games, seed)));
-  console.log(`${vs} vs ${against}: wins ${(r.share * 100).toFixed(1)}% ± ${(r.margin * 100).toFixed(1)} over ${games} games, ${r.turns.toFixed(1)} turns`);
+  console.log(`${vs} vs ${against}: wins ${(r.share * 100).toFixed(1)}% ± ${(r.margin * 100).toFixed(1)} over ${games} games, ${r.turns.toFixed(1)} turns, ${(r.lost * 100).toFixed(0)}% lost to clashes`);
 } else if (levels) {
   const tune = args.get("tune");
   const personalities = args.get("personalities") !== "off";
-  const r = lineupResult(levels, await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined, personalities)));
+  const records = await playAll(lineup(pack, levels, games, seed, tune ? (JSON.parse(tune) as Partial<Tuning>) : undefined, personalities));
+  const r = lineupResult(levels, records);
   const even = (l: AiLevel) => levels.filter((x) => x === l).length / levels.length;
   const parts = (Object.entries(r.share) as [AiLevel, number][]).map(([l, s]) => `${l} ${(s * 100).toFixed(1)}% (even ${(even(l) * 100).toFixed(0)}%)`);
-  console.log(`${levels.join(",")}${personalities ? "" : " (no personalities)"}: ${parts.join(", ")} over ${games} games; ${(r.lost * 100).toFixed(1)}% of spending lost to clashes`);
+  const turns = records.reduce((a, x) => a + x.turns, 0) / records.length;
+  console.log(`${levels.join(",")}${personalities ? "" : " (no personalities)"}: ${parts.join(", ")} over ${games} games, ${turns.toFixed(1)} turns, ${(r.lost * 100).toFixed(0)}% lost to clashes`);
 } else {
   const out = new URL(args.get("out") ?? `docs/balance/${packId}.md`, root);
   const list = schedule(pack, games, seed);

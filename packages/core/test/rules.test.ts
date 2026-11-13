@@ -13,13 +13,14 @@ import { newMatch, richen, setSteps, testPack as pack } from "./fixtures.js";
 
 describe("step costs", () => {
   it("each Parliamentary step costs 1.1x the previous one, with the candidate's bonus applied", () => {
-    // GDD region card: London, base £20K, a -10% cost bonus: step 10 is £42.4K and step 11 is £46.7K.
+    // GDD region card: London, base £20K, a -10% cost bonus: step 10 is £42.4K and step 11 is £46.7K, rounded to the
+    // nearest £1K like every cost: £42K and £47K.
     const s = newMatch();
     const ann = s.players[0]!; // Ann: +10% Capital, so City steps are 10% cheaper
     expect(costMultiplier(pack, ann, "city")).toBeCloseTo(0.9);
-    expect(stepCost(pack, ann, "city", 10)).toBe(42_443);
-    expect(stepCost(pack, ann, "city", 11)).toBe(46_687);
-    expect(moveCost(pack, ann, "city", 9, 11)).toBe(42_443 + 46_687);
+    expect(stepCost(pack, ann, "city", 10)).toBe(42_000);
+    expect(stepCost(pack, ann, "city", 11)).toBe(47_000);
+    expect(moveCost(pack, ann, "city", 9, 11)).toBe(42_000 + 47_000);
   });
 
   it("adds modifiers from every group a region belongs to", () => {

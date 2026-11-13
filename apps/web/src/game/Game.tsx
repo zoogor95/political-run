@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BoardView } from "@majority-map/board";
+import { regionSeats, reservedScope } from "@majority-map/core";
 import { board, boardStyles, electionStyles, pack, playerOf, trackName } from "./model";
 import { play } from "./audio";
 import { useSettings } from "./settings";
@@ -7,6 +8,7 @@ import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
 import { GroupsPanel, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { Coach } from "./Coach";
+import { SeatMap } from "./SeatMap";
 import { useGame, type GameApi, type GameStart } from "./useGame";
 
 declare global {
@@ -56,8 +58,13 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const onNight = game.stage === "election" && night !== null;
   const [nightPhase, setNightPhase] = useState<NightPhase>("suspense");
   const [called, setCalled] = useState(0);
-  const [replay, setReplay] = useState(0);
+  // The results' replay slider: null means the final result, so the results open on it without waiting for an effect.
+  const [replayAt, setReplay] = useState<number | null>(null);
+  const replay = replayAt ?? game.boards.length - 1;
   const [coaching, setCoaching] = useState(() => game.config.tutorial === true);
+  // Election night and results show the seat map; results can switch back to the campaign board.
+  const [seatView, setSeatView] = useState(true);
+  const [litGroup, setLitGroup] = useState<string | null>(null);
   useEffect(() => {
     if (!onNight) return;
     setNightPhase("suspense");
@@ -79,7 +86,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     return () => clearTimeout(t);
   }, [onNight, night, nightPhase, called]);
   useEffect(() => {
-    if (game.stage === "results") setReplay(game.boards.length - 1);
+    if (game.stage === "results") setReplay(null);
   }, [game.stage, game.boards.length]);
   const skipNight = useCallback(() => {
     if (!night) return;
@@ -102,6 +109,34 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     return Object.fromEntries(board.regions.map((r) => [r.id, shown.has(r.id) ? after[r.id]! : before[r.id]!]));
   }, [recapping, report, recapRegions, recapIndex, game.state, game.plan, highlight, onNight, night, called, game.stage, game.boards, replay]);
   const endBreaking = useCallback(() => setBreakingDone(true), []);
+
+  // The seat map: regions fill as they are declared; in the results, the replay slider shows the seats each turn's board
+  // would have won.
+  const results = game.stage === "results" && night !== null;
+  const showSeats = (onNight || results) && seatView;
+  const seatMap = useMemo(() => {
+    if (!night || !(onNight || results)) return null;
+    const finalBoard = !results || replay >= game.boards.length - 1;
+    const shown = onNight ? night.calls.slice(0, called) : night.calls;
+    if (!finalBoard) return { state: game.boards[replay]!, seats: regionSeats(pack, game.boards[replay]!), reservedWon: {} as Record<string, Record<string, number>> };
+    const seats: Record<string, Record<string, number>> = {};
+    const reservedWon: Record<string, Record<string, number>> = {};
+    for (const c of shown) (c.reserved ? reservedWon : seats)[c.regionId] = c.seats;
+    return { state: night.state, seats, reservedWon };
+  }, [night, onNight, results, called, replay, game.boards]);
+  const nightCall = onNight && nightPhase === "calling" && called > 0 ? night.calls[called - 1]! : null;
+  const seatHighlight = useMemo(() => {
+    if (nightCall?.reserved) {
+      const def = pack.reservedSeats?.find((d) => d.id === nightCall.regionId);
+      return [nightCall.regionId, ...(def ? reservedScope(pack, def) : [])];
+    }
+    if (nightCall) return [nightCall.regionId];
+    if (results && litGroup) return pack.groups.find((g) => g.id === litGroup)?.regions ?? [];
+    return [];
+  }, [nightCall, results, litGroup]);
+  useEffect(() => {
+    if (!results) setLitGroup(null);
+  }, [results]);
 
   // Sound cues: submitting, BREAKING cards, election calls and a majority.
   useEffect(() => {
@@ -173,12 +208,29 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
       {game.secondRound && <div className="banner">Tie for most seats! Second round: everyone loses 5 pips in every region and the campaign goes on.</div>}
       <main className="game-body">
         <div className="board-wrap">
-          <div className="board" ref={host} data-testid="board" />
+          <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
+          {showSeats && seatMap && (
+            <SeatMap
+              state={seatMap.state}
+              seats={seatMap.seats}
+              highlight={seatHighlight}
+              night={onNight}
+              reserved={(pack.reservedSeats ?? []).map((d) => ({ ...d, ...(seatMap.reservedWon[d.id] ? { won: seatMap.reservedWon[d.id]! } : {}) }))}
+            />
+          )}
+          {results && (
+            <button type="button" className="seat-toggle" onClick={() => setSeatView((v) => !v)} aria-pressed={seatView} data-testid="seatmap-toggle">
+              {seatView ? "Show the campaign board" : "Show the seat map"}
+            </button>
+          )}
           {coaching && game.stage !== "results" && <Coach context={{ game, selected, tab }} onClose={() => setCoaching(false)} />}
         </div>
         <aside className="panel game-panel">
           {game.stage === "results" && night ? (
-            <ResultsPanel game={game} replay={replay} onReplay={setReplay} />
+            <ResultsPanel game={game} replay={replay} onReplay={setReplay} litGroup={litGroup} onGroup={(id) => {
+              setLitGroup((g) => (g === id ? null : id));
+              setSeatView(true);
+            }} />
           ) : onNight ? (
             <section data-testid="night-log">
               <h3>Declared so far</h3>

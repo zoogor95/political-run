@@ -83,7 +83,8 @@ export function money(n: number): string {
   // A symbol of letters (Rs) gets a space: "Rs 2.50M"; a sign (£) doesn't: "£250K".
   const c = /^[A-Za-z]/.test(pack.currency) ? `${pack.currency} ` : pack.currency;
   if (a >= 1_000_000) return `${sign}${c}${(a / 1_000_000).toFixed(2)}M`;
-  if (a >= 1000) return `${sign}${c}${(a / 1000).toFixed(a >= 100_000 ? 0 : 1)}K`;
+  // Costs and incomes are whole thousands, so thousands show without a decimal: £17K.
+  if (a >= 1000) return `${sign}${c}${(a / 1000).toFixed(a >= 100_000 || a % 1000 === 0 ? 0 : 1)}K`;
   return `${sign}${c}${a}`;
 }
 

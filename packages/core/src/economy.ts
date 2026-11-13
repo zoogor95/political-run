@@ -1,4 +1,4 @@
-import { groupModifier } from "./costs.js";
+import { groupModifier, roundMoney } from "./costs.js";
 import { meterOf, regionLeader, regionRanking } from "./standing.js";
 import type { GameState, GroupDef, MapPack, PlayerState, TurnEvent } from "./types.js";
 
@@ -109,7 +109,7 @@ export function grantIncome(pack: MapPack, state: GameState, events: TurnEvent[]
     const groups: Record<string, number> = {};
     for (const g of pack.groups) {
       if (ctrl[g.id] !== player.id) continue;
-      const amount = Math.round(g.income * incomeMultiplier(pack, player, g.id));
+      const amount = roundMoney(pack, g.income * incomeMultiplier(pack, player, g.id));
       player.wallets[g.id] = (player.wallets[g.id] ?? 0) + amount;
       groups[g.id] = amount;
     }

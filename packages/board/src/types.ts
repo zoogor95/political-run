@@ -9,6 +9,16 @@ export interface BoardRegion {
   small: boolean;
 }
 
+/** A drawn piece of the results map holding some of a region's seats (a constituency holds one). */
+export interface BoardUnit {
+  id: string;
+  name: string;
+  region: string;
+  seats: number;
+  d: string;
+  label: [number, number];
+}
+
 export interface BoardData {
   id: string;
   width: number;
@@ -19,6 +29,8 @@ export interface BoardData {
   areaBorders?: string;
   greyed?: { d: string; label: [number, number]; name: string };
   sampleSeats?: boolean;
+  /** Real shapes drawn on the results map in place of seat hexes. */
+  units?: BoardUnit[];
   credits: string[];
   notes: string[];
 }

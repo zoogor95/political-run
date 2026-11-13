@@ -200,16 +200,21 @@ export function lineupResult(levels: AiLevel[], records: MatchRecord[]): LineupR
     wins[level] = (wins[level] ?? 0) + 1;
   }
   const share = Object.fromEntries(Object.entries(wins).map(([l, n]) => [l, n / records.length]));
-  const spent = records.reduce((a, r) => a + r.spent.reduce((x, y) => x + y, 0), 0);
-  const lost = records.reduce((a, r) => a + r.lost.reduce((x, y) => x + y, 0), 0);
-  return { levels, games: records.length, share, lost: spent ? lost / spent : 0 };
+  return { levels, games: records.length, share, lost: lostShare(records) };
 }
 
 /** Side A's share of wins in a versus schedule, with a 95% margin of error. */
-export function versusResult(records: MatchRecord[]): { share: number; margin: number; turns: number } {
+export function versusResult(records: MatchRecord[]): { share: number; margin: number; turns: number; lost: number } {
   const wins = records.filter((r, i) => r.ranking[0] === (i % 2 === 0 ? 0 : 1)).length;
   const share = wins / records.length;
-  return { share, margin: 1.96 * Math.sqrt((share * (1 - share)) / records.length), turns: records.reduce((a, r) => a + r.turns, 0) / records.length };
+  return { share, margin: 1.96 * Math.sqrt((share * (1 - share)) / records.length), turns: records.reduce((a, r) => a + r.turns, 0) / records.length, lost: lostShare(records) };
+}
+
+/** Share of all money spent in these matches that was lost to clashes. */
+export function lostShare(records: MatchRecord[]): number {
+  const spent = records.reduce((a, r) => a + r.spent.reduce((x, y) => x + y, 0), 0);
+  const lost = records.reduce((a, r) => a + r.lost.reduce((x, y) => x + y, 0), 0);
+  return spent ? lost / spent : 0;
 }
 
 /**

@@ -15,7 +15,8 @@
     "memberSharePct": 20,
     "freePipEvery": 3,
     "secondRoundPipLoss": 5,
-    "turnCap": 40
+    "turnCap": 40,
+    "moneyStep": 1000
   },
   "regions": [
     {

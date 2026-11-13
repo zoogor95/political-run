@@ -119,7 +119,19 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone, you }:
   );
 }
 
-export function ResultsPanel({ game, replay, onReplay }: { game: GameApi; replay: number; onReplay: (turn: number) => void }) {
+export function ResultsPanel({
+  game,
+  replay,
+  onReplay,
+  litGroup,
+  onGroup,
+}: {
+  game: GameApi;
+  replay: number;
+  onReplay: (turn: number) => void;
+  litGroup: string | null;
+  onGroup: (groupId: string) => void;
+}) {
   const night = game.election!;
   const s = night.state;
   const result = night.result;
@@ -196,6 +208,33 @@ export function ResultsPanel({ game, replay, onReplay }: { game: GameApi; replay
           ))}
         </tbody>
       </table>
+
+      <h3>Groups on the map</h3>
+      <p className="small muted">Pick a group to show its regions on the seat map.</p>
+      <ul className="result-groups" data-testid="result-groups">
+        {pack.groups
+          .filter((g) => g.kind === "state")
+          .map((g) => {
+            const won: Record<string, number> = {};
+            for (const r of g.regions) for (const [id, n] of Object.entries(result.regionSeats[r] ?? {})) won[id] = (won[id] ?? 0) + n;
+            const top = Object.entries(won)
+              .filter(([, n]) => n > 0)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3);
+            const owner = ctrl[g.id];
+            return (
+              <li key={g.id}>
+                <button type="button" aria-pressed={litGroup === g.id} onClick={() => onGroup(g.id)} data-testid={`result-group-${g.id}`}>
+                  <span className="rg-name">
+                    <i className="chip" style={{ background: owner ? partyColor(s, owner) : "#fff" }} title={owner ? `Held by ${partyName(s, owner)}` : "Nobody holds it"} />
+                    {g.name}
+                  </span>
+                  <span className="rg-seats">{top.map(([id, n]) => `${partyName(s, id)} ${n}`).join(" · ") || "No seats won"}</span>
+                </button>
+              </li>
+            );
+          })}
+      </ul>
 
       <h3>{game.solo ? "Your match" : `${you.party.name}'s match`}</h3>
       <div className="stats" data-testid="stats">
