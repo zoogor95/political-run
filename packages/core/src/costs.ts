@@ -45,9 +45,20 @@ export function trackBaseCost(pack: MapPack, trackId: string): number {
   throw new Error(`Unknown region or national group "${trackId}"`);
 }
 
-/** Cost of one step (step 1 is the first) for a player on a track, rounded to whole currency units. */
+/** The pack's money step: every cost and income is a whole number of it. */
+export function moneyStep(pack: MapPack): number {
+  return pack.rules.moneyStep ?? 1000;
+}
+
+/** Rounds an amount of money to the nearest money step (1K). */
+export function roundMoney(pack: MapPack, amount: number): number {
+  const step = moneyStep(pack);
+  return Math.round(amount / step) * step;
+}
+
+/** Cost of one step (step 1 is the first) for a player on a track, to the nearest 1K and never less than 1K. */
 export function stepCost(pack: MapPack, player: PlayerState, trackId: string, step: number): number {
-  return Math.round(trackBaseCost(pack, trackId) * costMultiplier(pack, player, trackId) * pack.rules.costGrowth ** (step - 1));
+  return Math.max(moneyStep(pack), roundMoney(pack, trackBaseCost(pack, trackId) * costMultiplier(pack, player, trackId) * pack.rules.costGrowth ** (step - 1)));
 }
 
 /** Cost of moving from one step to a higher target step. */

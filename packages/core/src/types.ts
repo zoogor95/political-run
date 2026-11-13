@@ -26,6 +26,8 @@ export interface RulesConfig {
   secondRoundPipLoss: number;
   /** Safety cap: the campaign goes to the election after this turn even if not every region is in contention. */
   turnCap: number;
+  /** Every cost and income is rounded to a whole number of this (1,000: £1K, Rs 1K). Absent: 1,000. */
+  moneyStep?: number;
 }
 
 export interface RegionDef {

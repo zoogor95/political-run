@@ -74,6 +74,12 @@ describe("national groups", () => {
 });
 
 describe("income", () => {
+  it("every step cost and income is a whole number of the money step", () => {
+    const s = newMatch();
+    for (let step = 1; step <= 15; step++) for (const t of ["north", "south", "city", "unions"]) expect(stepCost(pack, s.players[1]!, t, step) % 1000).toBe(0);
+    expect(stepCost({ ...pack, regions: pack.regions.map((r) => ({ ...r, baseCost: 1 })) }, s.players[0]!, "north", 1)).toBe(1000); // never below 1K
+  });
+
   it("pays base money plus each group controlled, adjusted by the player's modifier, into that group's wallet", () => {
     const s = newMatch();
     richen(s, 1_000_000);
@@ -88,13 +94,13 @@ describe("income", () => {
     expect(events).toContainEqual({ type: "income", playerId: "a", base: 250_000, groups: { capital: 55_000, mainland: 50_000 } });
   });
 
-  it("GDD example: +25% turns 50K of income into 62.5K", () => {
+  it("GDD example: +25% turns 50K of income into 62.5K, rounded to the nearest 1K: 63K", () => {
     const s = newMatch();
     s.players[0]!.leaderId = "cat"; // +50% Capital
     s.players[0]!.members.push({ candidateId: "bob", regionId: null, assignedTurn: null }); // nothing on Capital
     const half = { ...pack, candidates: pack.candidates.map((c) => (c.id === "cat" ? { ...c, modifiers: { capital: 25 } } : c)) };
     setSteps(s, "city", "a", 1);
-    expect(resolveTurn(half, s, {}).state.players[0]!.wallets.capital).toBe(62_500);
+    expect(resolveTurn(half, s, {}).state.players[0]!.wallets.capital).toBe(63_000);
   });
 
   it("stops when control is lost, but money already earned stays", () => {
