@@ -34,6 +34,19 @@ async function finishTurn(page: Page) {
   throw new Error("turn did not finish");
 }
 
+test("the luck factor is chosen at setup and kept with the match", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-solo").click();
+  await page.getByTestId("setup-luck").check();
+  await page.getByTestId("start-match").click();
+  await boardReady(page);
+  await expect(page.getByTestId("tally")).toContainText("luck factor on");
+  await page.reload();
+  await page.getByTestId("continue-match").click();
+  await boardReady(page);
+  await expect(page.getByTestId("tally")).toContainText("luck factor on");
+});
+
 test("solo setup: choose the table, start, and the match survives closing the browser", async ({ page, browser }) => {
   await page.goto("/");
   await expect(page.getByTestId("main-menu")).toBeVisible();
@@ -47,9 +60,11 @@ test("solo setup: choose the table, start, and the match survives closing the br
   await page.getByTestId("seat-ai2").getByLabel(/difficulty/).selectOption("easy");
   await page.getByTestId("add-seat").click();
   await expect(page.locator("[data-testid^=seat-]")).toHaveCount(4);
+  await expect(page.getByTestId("setup-luck")).not.toBeChecked();
   await page.getByTestId("start-match").click();
   await boardReady(page);
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
+  await expect(page.getByTestId("tally")).toContainText("Projected seats"); // luck factor off
 
   // Play a turn, start planning the next, then close the browser.
   await tapRegion(page, "lon");

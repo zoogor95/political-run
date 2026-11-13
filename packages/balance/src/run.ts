@@ -4,6 +4,7 @@
  *   pnpm balance                                   10,000 strategy matches plus difficulty line-ups; writes docs/balance/uk.md
  *   pnpm balance --games 2000 --out /tmp/uk.md     a quicker report somewhere else
  *   pnpm balance --rules contentionAt=4            try rule numbers before putting them in the pack
+ *   pnpm balance --luck                            every match with the luck factor on (seats drawn at the count)
  *   pnpm balance --costs 2 --income 0.5            try every step cost, or every group income, scaled
  *   pnpm balance --versus '{"spend":0.8}'          mirrored duels of AI settings against the plain Hard AI
  *   pnpm balance --lineup hard,normal,normal       one difficulty line-up in every seat order (--tune '{...}' changes the Hard seats,
@@ -42,6 +43,9 @@ for (const g of pack.groups) {
   g.income = Math.round(g.income * Number(args.get("income") ?? 1));
 }
 
+/** Luck factor: every match draws its seats at the count. */
+const luck = args.has("luck");
+
 /** Plays every match across the worker threads; records come back in schedule order. */
 async function playAll(list: ScheduledMatch[], on: MapPack = pack): Promise<MatchRecord[]> {
   const slices: number[][] = Array.from({ length: threads }, () => []);
@@ -52,7 +56,7 @@ async function playAll(list: ScheduledMatch[], on: MapPack = pack): Promise<Matc
     slices.map(
       (indexes) =>
         new Promise<void>((resolve, reject) => {
-          const w = new Worker(new URL("./worker-boot.mjs", import.meta.url), { workerData: { pack: on, matches: indexes.map((i) => list[i]!) } });
+          const w = new Worker(new URL("./worker-boot.mjs", import.meta.url), { workerData: { pack: on, luck, matches: indexes.map((i) => list[i]!) } });
           let k = 0;
           w.on("message", (record: MatchRecord) => {
             records[indexes[k++]!] = record;

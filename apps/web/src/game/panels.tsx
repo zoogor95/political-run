@@ -3,6 +3,7 @@ import {
   controllers,
   eligibleWallets,
   groupModifier,
+  luckWeights,
   majority,
   meterOf,
   moveCost,
@@ -34,7 +35,8 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
   // During the recap the bar shows the board as it was before the turn, so the reveal isn't given away.
   const state = game.stage === "recap" && game.report ? game.report.before : game.state;
   const { issues } = game;
-  const seats = projectedSeats(pack, state);
+  const counted = game.stage === "results" ? game.election?.result.seats : undefined;
+  const seats = counted ?? projectedSeats(pack, state);
   const total = totalSeats(pack);
   const contention = pack.regions.filter((r) => state.players.some((p) => meterOf(state, r.id, p.id).steps >= pack.rules.contentionAt)).length;
   const order = [...state.players].sort((a, b) => (a.id === game.viewer ? -1 : b.id === game.viewer ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
@@ -69,7 +71,7 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
           <em style={{ left: `${(100 * majority(pack)) / total}%` }} />
         </div>
         <div className="tally-note">
-          <span>Projected seats if the election were today</span>
+          <span>{counted ? "Seats won" : state.luck ? "Expected seats if the election were today (luck factor on)" : "Projected seats if the election were today"}</span>
           <span>{majority(pack)} FOR A MAJORITY</span>
         </div>
       </div>
@@ -146,6 +148,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
           </div>
         ))}
       </div>
+      {region && state.luck && <LuckOdds state={state} regionId={region.id} label={game.label} />}
       {canAdd ? (
         <div className="planner">
           <div className="stepper">
@@ -182,6 +185,21 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
       )}
       {wallets.length > 0 && <p className="small">Group money you can spend here: {wallets.map((w) => `${groupName(w)} ${money(you.wallets[w] ?? 0)}`).join(" · ")}</p>}
     </section>
+  );
+}
+
+/** Luck factor: each party's chance of every seat in a region, from its pips (lead pips count double). */
+function LuckOdds({ state, regionId, label }: { state: GameState; regionId: string; label: (id: string) => string }) {
+  const weights = luckWeights(state, regionId);
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  if (total === 0) return <p className="small muted">Luck factor: nobody has a pip here yet, so nobody can win a seat.</p>;
+  return (
+    <p className="small" data-testid="luck-odds">
+      Chance of each seat:{" "}
+      {Object.entries(weights)
+        .map(([id, w]) => `${label(id)} ${Math.round((100 * w) / total)}%`)
+        .join(" · ")}
+    </p>
   );
 }
 

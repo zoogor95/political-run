@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 type GameHook = {
   ready: boolean;
   view: { piecePoint(id: string): { x: number; y: number }; app: { canvas: HTMLCanvasElement } };
-  game: { state: { turn: number; phase: string } };
+  game: { state: { turn: number; phase: string }; election: { result: { seats: Record<string, number> } } | null };
 };
 type HookWindow = { __game?: GameHook };
 
@@ -259,6 +259,34 @@ test("the seat map fills as regions are declared and lights up the called region
   await expect(page.getByTestId("board")).not.toHaveClass(/under/);
   await page.getByTestId("seatmap-toggle").click();
   await expect(page.getByTestId("seat-map")).toBeVisible();
+});
+
+test("luck factor: the odds show on regions, every seat is a draw on election night, and the result says so", async ({ page }) => {
+  await page.goto("/?scenario=hung&ai=easy&luck");
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  await expect(page.getByTestId("tally")).toContainText("Expected seats");
+  await page.getByTestId("find-region").selectOption("lon");
+  await expect(page.getByTestId("luck-odds")).toContainText("Chance of each seat:");
+  await expect(page.getByTestId("luck-odds")).toContainText("%");
+  await page.getByRole("button", { name: "Close" }).click();
+
+  await page.getByTestId("submit").click();
+  for (let i = 0; i < 60 && !(await page.getByTestId("continue").isVisible().catch(() => false)); i++) {
+    for (const id of ["breaking", "skip"]) {
+      const el = page.getByTestId(id);
+      if (await el.isVisible().catch(() => false)) await el.click({ timeout: 1000 }).catch(() => {});
+    }
+    await page.waitForTimeout(150);
+  }
+  await page.getByTestId("continue").click();
+  await expect(page.getByTestId("suspense")).toContainText("every seat is a draw");
+  await page.getByTestId("night-skip").click();
+  await page.getByTestId("night-done").click();
+  await expect(page.getByTestId("luck-note")).toBeVisible();
+  // The bar shows the seats actually won, and they add up to the parliament.
+  await expect(page.getByTestId("tally")).toContainText("Seats won");
+  const seats = await page.evaluate(() => Object.values((window as unknown as HookWindow).__game!.game.election!.result.seats));
+  expect(seats.reduce((a: number, b: number) => a + b, 0)).toBe(650);
 });
 
 test("a tie for most seats starts a second round that plays through to a result", async ({ page }) => {

@@ -164,6 +164,11 @@ export interface GameState {
   rng: number;
   /** The match's seed, which never changes (absent in saves from before it was kept). */
   seed?: number;
+  /**
+   * Luck factor: at the count every seat is drawn at random instead of shared out by pip share. A party's chance of each
+   * seat in a region is 2 x its pips - the fewest pips any party there has (see luckWeights).
+   */
+  luck?: boolean;
 }
 
 /** What a player submits for one turn. */

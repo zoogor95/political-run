@@ -51,6 +51,7 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone, you }:
         <div className="night-card" data-testid="suspense">
           <span className="breaking-tag">ELECTION NIGHT</span>
           <b>Ballot count, turn {night.turn}: is there a winner?</b>
+          {s.luck && <span className="small">Luck factor on: every seat is a draw tonight.</span>}
         </div>
       )}
       {phase === "calling" && call && (
@@ -155,6 +156,11 @@ export function ResultsPanel({
         </p>
       )}
 
+      {s.luck && (
+        <p className="small muted" data-testid="luck-note">
+          Luck factor on: every seat was drawn by chance, weighted by pips with each pip of lead counting double.
+        </p>
+      )}
       <h3>How the government formed</h3>
       <ol className="formation" data-testid="formation">
         <li>

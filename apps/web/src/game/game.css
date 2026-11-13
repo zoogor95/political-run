@@ -2041,3 +2041,15 @@
   color: var(--muted);
   text-align: right;
 }
+
+/* Setup: the luck factor switch, title over its explanation. */
+.luck-option {
+  align-items: flex-start;
+  margin: 4px 0 12px;
+}
+
+.luck-option small {
+  display: block;
+  font-size: 13px;
+  margin-top: 2px;
+}

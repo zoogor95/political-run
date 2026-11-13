@@ -24,6 +24,8 @@ export interface MatchConfig {
   customs?: CustomCandidate[];
   /** The Learn to play match: the coach runs over it. */
   tutorial?: boolean;
+  /** Luck factor: seats are drawn at random on election night, weighted by pips. */
+  luck?: boolean;
 }
 
 /** The colour palette from the designs: colours are first come, first served. */

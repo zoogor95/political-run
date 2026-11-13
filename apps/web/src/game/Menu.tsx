@@ -293,6 +293,16 @@ export function SetupScreen({ mode, onBack, onStart }: { mode: Mode; onBack: () 
           </button>
         )}
       </div>
+      <label className="check luck-option">
+        <input type="checkbox" checked={config.luck === true} onChange={(e) => setConfig({ ...config, luck: e.target.checked })} data-testid="setup-luck" />
+        <span>
+          <b>Turn on luck factor</b>
+          <small className="muted">
+            {" "}
+            Every seat is a draw on election night: more pips mean better odds, and each pip of lead counts double. A close race can go either way.
+          </small>
+        </span>
+      </label>
       {issues.length > 0 && (
         <ul className="issues" data-testid="setup-issues">
           {issues.map((i) => (
