@@ -45,11 +45,15 @@ export function validatePack(pack: MapPack): PackIssue[] {
 
   const r = pack.rules;
   const positiveInt = (key: keyof RulesConfig) => {
-    const v = r[key];
+    const v = r[key] ?? 0;
     if (!Number.isInteger(v) || v < 1) add(`rules.${key}`, "must be a whole number of at least 1");
   };
   (["steps", "contentionAt", "firstEntryMax", "baseIncome", "freePipEvery", "turnCap"] as const).forEach(positiveInt);
   if (r.contentionAt > r.steps) add("rules.contentionAt", "can't be more than the number of steps");
+  if (r.moneyStep !== undefined && (!Number.isInteger(r.moneyStep) || r.moneyStep < 1)) add("rules.moneyStep", "must be a whole number of at least 1");
+  const step = r.moneyStep ?? 1000;
+  const wholeSteps = (v: number | undefined) => v === undefined || v % step === 0;
+  if (!wholeSteps(r.baseIncome)) add("rules.baseIncome", `must be a whole number of ${step}`);
   if (r.firstEntryMax >= r.contentionAt) add("rules.firstEntryMax", "must be below contentionAt, so no region reaches contention in one turn");
   if (!(r.costGrowth >= 1)) add("rules.costGrowth", "must be at least 1");
   if (!(r.costClampMin > 0 && r.costClampMin <= 1 && r.costClampMax >= 1)) add("rules.costClamp", "min must be in (0, 1] and max at least 1");
@@ -66,6 +70,7 @@ export function validatePack(pack: MapPack): PackIssue[] {
     if (!reg.name) add(`${p}.name`, "is required");
     if (!Number.isInteger(reg.seats) || reg.seats < 1) add(`${p}.seats`, "must be a whole number of at least 1");
     if (!Number.isInteger(reg.baseCost) || reg.baseCost < 1) add(`${p}.baseCost`, "must be a whole number of at least 1");
+    else if (!wholeSteps(reg.baseCost)) add(`${p}.baseCost`, `must be a whole number of ${step}`);
     if (reg.voters !== undefined && (!Number.isInteger(reg.voters) || reg.voters < 1)) add(`${p}.voters`, "must be a whole number of at least 1");
   });
   if (pack.regions.length < 2) add("regions", "needs at least 2 regions");
@@ -78,6 +83,8 @@ export function validatePack(pack: MapPack): PackIssue[] {
     groupIds.add(g.id);
     if (!g.name) add(`${p}.name`, "is required");
     if (!Number.isInteger(g.income) || g.income < 0) add(`${p}.income`, "must be a whole number");
+    else if (!wholeSteps(g.income)) add(`${p}.income`, `must be a whole number of ${step}`);
+    if (g.baseCost !== undefined && !wholeSteps(g.baseCost)) add(`${p}.baseCost`, `must be a whole number of ${step}`);
     if (g.kind === "national" && (!Number.isInteger(g.baseCost) || (g.baseCost ?? 0) < 1)) add(`${p}.baseCost`, "a national group needs a whole-number step cost of at least 1");
     if (g.kind === "state" && g.baseCost !== undefined) add(`${p}.baseCost`, "only national groups have their own step cost");
     if (g.kind === "state") {

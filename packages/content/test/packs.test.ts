@@ -34,7 +34,7 @@ describe("UK pack", () => {
     expect(uk.regions.filter((r) => !grouped.has(r.id))).toEqual([]);
   });
 
-  it("can start a full match and price a London move (Starmer is 15% cheaper in London: step 10 about £40.1K)", () => {
+  it("can start a full match and price a London move (Starmer is 15% cheaper in London: step 10 costs £40K, to the nearest £1K)", () => {
     const s = createMatch(uk, {
       seed: 1,
       players: [
@@ -43,7 +43,7 @@ describe("UK pack", () => {
       ],
     });
     const cost = moveCost(uk, s.players[0]!, "lon", 9, 10);
-    expect(Math.round(cost / 100) / 10).toBe(40.1);
+    expect(cost).toBe(40_000);
   });
 });
 
