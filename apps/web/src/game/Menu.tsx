@@ -17,11 +17,13 @@ export function MainMenu({
   onNew,
   onTutorial,
   onSettings,
+  onProfile,
 }: {
   onContinue: () => void;
   onNew: (mode: Mode) => void;
   onTutorial: () => void;
   onSettings: () => void;
+  onProfile: () => void;
 }) {
   const save = loadMatch();
   // New players see Learn to play first; once it's done or skipped, it moves down the list.
@@ -56,6 +58,10 @@ export function MainMenu({
           <small>2 to 5 players on one device</small>
         </button>
         {!newcomer && learn}
+        <button type="button" className="menu-big" onClick={onProfile} data-testid="open-profile">
+          Profile
+          <small>Stats and achievements</small>
+        </button>
         <button type="button" className="menu-big" onClick={onSettings} data-testid="open-settings">
           Settings
         </button>

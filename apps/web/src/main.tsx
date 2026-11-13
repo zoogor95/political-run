@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { initAudio } from "./game/audio";
 import { Game } from "./game/Game";
 import { MainMenu, SettingsPanel, SetupScreen } from "./game/Menu";
+import { AchievementToast, ProfileScreen } from "./game/Profile";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
 import { isMapId, map, selectMap } from "./game/model";
@@ -13,7 +14,7 @@ import { Lab } from "./Lab";
 import "./styles.css";
 import "./game/game.css";
 
-type Screen = { name: "menu" } | { name: "setup"; mode: Mode } | { name: "game"; start: GameStart; key: number };
+type Screen = { name: "menu" } | { name: "profile" } | { name: "setup"; mode: Mode } | { name: "game"; start: GameStart; key: number };
 
 /** Links with ?seed=, ?ai=, ?map= or ?scenario= go straight into a solo match (used by tests and shared links). */
 function directStart(): GameStart | null {
@@ -47,6 +48,7 @@ function App() {
             selectMap(isMapId(save.state.packId) ? save.state.packId : "uk", save.config.customs ?? []);
             setScreen({ name: "game", start: { save }, key: Date.now() });
           }}
+          onProfile={() => setScreen({ name: "profile" })}
           onTutorial={() => {
             selectMap("uk");
             restartTutorial();
@@ -60,6 +62,7 @@ function App() {
           onSettings={openSettings}
         />
       )}
+      {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} />}
       {screen.name === "setup" && (
         <SetupScreen
           mode={screen.mode}
@@ -73,6 +76,7 @@ function App() {
       )}
       {screen.name === "game" && <Game key={screen.key} start={screen.start} onMenu={() => setScreen({ name: "menu" })} onSettings={openSettings} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      <AchievementToast />
     </>
   );
 }

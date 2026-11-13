@@ -25,6 +25,8 @@ import {
 import { candidateName, groupName, money, news, pack, playerOf, scenarioGame, trackName, type Scenario } from "./model";
 import { saveMatch, type SavedMatch } from "./saves";
 import { defaultConfig, playersOf, type MatchConfig } from "./setup";
+import { afterMatch, afterTurn, type Table } from "./achievements";
+import { loadProfile, record } from "./profile";
 
 
 /** Everything about the turn just played, for the recap, the summary and the ticker. */
@@ -205,6 +207,7 @@ export function useGame(start: GameStart): GameApi {
     const summary = summarizeTurn(pack, state, resolved.state, events);
     let next = resolved.state;
     let tie = false;
+    let finalResult: ElectionResult | null = null;
     setSecondRound(false);
     if (next.phase === "election") {
       const calls = electionCalls(pack, next);
@@ -212,7 +215,30 @@ export function useGame(start: GameStart): GameApi {
       setElection({ state: next, calls, result: done.result, tie: done.result.secondRound, turn: state.turn });
       next = done.state;
       tie = done.result.secondRound;
-      if (!tie) setResult(done.result);
+      if (!tie) {
+        setResult(done.result);
+        finalResult = done.result;
+      }
+    }
+    // Stats and achievements, for real matches only (the scripted scenarios don't count).
+    if (!start.scenario) {
+      const table: Table = {
+        pack,
+        humans,
+        ai: config.seats.filter((s) => s.kind === "ai").map((s) => s.level),
+        passAndPlay: humans.length > 1,
+        ownCandidate: humans.some((h) => pack.candidates.some((c) => c.id === playerOf(state, h).leaderId && "custom" in c)),
+      };
+      const turn = afterTurn(table, resolved.state, events, loadProfile().stats);
+      let stats = turn.stats;
+      const earned = [...turn.earned];
+      if (finalResult) {
+        const clashed = [...summaries, summary].some((s) => s.parties.some((p) => humans.includes(p.playerId) && p.conflicts.length > 0));
+        const match = afterMatch(table, finalResult, stats, { clashed, secondRound: next.round > 1 });
+        stats = match.stats;
+        earned.push(...match.earned);
+      }
+      record(stats, earned);
     }
     setIdleAi(false);
     setBoards((b) => [...b, resolved.state]);
@@ -229,7 +255,7 @@ export function useGame(start: GameStart): GameApi {
     setSubmitted([]);
     setCurrent(humans[0]!);
     setLastEvents(events);
-  }, [state, humans, idleAi, levelOf, newsRng]);
+  }, [state, humans, idleAi, levelOf, newsRng, start.scenario, config, summaries]);
 
   const submit = useCallback(() => {
     if (validatePlan(pack, state, current, plan).length > 0) return;
