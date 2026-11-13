@@ -1,5 +1,6 @@
 /** The tutorial's coach card over the map, and the outline on what the current step points at. */
 import { useEffect, useState } from "react";
+import { unlock } from "./profile";
 import { TUTORIAL, finishTutorial, saveStep, savedStep, type CoachContext } from "./tutorial";
 
 export function Coach({ context, onClose }: { context: CoachContext; onClose: () => void }) {
@@ -69,6 +70,7 @@ export function Coach({ context, onClose }: { context: CoachContext; onClose: ()
           onClick={() => {
             if (last) {
               finishTutorial();
+              unlock("first-steps");
               onClose();
             } else advance();
           }}

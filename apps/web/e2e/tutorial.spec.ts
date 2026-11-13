@@ -84,11 +84,16 @@ test("a new player follows the coach from the menu to the end of Learn to play",
   await expect(coach(page)).toContainText("You're ready");
   await page.getByTestId("coach-next").click();
   await expect(coach(page)).toHaveCount(0);
+  await expect(page.getByTestId("achievement-toast")).toContainText("First steps");
 
   // Done: the menu no longer leads with it, and the match carries on from the menu.
   await page.getByTestId("menu-button").click();
   await expect(page.getByTestId("learn")).not.toContainText("New here?");
   await expect(page.getByTestId("continue-match")).toBeVisible();
+  // The profile shows the achievement and the turns played.
+  await page.getByTestId("open-profile").click();
+  await expect(page.getByTestId("ach-first-steps")).toHaveAttribute("aria-label", "First steps: unlocked");
+  await expect(page.getByTestId("profile")).toContainText("Turns played");
 });
 
 test("the tutorial survives a reload and can be skipped", async ({ page }) => {

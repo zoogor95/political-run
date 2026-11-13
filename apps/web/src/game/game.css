@@ -1763,3 +1763,129 @@
     font-size: 13px;
   }
 }
+
+/* Profile and achievements */
+.profile-name {
+  max-width: 320px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(190px, 40%), 1fr));
+  gap: 10px;
+}
+
+.stat {
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat b {
+  font: 400 24px "Lilita One", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat small {
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.by-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-weight: 700;
+}
+
+.ach-title {
+  font: 400 24px "Lilita One", sans-serif;
+  margin: 6px 0 0;
+}
+
+.ach-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.ach {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(255, 247, 226, 0.6);
+  border: 3px dashed rgba(43, 36, 64, 0.45);
+  border-radius: 14px;
+  padding: 8px 12px;
+}
+
+.ach span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ach small {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ach.on {
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.ach-badge {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.ach.on .ach-badge,
+.ach-toast .ach-badge {
+  color: #c98a00;
+}
+
+.ach .ach-date {
+  color: var(--ink);
+}
+
+.ach-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--gold);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 8px 16px;
+  max-width: calc(100% - 32px);
+}
+
+.ach-toast span:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.ach-toast small {
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ach-toast b {
+  font: 400 20px "Lilita One", sans-serif;
+}
