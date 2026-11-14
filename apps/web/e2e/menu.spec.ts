@@ -163,3 +163,20 @@ test("no serious accessibility problems on the menu, setup and game screens", as
   await boardReady(page);
   await check("game");
 });
+
+test("phones play sideways: held upright, a card asks to turn the phone", async ({ browser }, info) => {
+  test.skip(info.project.name !== "desktop", "opens its own phone contexts");
+  const { devices } = await import("@playwright/test");
+  const upright = await browser.newContext({ ...devices["Pixel 7"] });
+  const page = await upright.newPage();
+  await page.goto("/");
+  await expect(page.getByTestId("rotate-notice")).toBeVisible();
+  await expect(page.getByTestId("rotate-notice")).toContainText("Turn your phone sideways");
+  await upright.close();
+  const sideways = await browser.newContext({ ...devices["Pixel 7 landscape"] });
+  const side = await sideways.newPage();
+  await side.goto("/");
+  await expect(side.getByTestId("main-menu")).toBeVisible();
+  await expect(side.getByTestId("rotate-notice")).toBeHidden();
+  await sideways.close();
+});

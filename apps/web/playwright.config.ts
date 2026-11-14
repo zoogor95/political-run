@@ -18,6 +18,6 @@ export default defineConfig({
   ],
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "phone", use: { ...devices["Pixel 7"] } },
+    { name: "phone", use: { ...devices["Pixel 7 landscape"] } },
   ],
 });

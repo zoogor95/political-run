@@ -420,7 +420,7 @@ export function SetupScreen({
               <path d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <span>{issues.length ? `${issues.length} thing${issues.length === 1 ? "" : "s"} to fix` : mode === "online" ? `${people - 1} seat${people === 2 ? "" : "s"} for friends` : "Ready when you are"}</span>
+          <span>{issues.length ? `${issues.length} thing${issues.length === 1 ? "" : "s"} to fix` : mode === "online" ? `Next: a lobby with your invite code · ${people - 1} seat${people === 2 ? "" : "s"} for friends` : "Ready when you are"}</span>
         </div>
       </header>
 
