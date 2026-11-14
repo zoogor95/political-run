@@ -16,4 +16,6 @@ The popular vote uses the Election Commission's 2024 registered voters by provin
 
 ## Money
 
-Amounts are in rupees: base income Rs 25M a turn. A division's first step costs Rs 300K plus Rs 78K per seat. Group incomes and national group costs are drafts, tuned with the balance simulator; the report is in `docs/balance/pk.md`.
+Amounts are in rupees: base income Rs 17.5M a turn (cut by 30% from Rs 25M). A division's first step costs Rs 300K plus Rs 78K per seat. Group incomes and national group costs are drafts, tuned with the balance simulator; the report is in `docs/balance/pk.md`.
+
+Every region group has at least two regions: the capital's group is Islamabad and Rawalpindi, the twin cities (Islamabad alone is a single region).

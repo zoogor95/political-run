@@ -318,12 +318,13 @@
     },
     {
       "id": "capital",
-      "name": "Islamabad",
+      "name": "Islamabad and Rawalpindi",
       "kind": "state",
       "regions": [
-        "islamabad"
+        "islamabad",
+        "rawalpindi"
       ],
-      "income": 2000000
+      "income": 4000000
     },
     {
       "id": "south-punjab",

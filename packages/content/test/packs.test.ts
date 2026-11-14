@@ -233,3 +233,12 @@ describe("US pack", () => {
     expect(s.phase).toBe("finished");
   });
 });
+
+describe("every map pack", () => {
+  const packs = ["uk", "pk", "us"].map((id) => JSON.parse(readFileSync(new URL(`../packs/${id}/pack.json`, import.meta.url), "utf8")) as MapPack);
+
+  it.each(packs.map((p) => [p.name, p] as const))("%s: every region group has at least two regions", (_, pack) => {
+    // A region group is a set of regions: one region on its own is just that region.
+    expect(pack.groups.filter((g) => g.kind === "state" && g.regions.length < 2).map((g) => g.id)).toEqual([]);
+  });
+});

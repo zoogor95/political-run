@@ -139,12 +139,13 @@
     },
     {
       "id": "london",
-      "name": "London",
+      "name": "London and the South East",
       "kind": "state",
       "regions": [
-        "lon"
+        "lon",
+        "se"
       ],
-      "income": 50000
+      "income": 30000
     },
     {
       "id": "devolved",
@@ -285,7 +286,7 @@
       "name": "Sadiq Khan",
       "affiliation": "Labour",
       "modifiers": {
-        "london": 15,
+        "london": 10,
         "cities": 5,
         "commuters": -10
       },

@@ -24,10 +24,10 @@ test("unlock the creator, build a candidate within the budget, and lead a match 
   await creator.getByRole("button", { name: "More for The North" }).click();
   await creator.getByRole("button", { name: "More for The North" }).click();
   await expect(page.getByTestId("creator-points")).toContainText("8 of 8 points");
-  await expect(creator.getByRole("button", { name: "More for London" })).toBeDisabled();
-  // A penalty on a big group gives points back: −5% Big cities returns 3, enough for +5% London.
+  await expect(creator.getByRole("button", { name: "More for The Midlands" })).toBeDisabled();
+  // A penalty on a big group gives points back: −5% Big cities returns 3, enough for +5% The Midlands (2 points).
   await creator.getByRole("button", { name: "Less for Big cities" }).click();
-  await creator.getByRole("button", { name: "More for London" }).click();
+  await creator.getByRole("button", { name: "More for The Midlands" }).click();
   await expect(page.getByTestId("creator-points")).toContainText("7 of 8 points");
 
   const axe = await new AxeBuilder({ page }).include('[data-testid="creator"]').analyze();
