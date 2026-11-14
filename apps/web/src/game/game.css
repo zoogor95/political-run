@@ -1049,24 +1049,8 @@
   }
 }
 
-.again {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-weight: 900;
-}
 
-.again select {
-  font: 800 14px "Nunito", sans-serif;
-  border: 2px solid var(--ink);
-  border-radius: 10px;
-  padding: 6px;
-}
 
-.again .primary {
-  margin-left: auto;
-}
 
 /* News ticker */
 .ticker {
@@ -1800,13 +1784,6 @@
 }
 
 /* Results */
-.results-title {
-  font-family: "Lilita One", sans-serif;
-  font-weight: 400;
-  font-size: 24px;
-  margin: 0 0 6px;
-}
-
 .formation {
   margin: 4px 0 10px;
   padding-left: 22px;
@@ -1817,46 +1794,11 @@
   font-weight: 800;
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 10px 0;
-}
 
-.stats div {
-  background: #fff;
-  border: 2px solid var(--ink);
-  border-radius: 12px;
-  padding: 6px 10px;
-  display: flex;
-  flex-direction: column;
-}
 
-.stats small {
-  font-size: 11px;
-  font-weight: 900;
-  color: var(--muted);
-}
 
-.stats b {
-  font-family: "Lilita One", sans-serif;
-  font-weight: 400;
-  font-size: 20px;
-}
 
-.replay {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-weight: 900;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
 
-.replay input {
-  accent-color: var(--ink);
-}
 
 /* Accessibility: text size scales the panels (not the map), focus is always visible, motion can be reduced. */
 .game-panel,
@@ -4670,5 +4612,613 @@
     right: 14px;
     bottom: 10px;
     font-size: 11px;
+  }
+}
+
+/* Results (design: Results and ParlResults): a banner in the winner's colour, the map on the left, the race or the
+   chamber on the right, and a bar with the match's numbers and what to do next. */
+.game.results-stage {
+  overflow: hidden;
+}
+
+.results-banner {
+  align-self: center;
+  margin: 18px 16px 10px;
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 7px 0 var(--ink);
+  padding: 6px 30px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  zoom: var(--text-scale, 1);
+}
+
+.results-banner h2 {
+  margin: 0;
+  font: 400 36px/1.05 "Lilita One", sans-serif;
+}
+
+.results-banner span {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.game.results-stage .game-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 470px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px 24px;
+  padding: 8px 30px 0;
+}
+
+.game.results-stage.parl .game-body {
+  grid-template-columns: minmax(0, 1fr) 560px;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.game.results-stage .board-wrap {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.game.results-stage .game-side {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  min-height: 0;
+}
+
+.game.results-stage .game-panel {
+  width: auto;
+  flex: 1;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0 6px 10px 0;
+}
+
+.game.results-stage .seat-map {
+  background: transparent;
+}
+
+.game.results-stage.parl .rank-cards {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.results-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The ranking: one card per party, yours ringed in gold. */
+.rank-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rank-cards.many {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rank-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 7px 14px 7px 7px;
+  min-width: 0;
+}
+
+.rank-card.you {
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--gold), 0 5px 0 4px var(--ink);
+}
+
+.rank-place {
+  width: 28px;
+  flex: none;
+  text-align: center;
+  font: 400 26px "Lilita One", sans-serif;
+}
+
+.rank-face {
+  width: 54px;
+  height: 54px;
+  font-size: 20px;
+}
+
+.rank-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rank-text b {
+  font: 400 20px/1.15 "Lilita One", sans-serif;
+}
+
+.rank-text b small {
+  font: 900 12px "Nunito", sans-serif;
+  white-space: nowrap;
+}
+
+.rank-text > span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.rank-seats {
+  font: 400 32px "Lilita One", sans-serif;
+}
+
+.rank-cards.many .rank-card {
+  padding: 5px 10px 5px 5px;
+  gap: 8px;
+}
+
+.rank-cards.many .rank-face {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+.rank-cards.many .rank-place {
+  width: 20px;
+  font-size: 20px;
+}
+
+.rank-cards.many .rank-text b {
+  font-size: 16px;
+}
+
+.rank-cards.many .rank-text > span {
+  font-size: 11.5px;
+}
+
+.rank-cards.many .rank-seats {
+  font-size: 24px;
+}
+
+.rank-note {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+/* The chamber card: the seat chart, how the government formed, and the rule. */
+.chamber {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chamber-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.chamber-head h3 {
+  margin: 0;
+  font: 400 22px "Lilita One", sans-serif;
+}
+
+.chamber-head small,
+.chamber-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.hemicycle {
+  width: 380px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.hemi-score {
+  font: 400 30px "Lilita One", sans-serif;
+  text-anchor: middle;
+  fill: var(--ink);
+}
+
+.hemi-label {
+  font: 900 11px "Nunito", sans-serif;
+  text-anchor: middle;
+  fill: #4a4260;
+}
+
+.chamber .formation {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.chamber .formation li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chamber .formation li > span {
+  flex: 1;
+}
+
+.chamber .formation .chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex: none;
+}
+
+.chamber-note {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4a4260;
+  border-top: 2px solid #e6dcc0;
+  padding-top: 8px;
+}
+
+.match-headline {
+  margin: 0;
+  background: var(--ink);
+  color: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.match-headline small {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+
+.match-headline b {
+  font: 400 18px/1.2 "Lilita One", sans-serif;
+}
+
+.results-luck {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 8px 12px;
+}
+
+.results-groups {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 10px 14px 4px;
+}
+
+.results-groups h3 {
+  margin: 0;
+}
+
+.results-groups .small {
+  margin: 2px 0 8px;
+}
+
+/* The bar: five numbers in one card, then the buttons. */
+.results-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 14px 30px 20px;
+  zoom: var(--text-scale, 1);
+}
+
+.res-stats {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink);
+  overflow: hidden;
+}
+
+.res-stats > div {
+  padding: 6px 10px;
+  justify-content: space-between;
+  border-right: 2px solid #e6dcc0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.res-stats > div:last-child {
+  border-right: 0;
+}
+
+.res-stats small {
+  font-size: 10.5px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.res-stats b {
+  font: 400 20px "Lilita One", sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.res-stats b.bad {
+  color: #b8301f;
+}
+
+.res-buttons {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.res-buttons button,
+.rematch select {
+  font: 900 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.res-buttons button.primary {
+  background: var(--gold);
+  font-size: 16px;
+  padding: 0 20px;
+}
+
+.rematch {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.rematch select {
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+/* Replay map: a strip along the bottom of the map. */
+.replay-strip {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 20px));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 6px 10px;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.replay-strip label {
+  width: 96px;
+  flex: none;
+  white-space: nowrap;
+}
+
+.replay-strip input {
+  flex: 1;
+  accent-color: var(--ink);
+}
+
+.replay-strip button {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  font: 900 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.replay-strip button:last-child {
+  background: var(--cream);
+}
+
+/* Narrower screens: a slimmer side column and a bar that wraps. */
+@media (max-width: 1180px) {
+  .game.results-stage .game-body,
+  .game.results-stage.parl .game-body {
+    grid-template-columns: minmax(0, 1fr) 400px;
+  }
+
+  .results-bar {
+    flex-wrap: wrap;
+  }
+
+  .res-stats {
+    flex-basis: 100%;
+  }
+
+  .res-buttons {
+    margin-left: auto;
+    min-height: 42px;
+  }
+}
+
+/* Phones held sideways and small windows: the whole screen scrolls, with the map at a fixed height. */
+@media (max-height: 560px), (max-width: 760px) {
+  .game.results-stage {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .results-banner {
+    margin: 8px 12px 6px;
+    padding: 4px 18px 6px;
+    border-width: 3px;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+
+  .results-banner h2 {
+    font-size: 22px;
+  }
+
+  .results-banner span {
+    font-size: 12px;
+  }
+
+  .game.results-stage .game-body,
+  .game.results-stage.parl .game-body {
+    flex: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    padding: 6px 12px 0;
+    gap: 10px 14px;
+  }
+
+  .game.results-stage .board-wrap {
+    height: 300px;
+  }
+
+  .game.results-stage .game-side {
+    grid-column: 1;
+    grid-row: auto;
+    width: auto;
+    max-height: none;
+  }
+
+  .results-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .results-side > .rank-cards,
+  .results-side > .results-groups {
+    grid-column: 1 / -1;
+  }
+
+  .game.results-stage .game-panel {
+    overflow: visible;
+    max-height: none;
+  }
+
+  .game.results-stage.parl .rank-cards {
+    grid-row: 2;
+  }
+
+  .rank-cards.many {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rank-card {
+    border-width: 3px;
+    box-shadow: 0 3px 0 var(--ink);
+    padding: 4px 10px 4px 4px;
+    gap: 8px;
+  }
+
+  .rank-card.you {
+    box-shadow: 0 0 0 3px var(--gold), 0 3px 0 3px var(--ink);
+  }
+
+  .rank-face {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+  }
+
+  .rank-place {
+    width: 18px;
+    font-size: 18px;
+  }
+
+  .rank-text b {
+    font-size: 15px;
+  }
+
+  .rank-text > span {
+    font-size: 11px;
+  }
+
+  .rank-seats {
+    font-size: 22px;
+  }
+
+  .results-bar {
+    flex-wrap: wrap;
+    padding: 12px 12px 16px;
+    gap: 10px;
+  }
+
+  .res-stats {
+    flex-basis: 100%;
+  }
+
+  .res-stats > div {
+    padding: 5px 10px;
+  }
+
+  .res-stats b {
+    font-size: 17px;
+  }
+
+  .res-buttons {
+    flex-wrap: wrap;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 600px) {
+  .res-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

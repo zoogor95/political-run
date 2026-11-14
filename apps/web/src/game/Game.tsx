@@ -5,7 +5,8 @@ import { board, boardStyles, electionStyles, pack, playerOf, presidential, votes
 import { play } from "./audio";
 import { useSettings } from "./settings";
 import { Countdown } from "./Online";
-import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
+import { ElectionNightView, type NightPhase } from "./election";
+import { RankCards, ReplayStrip, ResultsBanner, ResultsBar, ResultsPanel } from "./results";
 import { GroupsPanel, LeadersCard, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { Coach } from "./Coach";
@@ -98,8 +99,11 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     const t = setTimeout(() => setCalled((c) => c + 1), (called === 0 ? 300 : passed ? 350 : 1000) / nightSpeed);
     return () => clearTimeout(t);
   }, [onNight, night, nightPhase, called, nightSpeed]);
+  // Replay map: the strip over the map that plays the board turn by turn.
+  const [replaying, setReplaying] = useState(false);
   useEffect(() => {
     if (game.stage === "results") setReplay(null);
+    setReplaying(false);
   }, [game.stage, game.boards.length]);
   const skipNight = useCallback(() => {
     if (!night) return;
@@ -211,8 +215,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   });
 
   return (
-    <div className={`game${onNight ? " night" : ""}`}>
-      <Ticker headlines={game.ticker} />
+    <div className={`game${onNight ? " night" : ""}${results ? ` results-stage${presidential() ? "" : " parl"}` : ""}`} data-testid={results ? "results" : undefined}>
+      {!results && <Ticker headlines={game.ticker} />}
       {onNight ? (
         <ElectionNightView
           night={night}
@@ -225,6 +229,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
           speed={nightSpeed}
           onSpeed={() => setNightSpeed((v) => (v === 1 ? 2 : 1))}
         />
+      ) : results ? (
+        <ResultsBanner game={game} />
       ) : (
         <TopBar game={game} onMenu={onMenu} onSettings={onSettings} />
       )}
@@ -253,6 +259,17 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
               {seatView ? "Show the campaign board" : "Show the seat map"}
             </button>
           )}
+          {results && replaying && (
+            <ReplayStrip
+              game={game}
+              replay={replay}
+              onReplay={setReplay}
+              onClose={() => {
+                setReplaying(false);
+                setReplay(null);
+              }}
+            />
+          )}
           {coaching && game.stage !== "results" && <Coach context={{ game, selected, tab }} onClose={() => setCoaching(false)} />}
           {game.stage === "planning" && !onNight && (
             <div className="group-buttons">
@@ -280,10 +297,14 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
         <div className={`game-side${selected && !recapping && !onNight && game.stage !== "results" ? " card-open" : ""}`}>
         <aside className="panel game-panel">
           {game.stage === "results" && night ? (
-            <ResultsPanel game={game} replay={replay} onReplay={setReplay} litGroup={litGroup} onGroup={(id) => {
-              setLitGroup((g) => (g === id ? null : id));
-              setSeatView(true);
-            }} />
+            <ResultsPanel
+              game={game}
+              litGroup={litGroup}
+              onGroup={(id) => {
+                setLitGroup((g) => (g === id ? null : id));
+                setSeatView(true);
+              }}
+            />
           ) : recapping ? (
             <RecapPanel
               label={game.label}
@@ -350,7 +371,18 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
         </aside>
         {!onNight && game.stage !== "results" && <LeadersCard game={game} highlight={highlight} onHighlight={setHighlight} />}
         </div>
+        {results && !presidential() && <RankCards game={game} />}
       </main>
+      {results && (
+        <ResultsBar
+          game={game}
+          onMenu={onMenu}
+          onReplay={() => {
+            setReplay(0);
+            setReplaying(true);
+          }}
+        />
+      )}
       {breaking && <BreakingCard headline={breaking} onDone={endBreaking} />}
       {game.stage === "summary" && report && <SummaryView game={game} />}
       {game.stage === "handoff" && <Handoff game={game} />}
