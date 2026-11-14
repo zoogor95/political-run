@@ -249,7 +249,6 @@ test("election night ending in a hung parliament forms a coalition government", 
   await toElectionNight(page, "hung");
   await expect(page.getByTestId("suspense")).toContainText("Ballot count, turn 9");
   await expect(page.getByTestId("call-banner")).toContainText("North East"); // the UK count starts in the North East
-  await expect(page.getByTestId("night-log")).toContainText("North East");
   await page.getByTestId("night-skip").click();
   const end = page.getByTestId("night-end");
   await expect(end).toContainText("HUNG PARLIAMENT");

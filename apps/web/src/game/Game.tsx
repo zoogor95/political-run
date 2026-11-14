@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BoardView } from "@majority-map/board";
 import { controllers, regionSeats, reservedScope } from "@majority-map/core";
-import { board, boardStyles, electionStyles, pack, playerOf, presidential, trackName, votesWord } from "./model";
+import { board, boardStyles, electionStyles, pack, playerOf, presidential, votesWord } from "./model";
 import { play } from "./audio";
 import { useSettings } from "./settings";
 import { Countdown } from "./Online";
@@ -67,6 +67,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const onNight = game.stage === "election" && night !== null;
   const [nightPhase, setNightPhase] = useState<NightPhase>("suspense");
   const [called, setCalled] = useState(0);
+  // Election night at 2× (the design's speed button): every pause halves.
+  const [nightSpeed, setNightSpeed] = useState<1 | 2>(1);
   // The results' replay slider: null means the final result, so the results open on it without waiting for an effect.
   const [replayAt, setReplay] = useState<number | null>(null);
   const replay = replayAt ?? game.boards.length - 1;
@@ -84,18 +86,18 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   useEffect(() => {
     if (!onNight || !night) return;
     if (nightPhase === "suspense") {
-      const t = setTimeout(() => setNightPhase("calling"), 1800);
+      const t = setTimeout(() => setNightPhase("calling"), 1800 / nightSpeed);
       return () => clearTimeout(t);
     }
     if (nightPhase !== "calling") return;
     if (called >= night.calls.length) {
-      const t = setTimeout(() => setNightPhase("done"), 1200);
+      const t = setTimeout(() => setNightPhase("done"), 1200 / nightSpeed);
       return () => clearTimeout(t);
     }
     const passed = night.calls.slice(0, called).some((c) => c.majorityFor);
-    const t = setTimeout(() => setCalled((c) => c + 1), called === 0 ? 300 : passed ? 350 : 1000);
+    const t = setTimeout(() => setCalled((c) => c + 1), (called === 0 ? 300 : passed ? 350 : 1000) / nightSpeed);
     return () => clearTimeout(t);
-  }, [onNight, night, nightPhase, called]);
+  }, [onNight, night, nightPhase, called, nightSpeed]);
   useEffect(() => {
     if (game.stage === "results") setReplay(null);
   }, [game.stage, game.boards.length]);
@@ -209,10 +211,20 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   });
 
   return (
-    <div className="game">
+    <div className={`game${onNight ? " night" : ""}`}>
       <Ticker headlines={game.ticker} />
       {onNight ? (
-        <ElectionNightView night={night} called={called} phase={nightPhase} onSkip={skipNight} onDone={game.endElection} you={game.solo ? game.humans[0]! : null} humans={game.humans} />
+        <ElectionNightView
+          night={night}
+          called={called}
+          phase={nightPhase}
+          onSkip={skipNight}
+          onDone={game.endElection}
+          you={game.solo ? game.humans[0]! : null}
+          humans={game.humans}
+          speed={nightSpeed}
+          onSpeed={() => setNightSpeed((v) => (v === 1 ? 2 : 1))}
+        />
       ) : (
         <TopBar game={game} onMenu={onMenu} onSettings={onSettings} />
       )}
@@ -272,27 +284,6 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
               setLitGroup((g) => (g === id ? null : id));
               setSeatView(true);
             }} />
-          ) : onNight ? (
-            <section data-testid="night-log">
-              <h3>Declared so far</h3>
-              <ul className="night-log">
-                {night.calls
-                  .slice(0, called)
-                  .slice()
-                  .reverse()
-                  .map((c) => (
-                    <li key={c.regionId}>
-                      <i className="chip" style={{ background: c.winner ? playerOf(night.state, c.winner).party.color : "#fff" }} />
-                      <b>{trackName(c.regionId)}</b>{" "}
-                      {Object.entries(c.seats)
-                        .filter(([, n]) => n > 0)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([id, n]) => `${playerOf(night.state, id).party.name} ${n}`)
-                        .join(" · ")}
-                    </li>
-                  ))}
-              </ul>
-            </section>
           ) : recapping ? (
             <RecapPanel
               label={game.label}
