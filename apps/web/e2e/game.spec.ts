@@ -113,7 +113,12 @@ test("a region group lights up its regions on the board, and a region card lists
   await page.getByTestId("tab-groups").click();
   const north = page.getByTestId("group-row-north");
   await north.click();
-  await expect(north).toHaveAttribute("aria-selected", "true");
+  await expect(north).toHaveAttribute("aria-pressed", "true");
+  // Its card over the board: income, each party's share of the group's cost, and what it takes to win it.
+  const detail = page.getByTestId("group-detail");
+  await expect(detail).toContainText("The North");
+  await expect(detail).toContainText("MORE THAN 50% CONTROLS IT");
+  await expect(detail).toContainText(/To take control|You control it/);
   // The North's regions stand out; the others fade.
   const fills = await page.evaluate(() => {
     const v = (window as unknown as { __game: { view: { styles?: Record<string, { fill: number }> } } }).__game.view;
@@ -121,7 +126,8 @@ test("a region group lights up its regions on the board, and a region card lists
   });
   if (fills) expect(fills.ne).not.toBe(fills.lon);
   await north.click();
-  await expect(north).toHaveAttribute("aria-selected", "false");
+  await expect(north).toHaveAttribute("aria-pressed", "false");
+  await expect(detail).toHaveCount(0);
   await page.getByTestId("tab-plan").click();
   await page.getByTestId("find-region").selectOption("yh");
   await expect(page.getByTestId("region-groups")).toContainText("The North");

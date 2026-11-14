@@ -7,7 +7,7 @@ import { useSettings } from "./settings";
 import { Countdown } from "./Online";
 import { ElectionNightView, type NightPhase } from "./election";
 import { RankCards, ReplayStrip, ResultsBanner, ResultsBar, ResultsPanel } from "./results";
-import { GroupsPanel, LeadersCard, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
+import { GroupDetail, GroupsPanel, LeadersCard, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { Coach } from "./Coach";
 import { SeatMap } from "./SeatMap";
@@ -141,6 +141,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     for (const c of shown) (c.reserved ? reservedWon : seats)[c.regionId] = c.seats;
     return { state: night.state, seats, reservedWon };
   }, [night, onNight, results, called, replay, game.boards]);
+  // The picked region group's card sits above the board, which shrinks to fit under it.
+  const showGroupCard = game.stage === "planning" && tab === "groups" && groupFocus !== null && !selected;
   const nightCall = onNight && nightPhase === "calling" && called > 0 ? night.calls[called - 1]! : null;
   const seatHighlight = useMemo(() => {
     if (nightCall?.reserved) {
@@ -243,7 +245,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
       )}
       {game.online && game.stage === "planning" && <OnlineBanner game={game} />}
       <main className="game-body">
-        <div className="board-wrap">
+        <div className={`board-wrap${showGroupCard ? " with-card" : ""}`}>
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
           {showSeats && seatMap && (
             <SeatMap
@@ -271,6 +273,9 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
             />
           )}
           {coaching && game.stage !== "results" && <Coach context={{ game, selected, tab }} onClose={() => setCoaching(false)} />}
+          {showGroupCard && (
+            <GroupDetail game={game} groupId={groupFocus!} onClose={() => setGroupFocus(null)} />
+          )}
           {game.stage === "planning" && !onNight && (
             <div className="group-buttons">
               <button

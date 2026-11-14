@@ -65,7 +65,7 @@ test("two friends on different devices play a private match to the end", async (
   await expect(host.getByTestId("lobby-seats")).toContainText("Sara Party");
   await expect(host.getByTestId("lobby-start")).toHaveText("Waiting for 1 to get ready");
   await friend.getByTestId("lobby-ready").click();
-  await expect(friend.getByText("You're ready")).toBeVisible();
+  await expect(friend.getByText("You're ready. Waiting for the host")).toBeVisible();
   await expect(host.getByTestId("lobby-start")).toBeEnabled();
   await host.getByTestId("lobby-start").click();
 
