@@ -91,17 +91,17 @@ test("a whole US match: a running mate on turn 5, states called on election nigh
   expect(sawCall || night.calls.length === 51).toBe(true);
 });
 
-test("the US setup lines up: the create button sits level with the candidate box", async ({ page }) => {
+test("the setup editor lines up: the create button sits under the candidate box, left edges level", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("new-solo").click();
   await page.getByTestId("map-us").click();
   await expect(page.getByTestId("add-seat")).toContainText("Add a computer candidate");
   // Measured once the web fonts are in: until then the text, and so the boxes, are a different size.
   await page.evaluate(() => document.fonts.ready);
-  const gap = async () => {
-    const select = await page.getByLabel("Player 1 leader").boundingBox();
-    const button = await page.getByTestId("create-candidate-you").boundingBox();
-    return Math.abs(select!.y + select!.height - (button!.y + button!.height));
+  const layout = async () => {
+    const select = (await page.getByLabel("Player 1 leader").boundingBox())!;
+    const button = (await page.getByTestId("create-candidate-you").boundingBox())!;
+    return { left: Math.abs(select.x - button.x), below: button.y >= select.y + select.height };
   };
-  await expect.poll(gap).toBeLessThanOrEqual(2);
+  await expect.poll(layout).toEqual({ left: 0, below: true });
 });

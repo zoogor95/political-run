@@ -55,9 +55,10 @@ test("solo setup: choose the table, start, and the match survives closing the br
   await expect(page.getByTestId("setup")).toBeVisible();
 
   // First come, first served: a colour already taken by another seat can't be picked.
-  const you = page.getByTestId("seat-you");
-  await expect(you.getByRole("radio", { name: /taken by/ }).first()).toBeDisabled();
-  await page.getByTestId("seat-ai2").getByLabel(/difficulty/).selectOption("easy");
+  const editor = page.getByTestId("party-editor");
+  await expect(editor.getByRole("radio", { name: /taken by/ }).first()).toBeDisabled();
+  await page.getByTestId("seat-ai2").getByRole("button", { name: "Easy" }).click();
+  await expect(page.getByTestId("seat-ai2").getByRole("button", { name: "Easy" })).toHaveAttribute("aria-pressed", "true");
   await page.getByTestId("add-seat").click();
   await expect(page.locator("[data-testid^=seat-]")).toHaveCount(4);
   await expect(page.getByTestId("setup-luck")).not.toBeChecked();

@@ -65,6 +65,27 @@ export function selectMap(id: string, customs: CustomCandidate[] = []): MapEntry
   return map;
 }
 
+const MAP_KEY = "mm.map.v1";
+
+/** The map chosen on the main menu, which new matches start on. */
+export function preferredMap(): MapId {
+  try {
+    const v = localStorage.getItem(MAP_KEY);
+    return isMapId(v) ? v : "uk";
+  } catch {
+    return "uk";
+  }
+}
+
+export function setPreferredMap(id: MapId) {
+  try {
+    localStorage.setItem(MAP_KEY, id);
+  } catch {
+    // Remembered for this visit only.
+  }
+  selectMap(id);
+}
+
 /** For example "Parliamentary · 336 seats". */
 export const mapDetail = (entry: MapEntry) =>
   entry.pack.gameType === "presidential" ? `Presidential · ${totalSeats(entry.pack)} electoral votes` : `Parliamentary · ${totalSeats(entry.pack)} seats`;

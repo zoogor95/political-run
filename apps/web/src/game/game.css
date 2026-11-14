@@ -1007,7 +1007,6 @@
 .night-end,
 .settings-card,
 .setup,
-.menu,
 .handoff-card,
 .breaking,
 .call-banner {
@@ -1055,46 +1054,98 @@
   font-size: 13px;
 }
 
-/* Main menu */
+/* Main menu (design: Main menu artboard) */
 .menu {
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  padding: 28px 40px 0;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.menu-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.menu-title {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 7px 0 var(--ink);
+  padding: 14px 26px 16px;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 24px 16px;
+  gap: 16px;
 }
 
 .menu h1 {
-  font-family: "Lilita One", sans-serif;
-  font-weight: 400;
-  font-size: clamp(40px, 8vw, 72px);
+  font: 400 46px/1 "Lilita One", sans-serif;
+  letter-spacing: 0.01em;
   margin: 0;
-  color: var(--cream);
-  text-shadow: 0 5px 0 var(--ink), 3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 -3px 0 var(--ink);
+  color: var(--ink);
 }
 
-.tagline {
-  margin: 0 0 8px;
-  font-weight: 900;
+.menu .tagline {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #5a5270;
 }
 
-.menu-buttons {
+.menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 40px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 8px 20px 8px 8px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.menu-profile span {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: min(420px, 100%);
 }
 
-.menu-big {
-  font: 400 24px "Lilita One", sans-serif;
+.menu-profile b {
+  font-weight: 900;
+  font-size: 17px;
+}
+
+.menu-profile small {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5a5270;
+}
+
+.menu-callouts {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.menu-callout {
+  font: inherit;
   color: var(--ink);
   background: var(--cream);
-  border: 4px solid var(--ink);
-  border-radius: 18px;
-  box-shadow: 0 6px 0 var(--ink);
-  padding: 12px 18px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 8px 18px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1102,19 +1153,315 @@
   text-align: left;
 }
 
-.menu-big.primary {
+.menu-callout.gold {
   background: var(--gold);
 }
 
-.menu-big small {
-  font: 800 13px "Nunito", sans-serif;
-  color: var(--muted);
+.menu-callout b {
+  font: 400 21px "Lilita One", sans-serif;
+}
+
+.menu-callout small {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.menu-choose {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.menu-label {
+  font: 400 28px "Lilita One", sans-serif;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 6px 26px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.match-boxes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 22px;
+  width: 100%;
+  max-width: 1180px;
+}
+
+.match-box {
+  font: inherit;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 7px 0 var(--ink);
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.match-box:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+.match-box:disabled {
+  cursor: default;
+}
+
+.match-box-art {
+  position: relative;
+  height: 104px;
+  border-bottom: 4px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.soon-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+
+.match-box-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+}
+
+.match-box-body b {
+  font: 400 23px "Lilita One", sans-serif;
+}
+
+.match-box-about {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #4a4260;
+  flex-grow: 1;
+}
+
+.match-chip {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 900;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.menu-bar {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+}
+
+.menu-map {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 0 0 0 14px;
+}
+
+.menu-map select {
+  font: 800 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 10px 14px 10px 0;
+  cursor: pointer;
+}
+
+.menu-bar-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.menu-bar-buttons button {
+  position: relative;
+  font: 800 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.menu-bar-buttons button.gold {
+  background: var(--gold);
+}
+
+.menu-bar-buttons button.icon {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Not built yet: still drawn like the design, with quieter text. */
+.menu-bar-buttons button:disabled {
+  color: #6b6380;
+  cursor: default;
+}
+
+.menu-badge {
+  position: absolute;
+  top: -12px;
+  right: -10px;
+  background: #df4338;
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 1px 8px;
 }
 
 .lab-link {
   font-weight: 800;
   font-size: 13px;
   color: var(--ink);
+}
+
+.menu-ticker {
+  margin: 0 -40px;
+}
+
+.menu-ticker .ticker {
+  height: 44px;
+}
+
+.menu-ticker .ticker-tag {
+  font-size: 20px;
+  padding: 0 16px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Narrower screens: the boxes wrap, then on phones they become rows with the art on the left. */
+@media (max-width: 1100px) {
+  .match-boxes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .menu {
+    padding: 16px 16px 0;
+    gap: 14px;
+  }
+
+  .menu-ticker {
+    margin: 0 -16px;
+  }
+
+  .menu-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-title {
+    padding: 10px 14px 12px;
+  }
+
+  .menu-title svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .menu h1 {
+    font-size: 34px;
+  }
+
+  .menu-label {
+    font-size: 22px;
+  }
+
+  .match-boxes {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .match-box {
+    flex-direction: row;
+    box-shadow: 0 5px 0 var(--ink);
+  }
+
+  .match-box-art {
+    width: 84px;
+    height: auto;
+    border-bottom: 0;
+    border-right: 4px solid var(--ink);
+  }
+
+  .match-box-art svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .soon-tag {
+    top: auto;
+    bottom: 6px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  .match-box-body {
+    padding: 10px 12px 12px;
+  }
+
+  .match-box-body b {
+    font-size: 20px;
+  }
+
+  .menu-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-bar-buttons {
+    justify-content: center;
+  }
 }
 
 /* Match setup */
@@ -1768,6 +2115,551 @@
 
   .coach p {
     font-size: 13px;
+  }
+}
+
+/* Match setup (design: Match setup, Parliamentary online and Pass and play artboards) */
+.setup.setup-v2 {
+  max-width: 1280px;
+  padding: 24px 32px 30px;
+  gap: 20px;
+}
+
+.setup-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.setup .setup-back {
+  justify-self: start;
+  font-size: 16px;
+  padding: 10px 18px;
+  box-shadow: 0 4px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setup-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.setup-title h1 {
+  font: 400 32px "Lilita One", sans-serif;
+  margin: 0;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 2px 26px;
+}
+
+.setup-title span,
+.setup-go span {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.setup-go {
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.setup .setup-go .start {
+  font-size: 18px;
+  padding: 11px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.setup-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: 20px;
+  align-items: start;
+}
+
+.setup-card {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: 0 7px 0 var(--ink);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setup-card h2 {
+  font: 400 24px "Lilita One", sans-serif;
+  margin: 0;
+}
+
+.setup-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.setup-card-head .muted {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.seat-tile {
+  position: relative;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 0 var(--ink);
+}
+
+.seat-tile.selected {
+  box-shadow: 0 0 0 4px var(--gold), 0 5px 0 4px var(--ink);
+}
+
+.setup .seat-tile-pick {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.setup .seat-tile-pick:focus-visible {
+  outline: 3px solid #2f6fdf;
+  outline-offset: -3px;
+}
+
+.seat-band {
+  height: 74px;
+  border-bottom: 3px solid var(--ink);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 6px 7px;
+  box-sizing: border-box;
+}
+
+.seat-order,
+.seat-tag {
+  font-size: 10.5px;
+  font-weight: 900;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 0 5px;
+}
+
+.seat-tag {
+  background: var(--gold);
+}
+
+.seat-face {
+  margin-top: -40px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.seat-initials {
+  width: 80px;
+  height: 80px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 30px "Lilita One", sans-serif;
+}
+
+.seat-emblem {
+  position: absolute;
+  right: 8px;
+  bottom: -4px;
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seat-body {
+  padding: 8px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.seat-party {
+  font: 400 18px/1.1 "Lilita One", sans-serif;
+}
+
+.seat-player {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4a4260;
+}
+
+.seat-spacer {
+  flex-grow: 1;
+  min-height: 6px;
+}
+
+.seat-small {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #5a5270;
+}
+
+.seat-leader {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.seat-aff {
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b6380;
+}
+
+/* Cream with a dot of the party colour: white text on the lighter party colours can't reach readable contrast. */
+.seat-chip {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--ink);
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 1px 8px 1px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.seat-chip i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  flex: none;
+}
+
+.seat-level {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 10px 12px;
+}
+
+.setup .seat-level button {
+  font: 900 12px "Nunito", sans-serif;
+  text-transform: uppercase;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #fff;
+  padding: 3px 6px;
+}
+
+.setup .seat-level button + button {
+  border-top: 2px solid var(--ink);
+}
+
+.setup .seat-level button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.setup .seat-remove {
+  position: absolute;
+  top: 30px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 15px;
+  line-height: 1;
+  border-width: 2px;
+}
+
+.setup-v2 .add-seat {
+  font: inherit;
+  color: var(--ink);
+  border: 3px dashed var(--ink);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  min-height: 200px;
+  text-align: center;
+}
+
+.setup-v2 .add-seat b {
+  font-size: 15px;
+}
+
+.setup-v2 .add-seat small {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5a5270;
+}
+
+.setup-note {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a4260;
+  background: #f4ecd2;
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.setup-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.party-editor {
+  gap: 10px;
+}
+
+.party-editor h2,
+.match-options h2 {
+  font-size: 22px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #5a5270;
+}
+
+.setup-v2 .field select,
+.party-name-box input {
+  font: 800 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 6px 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.party-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.party-name-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.party-name-emblem {
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.party-name-box input {
+  font: 400 18px "Lilita One", sans-serif;
+}
+
+.party-name-box input:disabled {
+  background: #f4ecd2;
+}
+
+.setup-v2 .swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 38px);
+  justify-content: space-between;
+  row-gap: 8px;
+}
+
+.setup-v2 .swatch {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  padding: 0;
+}
+
+.setup-v2 .swatch svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.setup-v2 .swatch[aria-checked="true"] {
+  box-shadow: 0 0 0 3px var(--cream), 0 0 0 6px var(--ink);
+}
+
+.setup-v2 .swatch:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.emblems {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.setup .emblem-pick {
+  height: 60px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.setup .emblem-pick span {
+  font: 900 10px "Nunito", sans-serif;
+}
+
+.setup .emblem-pick:disabled {
+  background: #ecebef;
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.party-runs {
+  margin: 0;
+  font-weight: 800;
+}
+
+.match-options .map-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.setup .match-options button.map-card {
+  font: 800 14px "Nunito", sans-serif;
+  padding: 6px 10px;
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--ink);
+  display: block;
+}
+
+.setup .match-options button.map-card[aria-checked="true"] {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.match-options .small {
+  font-weight: 700;
+  color: #4a4260;
+}
+
+@media (max-width: 1100px) {
+  .setup-main {
+    grid-template-columns: 1fr;
+  }
+
+  .seat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .setup.setup-v2 {
+    padding: 16px;
+  }
+
+  .setup-top {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .setup-title h1 {
+    font-size: 24px;
+    padding: 2px 14px;
+  }
+
+  .setup-go {
+    align-items: stretch;
+  }
+
+  .setup .setup-go .start {
+    justify-content: center;
+  }
+
+  .seat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .setup-v2 .add-seat {
+    min-height: 140px;
   }
 }
 
