@@ -80,6 +80,14 @@ export interface CandidateDef {
   notes?: Record<string, string>;
 }
 
+/** Computer player settings a map can change (see Tuning in ai-smart.ts for what each does). */
+export interface MapAiTuning {
+  noise?: number;
+  anticipate?: number;
+  groupBias?: number;
+  seatBias?: number;
+}
+
 export interface MapPack {
   id: string;
   name: string;
@@ -102,7 +110,7 @@ export interface MapPack {
    * Computer player settings for this map, on top of the defaults (see TUNING in ai-smart.ts). Maps differ: the right
    * amount of randomness depends on how many regions there are to choose between. Set from the balance simulator.
    */
-  aiTuning?: { normal?: { noise?: number }; hard?: { noise?: number } };
+  aiTuning?: { normal?: MapAiTuning; hard?: MapAiTuning };
 }
 
 /** Match state. Plain JSON so it can be saved, sent over the network and replayed. */

@@ -190,7 +190,7 @@ describe("US pack", () => {
       expect(r.voters).toBe(row.votes);
       const margin = Math.abs(row.republican - row.democratic);
       const comp = 1 + 0.6 * Math.max(0, 1 - margin / 25);
-      expect(r.baseCost).toBe(Math.round((2000 + 1500 * r.seats * comp) / 1000) * 1000);
+      expect(r.baseCost).toBe(Math.max(3000, Math.round((1400 * r.seats ** 1.1 * comp) / 1000) * 1000));
     }
     expect(us.regions.reduce((a, r) => a + (r.voters ?? 0), 0)).toBe(155_240_955);
   });
