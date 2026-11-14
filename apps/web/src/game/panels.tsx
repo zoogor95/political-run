@@ -19,7 +19,7 @@ import {
 } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
 import { Portrait, toAvatar } from "./Portrait";
-import type { GameApi } from "./useGame";
+import { overspends, type GameApi } from "./useGame";
 import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, presidential, trackName, votesWord } from "./model";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
@@ -30,6 +30,19 @@ const partyColor = (s: GameState, id: string) => playerOf(s, id).party.color;
 function Chip({ color }: { color: string }) {
   return <i className="chip" style={{ background: color }} />;
 }
+
+/** Ink or white, whichever reads better on a colour (WCAG relative luminance). */
+export function textOn(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const lum = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  return 1.05 / (lum + 0.05) >= (lum + 0.05) / 0.071 ? "#fff" : "#2b2440";
+}
+
+/** A party's name as a short label for the tally: its first word, in capitals. */
+const shortName = (name: string) => (name.trim().split(/\s+/)[0] ?? "").toUpperCase().slice(0, 9);
 
 export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: () => void; onSettings?: () => void }) {
   // During the recap the bar shows the board as it was before the turn, so the reveal isn't given away.
@@ -59,15 +72,24 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
       )}
       <div className={`turn${final ? " final" : ""}`} data-testid="turn">
         <b>{game.stage === "results" ? "Result" : final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
-        <span>{state.round > 1 ? "Second round · " : ""}{map.name}</span>
+        <span>
+          {state.round > 1 ? "Second round · " : ""}
+          {map.name} · {total} {votesWord()}
+        </span>
       </div>
       <div className="tally-wrap" data-testid="tally">
         <div className="tally" role="img" aria-label={`Projected ${votesWord()}: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>
-          {order.map((p) => (
-            <div key={p.id} style={{ width: `${(100 * (seats[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: seats[p.id] ? 8 : 0 }}>
-              <span>{seats[p.id] ? seats[p.id] : ""}</span>
-            </div>
-          ))}
+          {order.map((p) => {
+            const n = seats[p.id] ?? 0;
+            const share = (100 * n) / total;
+            // Wide enough segments carry the party's short name too, as on the design's board.
+            const text = share >= 9 ? `${shortName(p.party.name)} ${n}` : share >= 2.5 ? String(n) : "";
+            return (
+              <div key={p.id} style={{ width: `${share}%`, background: p.party.color, color: textOn(p.party.color), paddingLeft: n ? 8 : 0 }}>
+                <span>{text}</span>
+              </div>
+            );
+          })}
           <em style={{ left: `${(100 * majority(pack)) / total}%` }} />
         </div>
         <div className="tally-note">
@@ -82,14 +104,28 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
                   ? "Expected seats if the election were today (luck factor on)"
                   : "Projected seats if the election were today"}
           </span>
-          <span>{majority(pack)} {presidential() ? "TO WIN" : "FOR A MAJORITY"}</span>
+          <span>
+            {majority(pack)} {presidential() ? "TO WIN" : "FOR A MAJORITY"}
+            {(() => {
+              const me = state.players.find((p) => p.id === game.viewer);
+              if (!me || counted) return null;
+              const short = shortName(me.party.name);
+              const need = majority(pack) - (seats[me.id] ?? 0);
+              return need > 0 ? ` · ${short} needs ${need} more` : ` · ${short} would win`;
+            })()}
+          </span>
         </div>
       </div>
       <div className="contention" data-testid="contention">
-        <span>IN CONTENTION</span>
-        <b>
-          {contention} / {pack.regions.length}
-        </b>
+        <span className="contention-row">
+          <span>IN CONTENTION</span>
+          <b>
+            {contention} / {pack.regions.length}
+          </b>
+        </span>
+        <span className="contention-bar" aria-hidden="true">
+          <i style={{ width: `${(100 * contention) / pack.regions.length}%` }} />
+        </span>
       </div>
       {game.stage !== "results" && (
         <button
@@ -141,6 +177,9 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
   const cost = shown > mine.steps ? moveCost(pack, you, trackId, mine.steps, shown) : 0;
   const nextCost = mine.steps < max ? moveCost(pack, you, trackId, mine.steps, mine.steps + 1) : 0;
   const canAdd = !locked && mine.steps < max && state.phase !== "finished";
+  // One more step only if the whole plan can still be paid for (group money only counts where it may be spent).
+  const affordable = shown < max && !overspends(state, game.viewer, { ...plan, steps: { ...(plan.steps ?? {}), [trackId]: shown + 1 } });
+  const stepAfter = shown < max ? moveCost(pack, you, trackId, mine.steps, shown + 1) - cost : 0;
   const wallets = eligibleWallets(pack, trackId).filter((w) => (you.wallets[w] ?? 0) > 0);
   const ranking = [...state.players].sort((a, b) => meterOf(state, trackId, b.id).steps - meterOf(state, trackId, a.id).steps);
   return (
@@ -186,7 +225,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               <small>{planned === undefined ? "NOW" : "PLANNED"}</small>
               <b data-testid="target">Step {shown}</b>
             </div>
-            <button type="button" aria-label="One step more" disabled={shown >= max} onClick={() => game.setTarget(trackId, shown + 1)} data-testid="step-up">
+            <button type="button" aria-label="One step more" disabled={shown >= max || !affordable} onClick={() => game.setTarget(trackId, shown + 1)} data-testid="step-up">
               +
             </button>
           </div>
@@ -195,7 +234,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               <>
                 <b>{money(nextCost)}</b>
                 <small>
-                  for the next step: press + to plan it
+                  for the next step{affordable ? ": press + to plan it" : ""}
                   {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
                 </small>
               </>
@@ -209,6 +248,11 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               </>
             )}
           </div>
+          {shown < max && !affordable && (
+            <p className="short-money" data-testid="short-money" role="status">
+              Not enough money for step {shown + 1} here: it costs {money(stepAfter)} more than your plan can pay. Take steps back elsewhere to free some up.
+            </p>
+          )}
           {planned !== undefined && (
             <button type="button" onClick={() => game.setTarget(trackId, null)} data-testid="remove-steps">
               Remove
@@ -290,6 +334,10 @@ export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string
         <b>{money(total)}</b>
         <span>Your money</span>
         <b data-testid="money">{money(totalMoney(you))}</b>
+        <span className="sums-left">Remaining</span>
+        <b className={`sums-left${totalMoney(you) - total < 0 ? " bad" : ""}`} data-testid="remaining">
+          {money(totalMoney(you) - total)}
+        </b>
       </div>
       {issues.length > 0 && (
         <ul className="issues" data-testid="issues">
@@ -539,6 +587,64 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
             </div>
           );
         })}
+    </section>
+  );
+}
+
+/**
+ * Every party at a glance, as on the design's board: you first, then the rest by projected seats, each with leader,
+ * who plays it and the seats; your money underneath. Tap a party to see what it leads on the map.
+ */
+export function LeadersCard({ game, highlight, onHighlight }: { game: GameApi; highlight: string | null; onHighlight: (id: string | null) => void }) {
+  const state = game.stage === "recap" && game.report ? game.report.before : game.state;
+  const seats = projectedSeats(pack, state);
+  const order = [...state.players].sort((a, b) => (a.id === game.viewer ? -1 : b.id === game.viewer ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
+  const you = state.players.find((p) => p.id === game.viewer);
+  return (
+    <section className="leaders-card" data-testid="leaders-card" aria-label="Leaders">
+      <h3 className="leaders-head">{presidential() ? "CANDIDATES" : "LEADERS"}</h3>
+      <ul>
+        {order.map((p) => {
+          const c = candidate(p.leaderId);
+          const custom = c && "custom" in c ? (c as CustomCandidate) : null;
+          const level = game.levelOf(p.id);
+          const mine = p.id === game.viewer;
+          const who = mine ? `${game.solo ? "YOU" : "PLAYING"} · ${p.party.name}` : `${p.party.name} · ${level ? `AI ${LEVEL_NAME[level]}` : "PERSON"}`;
+          return (
+            <li key={p.id} className={`${mine ? "you" : ""}${highlight === p.id ? " on" : ""}${p.eliminated !== undefined ? " out" : ""}`}>
+              <button type="button" onClick={() => onHighlight(highlight === p.id ? null : p.id)} aria-pressed={highlight === p.id} aria-label={`${p.party.name}: show what they lead on the map`}>
+                {custom ? (
+                  <Portrait avatar={toAvatar(custom.avatar)} size={44} label={`Portrait of ${custom.name}`} />
+                ) : (
+                  <span className="leader-initials" style={{ background: `color-mix(in srgb, ${p.party.color} 22%, #fff)`, borderColor: p.party.color }} aria-hidden="true">
+                    {candidateName(p.leaderId)
+                      .split(/\s+/)
+                      .filter((w) => /^[A-Z]/.test(w))
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")}
+                  </span>
+                )}
+                <span className="leader-text">
+                  <small>
+                    <i className="chip" style={{ background: p.party.color }} /> {who.toUpperCase()}
+                  </small>
+                  <b>
+                    {candidateName(p.leaderId)} <em>{custom ? "Your candidate" : (c?.affiliation ?? "")}</em>
+                  </b>
+                </span>
+                <span className="leader-seats">{p.eliminated !== undefined ? "out" : (seats[p.id] ?? 0)}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {you && (
+        <div className="leaders-money">
+          <span>Your money</span>
+          <b>{money(totalMoney(you))}</b>
+        </div>
+      )}
     </section>
   );
 }

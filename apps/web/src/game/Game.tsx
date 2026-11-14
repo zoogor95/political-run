@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BoardView } from "@majority-map/board";
-import { regionSeats, reservedScope } from "@majority-map/core";
+import { controllers, regionSeats, reservedScope } from "@majority-map/core";
 import { board, boardStyles, electionStyles, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import { play } from "./audio";
 import { useSettings } from "./settings";
 import { Countdown } from "./Online";
 import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
-import { GroupsPanel, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
+import { GroupsPanel, LeadersCard, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { Coach } from "./Coach";
 import { SeatMap } from "./SeatMap";
@@ -26,6 +26,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const [highlight, setHighlight] = useState<string | null>(null);
   // A region group picked in the Groups tab: its regions stay lit on the board.
   const [groupFocus, setGroupFocus] = useState<string | null>(null);
+  // Region groups this player leads, for the badge on the board's groups button.
+  const ownedGroups = useMemo(() => Object.values(controllers(pack, game.state)).filter((o) => o === game.viewer).length, [game.state, game.viewer]);
   const focusRegions = useMemo(() => (groupFocus ? (pack.groups.find((g) => g.id === groupFocus)?.regions ?? null) : null), [groupFocus]);
   useEffect(() => {
     if (tab !== "groups") setGroupFocus(null);
@@ -240,7 +242,30 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
             </button>
           )}
           {coaching && game.stage !== "results" && <Coach context={{ game, selected, tab }} onClose={() => setCoaching(false)} />}
+          {game.stage === "planning" && !onNight && (
+            <div className="group-buttons">
+              <button
+                type="button"
+                className={`round${tab === "groups" && !selected ? " on" : ""}`}
+                onClick={() => {
+                  setSelected(null);
+                  setTab("groups");
+                }}
+                data-testid="groups-button"
+              >
+                {presidential() ? "State" : "Region"}
+                <br />
+                groups
+                {ownedGroups > 0 && (
+                  <span className="round-badge" aria-label={`You lead ${ownedGroups}`}>
+                    {ownedGroups}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
         </div>
+        <div className="game-side">
         <aside className="panel game-panel">
           {game.stage === "results" && night ? (
             <ResultsPanel game={game} replay={replay} onReplay={setReplay} litGroup={litGroup} onGroup={(id) => {
@@ -332,6 +357,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
             </>
           )}
         </aside>
+        {!onNight && game.stage !== "results" && <LeadersCard game={game} highlight={highlight} onHighlight={setHighlight} />}
+        </div>
       </main>
       {breaking && <BreakingCard headline={breaking} onDone={endBreaking} />}
       {game.stage === "summary" && report && <SummaryView game={game} />}
