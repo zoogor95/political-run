@@ -23,6 +23,12 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("plan");
   const [highlight, setHighlight] = useState<string | null>(null);
+  // A region group picked in the Groups tab: its regions stay lit on the board.
+  const [groupFocus, setGroupFocus] = useState<string | null>(null);
+  const focusRegions = useMemo(() => (groupFocus ? (pack.groups.find((g) => g.id === groupFocus)?.regions ?? null) : null), [groupFocus]);
+  useEffect(() => {
+    if (tab !== "groups") setGroupFocus(null);
+  }, [tab]);
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<BoardView | null>(null);
@@ -104,12 +110,12 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     }
     // Pass and play: the hand-off screen shows the board but nobody's plan.
     if (game.stage === "handoff") return boardStyles(game.state, {}, null, null);
-    if (!recapping) return boardStyles(game.state, game.plan, highlight, game.viewer);
+    if (!recapping) return boardStyles(game.state, game.plan, highlight, game.viewer, focusRegions);
     const before = boardStyles(report.before, {}, null, null);
     const after = boardStyles(report.after, {}, null, null);
     const shown = new Set(recapRegions.slice(0, recapIndex + 1));
     return Object.fromEntries(board.regions.map((r) => [r.id, shown.has(r.id) ? after[r.id]! : before[r.id]!]));
-  }, [recapping, report, recapRegions, recapIndex, game.state, game.plan, highlight, onNight, night, called, game.stage, game.boards, replay]);
+  }, [recapping, report, recapRegions, recapIndex, game.state, game.plan, highlight, focusRegions, onNight, night, called, game.stage, game.boards, replay]);
   const endBreaking = useCallback(() => setBreakingDone(true), []);
 
   // The seat map: regions fill as they are declared; in the results, the replay slider shows the seats each turn's board
@@ -310,7 +316,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
               )}
               {tab === "plan" && <PlanPanel game={game} onOpen={setSelected} />}
               {tab === "party" && <PartyPanel game={game} />}
-              {tab === "groups" && <GroupsPanel game={game} onOpen={setSelected} />}
+              {tab === "groups" && <GroupsPanel game={game} onOpen={setSelected} focus={groupFocus} onFocus={setGroupFocus} />}
               {tab === "rivals" && <RivalsPanel game={game} highlight={highlight} onHighlight={setHighlight} />}
               {tab === "plan" && report && (
                 <section className="last" data-testid="last-turn">

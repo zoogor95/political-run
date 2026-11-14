@@ -148,6 +148,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
         {region ? `${region.seats} ${votesWord()}` : "National group · its own meter"}
         {locked ? ` · locked by ${partyName(state, state.locked[trackId]!)}` : ""}
       </p>
+      {region && <RegionGroups state={state} regionId={region.id} />}
       <div className="meters">
         {ranking.map((p) => (
           <div key={p.id} className="meter-row">
@@ -212,6 +213,28 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
       )}
       {wallets.length > 0 && <p className="small">Group money you can spend here: {wallets.map((w) => `${groupName(w)} ${money(you.wallets[w] ?? 0)}`).join(" · ")}</p>}
     </section>
+  );
+}
+
+/** The region groups a region belongs to, each with a chip for whoever holds it. */
+function RegionGroups({ state, regionId }: { state: GameState; regionId: string }) {
+  const groups = pack.groups.filter((g) => g.kind === "state" && g.regions.includes(regionId));
+  if (groups.length === 0) return null;
+  const ctrl = controllers(pack, state);
+  return (
+    <p className="small region-groups" data-testid="region-groups">
+      <span className="muted">Groups: </span>
+      {groups.map((g, i) => {
+        const owner = ctrl[g.id];
+        return (
+          <span key={g.id} title={owner ? `Held by ${partyName(state, owner)}` : "Nobody holds it yet"}>
+            {i > 0 ? " · " : ""}
+            <Chip color={owner ? partyColor(state, owner) : "#ffffff"} />
+            {g.name}
+          </span>
+        );
+      })}
+    </p>
   );
 }
 
@@ -410,18 +433,34 @@ function MembersPanel({ game }: { game: GameApi }) {
   );
 }
 
-export function GroupsPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string) => void }) {
+export function GroupsPanel({
+  game,
+  onOpen,
+  focus,
+  onFocus,
+}: {
+  game: GameApi;
+  onOpen: (id: string) => void;
+  /** The region group lit up on the board, if any. */
+  focus: string | null;
+  onFocus: (groupId: string | null) => void;
+}) {
   const { state } = game;
   const ctrl = controllers(pack, state);
   const you = playerOf(state, game.viewer);
   const row = (id: string) => {
     const g = pack.groups.find((x) => x.id === id)!;
     const owner = ctrl[id];
+    const national = g.kind === "national";
+    const on = focus === id;
+    // A region group lights up its regions on the board; a national group opens its own meter.
+    const open = () => (national ? onOpen(id) : onFocus(on ? null : id));
     return (
-      <tr key={id} onClick={g.kind === "national" ? () => onOpen(id) : undefined} className={g.kind === "national" ? "link" : ""}>
+      <tr key={id} onClick={open} className={`link${on ? " on" : ""}`} aria-selected={on} data-testid={`group-row-${id}`}>
         <td>
           {owner ? <Chip color={partyColor(state, owner)} /> : <Chip color="#ffffff" />}
           {g.name}
+          {!national && <small className="muted"> · {g.regions.length} {g.regions.length === 1 ? "region" : "regions"}</small>}
         </td>
         <td>{money(g.income)}</td>
         <td>{pct(groupModifier(pack, you, id))}</td>
@@ -435,7 +474,7 @@ export function GroupsPanel({ game, onOpen }: { game: GameApi; onOpen: (id: stri
       <table className="list groups">
         <thead>
           <tr>
-            <th>Region groups</th>
+            <th>Region groups · tap to see them on the map</th>
             <th>Income</th>
             <th>You</th>
             <th>Wallet</th>

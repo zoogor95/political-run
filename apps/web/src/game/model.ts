@@ -137,7 +137,14 @@ export function planLines(state: GameState, plan: Plan, viewer: string): PlanLin
 }
 
 /** Board colours from the match: each region in its leader's shade for their pips, pip bars for the top three. */
-export function boardStyles(state: GameState, plan: Plan, highlight: string | null, viewer: string | null): Record<string, RegionStyle> {
+/** A blank region in the region group picked in the Groups tab: light gold, so the group stands out on an empty board. */
+const FOCUS_FILL = 0xffe08a;
+
+/**
+ * How every region looks on the campaign board. `highlight` is a rival whose leads stay lit (rival view); `focus` is a
+ * set of regions that stay lit (a region group picked in the Groups tab). Everything else fades.
+ */
+export function boardStyles(state: GameState, plan: Plan, highlight: string | null, viewer: string | null, focus: string[] | null = null): Record<string, RegionStyle> {
   const color = Object.fromEntries(state.players.map((p) => [p.id, hexToNumber(p.party.color)]));
   const you = viewer ? playerOf(state, viewer) : null;
   const styles: Record<string, RegionStyle> = {};
@@ -149,6 +156,11 @@ export function boardStyles(state: GameState, plan: Plan, highlight: string | nu
     let fill = leader ? shadeFor(color[leader.id]!, leader.steps, pack.rules.steps) : EMPTY;
     // Rival view: regions that rival leads stay lit, the rest fade.
     if (highlight && leader?.id !== highlight) fill = tint(fill, 0.65);
+    // Group view: the group's regions stand out (blank ones turn light gold), the rest fade.
+    if (focus) {
+      if (!focus.includes(r.id)) fill = tint(fill, 0.75);
+      else if (!leader) fill = FOCUS_FILL;
+    }
     styles[r.id] = {
       fill,
       shares: top.slice(0, 3).map((x) => ({ color: color[x.id]!, share: x.steps })),
