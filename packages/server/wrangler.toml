@@ -1,0 +1,15 @@
+# The Majority Map API: a Cloudflare Worker with one D1 database. Deploy with `pnpm --filter @majority-map/server deploy`.
+name = "majority-map-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+# The game's web sites allowed to call the API; localhost is always allowed for development.
+ALLOWED_ORIGINS = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "majority-map"
+database_id = "c7b41557-19d4-4ddb-9ed6-6284d9cd295f"
+migrations_dir = "migrations"

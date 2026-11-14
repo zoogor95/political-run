@@ -1,0 +1,19 @@
+{
+  "name": "@majority-map/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The online backend on Cloudflare: a Worker with a D1 database (accounts first; matches next).",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "wrangler dev",
+    "migrate": "wrangler d1 migrations apply majority-map --remote",
+    "deploy": "wrangler d1 migrations apply majority-map --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261029.1",
+    "miniflare": "4.20260730.0",
+    "wrangler": "4.156.0"
+  }
+}
