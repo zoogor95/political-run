@@ -67,6 +67,10 @@ export function Lab() {
   return (
     <div className="lab">
       <header className="bar">
+        {/* The lab is its own page (?lab): this goes back to the game's main menu. */}
+        <a className="lab-back" href={location.pathname} data-testid="lab-back">
+          ← Main menu
+        </a>
         <span className="brand">Board lab</span>
         <nav className="boards" aria-label="Board">
           {BOARDS.map((b) => (
