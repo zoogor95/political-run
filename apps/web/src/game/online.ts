@@ -16,7 +16,7 @@ export interface RoomView {
   youHost: boolean;
   you: string | null;
   setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean; turnSeconds?: number | null };
-  seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: Seat["party"]; leaderId: string; playerName: string | null }[];
+  seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: Seat["party"]; leaderId: string; playerName: string | null; ready: boolean }[];
   state: GameState | null;
   turnsPlayed: number;
   submitted: string[];
@@ -218,6 +218,9 @@ export class MatchLink {
   }
 
   start = () => this.send({ type: "start" });
+  /** Changes your own party in the lobby (first come, first served; the server refuses what's taken). */
+  pick = (change: { name?: string; color?: string; emblem?: string; leaderId?: string }) => this.send({ type: "pick", change });
+  setReady = (ready: boolean) => this.send({ type: "ready", ready });
   submit = (turn: number, plan: Plan) => this.send({ type: "plan", turn, plan });
   clearError = () => this.set({ error: null });
 

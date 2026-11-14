@@ -1,7 +1,7 @@
 import { createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
 import { describe, expect, it } from "vitest";
 import { inviteCode } from "../src/api.js";
-import { checkSetup, join, leave, newRoom, packFor, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
+import { checkSetup, join, leave, newRoom, packFor, pick, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
 
 const seat = (id: string, kind: "human" | "ai", leaderId: string, color: string, emblem: string) => ({
   id,
@@ -40,6 +40,7 @@ describe("the lobby", () => {
     expect(() => start(room, "host")).toThrow("every friend");
     join(room, "friend", "Ali");
     expect(() => start(room, "friend")).toThrow("Only the host");
+    setReady(room, "friend", true);
     start(room, "host");
     expect(room.status).toBe("active");
     expect(room.state!.players.map((p) => p.id)).toEqual(["p1", "p2", "cpu"]);
@@ -62,6 +63,7 @@ describe("playing the match", () => {
   it("waits for every person's plan, then resolves the turn with the computer's too and keeps plans secret till then", () => {
     const room = lobby();
     join(room, "friend", "Ali");
+    setReady(room, "friend", true);
     start(room, "host");
     const first = submit(room, "host", 1, planFor(room, "p1"));
     expect(first.turns).toEqual([]);
@@ -77,6 +79,7 @@ describe("playing the match", () => {
   it("refuses plans for the wrong turn, plans that break the rules, and people without a seat", () => {
     const room = lobby();
     join(room, "friend", "Ali");
+    setReady(room, "friend", true);
     start(room, "host");
     expect(() => submit(room, "host", 2, {})).toThrow("another turn");
     expect(() => submit(room, "host", 1, { steps: { nowhere: 3 } })).toThrow("breaks the rules");
@@ -86,6 +89,7 @@ describe("playing the match", () => {
   it("plays to the end, and every device replaying the sent turns lands on the server's board and result", () => {
     const room = lobby();
     join(room, "friend", "Ali");
+    setReady(room, "friend", true);
     start(room, "host");
     const pack = packFor(room.setup);
     // A device starts from the same board and replays each turn it is sent.
@@ -110,6 +114,7 @@ describe("turn timers", () => {
   const timed = (seconds: number) => {
     const room = newRoom("TIME01", "match-2", { ...structuredClone(SETUP), turnSeconds: seconds }, HOST, 99, 0);
     join(room, "friend", "Ali");
+    setReady(room, "friend", true);
     start(room, "host", 1000);
     return room;
   };
@@ -173,8 +178,57 @@ describe("turn timers", () => {
   it("has no deadline without a timer", () => {
     const room = lobby();
     join(room, "friend", "Ali");
+    setReady(room, "friend", true);
     start(room, "host", 1000);
     expect(room.deadline).toBeNull();
     expect(timeout(room, 10 ** 13).turns).toEqual([]);
+  });
+});
+
+describe("picks in the lobby", () => {
+  it("names a newcomer's placeholder party after them", () => {
+    const room = newRoom("PICK01", "m", { ...structuredClone(SETUP), seats: SETUP.seats.map((x, i) => (i === 1 ? { ...x, party: { ...x.party, name: "Friend 1 Party" } } : x)) }, HOST, 1, 0);
+    join(room, "friend", "Ali");
+    expect(room.seats[1]!.party.name).toBe("Ali Party");
+  });
+
+  it("lets each person change their own party, first come first served", () => {
+    const room = lobby();
+    join(room, "friend", "Ali");
+    pick(room, "friend", { name: "  The   Ali  Party ", color: "#D63F8C", emblem: "balloon", leaderId: "andy-burnham" });
+    expect(room.seats[1]).toMatchObject({ party: { name: "The Ali Party", color: "#d63f8c", emblem: "balloon" }, leaderId: "andy-burnham" });
+    expect(() => pick(room, "host", { color: "#d63f8c" })).toThrow("colour first");
+    expect(() => pick(room, "host", { emblem: "balloon" })).toThrow("emblem first");
+    expect(() => pick(room, "host", { leaderId: "andy-burnham" })).toThrow("leader");
+    expect(() => pick(room, "host", { name: "the ali party" })).toThrow("name");
+    expect(() => pick(room, "host", { color: "#123456" })).toThrow("Unknown colour");
+    expect(() => pick(room, "stranger", { color: "#7cb518" })).toThrow("seat");
+  });
+
+  it("locks picks while ready, and starts only when everyone is", () => {
+    const room = lobby();
+    join(room, "friend", "Ali");
+    expect(() => start(room, "host")).toThrow("everyone is ready");
+    setReady(room, "friend", true);
+    expect(view(room, "host").seats[1]!.ready).toBe(true);
+    expect(() => pick(room, "friend", { color: "#7cb518" })).toThrow("Change my pick");
+    setReady(room, "friend", false);
+    pick(room, "friend", { color: "#7cb518" });
+    setReady(room, "friend", true);
+    start(room, "host");
+    expect(room.state!.players[1]!.party.color).toBe("#7cb518");
+    expect(() => pick(room, "friend", { color: "#d63f8c" })).toThrow("already started");
+  });
+
+  it("on Presidential maps, a candidate pick brings its party along", () => {
+    const us: MatchSetup = {
+      map: "us",
+      seats: [seat("p1", "human", "donald-trump", "#c8102e", "megaphone"), seat("p2", "human", "jd-vance", "#e8604c", "owl"), seat("cpu", "ai", "kamala-harris", "#1f4fb4", "lighthouse")],
+    };
+    const room = newRoom("US0001", "m", us, HOST, 1, 0);
+    join(room, "friend", "Ali");
+    pick(room, "friend", { leaderId: "ron-desantis" });
+    expect(room.seats[1]!.party.name).toBe("Ron DeSantis");
+    expect(room.seats[1]!.party.color).not.toBe(room.seats[0]!.party.color);
   });
 });

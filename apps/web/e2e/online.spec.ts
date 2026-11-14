@@ -56,11 +56,25 @@ test("two friends on different devices play a private match to the end", async (
   await friend.getByTestId("join-code").fill(` ${code.toLowerCase()} `);
   await friend.getByTestId("join-go").click();
   await expect(friend.getByTestId("lobby-seats")).toContainText("(you)");
-  await expect(friend.getByText("Waiting for the host to start")).toBeVisible();
+  // The friend makes the party their own: a name and a colour, first come first served.
+  await expect(friend.getByTestId("lobby-name")).toHaveValue(/Party$/);
+  await expect(friend.getByTestId("lobby-party").getByRole("radio", { name: /taken by/ }).first()).toBeDisabled();
+  await friend.getByTestId("lobby-name").fill("Sara Party");
+  await friend.getByTestId("lobby-name").press("Enter");
+  await friend.getByTestId("lobby-party").getByRole("radio", { name: "Lime", exact: true }).click();
+  await expect(host.getByTestId("lobby-seats")).toContainText("Sara Party");
+  await expect(host.getByTestId("lobby-start")).toHaveText("Waiting for 1 to get ready");
+  await friend.getByTestId("lobby-ready").click();
+  await expect(friend.getByText("You're ready")).toBeVisible();
   await expect(host.getByTestId("lobby-start")).toBeEnabled();
   await host.getByTestId("lobby-start").click();
 
   for (const page of [host, friend]) await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  // The friend's picks are their party in the match, on both devices.
+  const friendParty = (page: Page) =>
+    page.evaluate(() => (window as unknown as { __game: { game: { state: { players: { party: { name: string; color: string } }[] } } } }).__game.game.state.players[1]!.party);
+  expect(await friendParty(host)).toEqual({ name: "Sara Party", color: "#7cb518", emblem: expect.any(String) });
+  expect(await friendParty(friend)).toEqual(await friendParty(host));
 
   // Each turn: the host sends a plan and waits; the friend's plan resolves the turn on both devices.
   let turns = 0;
@@ -95,6 +109,8 @@ test("a turn timer moves the match on without a friend who's away, and the ongoi
   const code = (await host.getByTestId("invite-code").textContent())!;
   await friend.goto(`/?join=${code}`);
   await expect(friend.getByTestId("lobby-seats")).toContainText("(you)");
+  await friend.getByTestId("lobby-ready").click();
+  await expect(host.getByTestId("lobby-start")).toBeEnabled();
   await host.getByTestId("lobby-start").click();
   for (const page of [host, friend]) await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
 

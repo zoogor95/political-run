@@ -2,7 +2,9 @@
 import { useEffect, useReducer, useState } from "react";
 import { useCloud } from "./cloud";
 import { askToNotify, canNotify, notificationsOn, nudge } from "./notify";
-import { candidateName, MAPS, isMapId, selectMap } from "./model";
+import { candidateName, map, MAPS, isMapId, selectMap } from "./model";
+import { EmblemIcon } from "./Menu";
+import { COLORS, EMBLEMS, EMBLEM_NAME } from "./setup";
 import { inviteLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
 
 /** Re-renders whenever the link changes (a new view, the connection, an error). */
@@ -123,9 +125,12 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
     }
   };
   const open = view?.seats.filter((s) => s.kind === "human" && !s.playerName).length ?? 0;
+  // People other than the host who haven't said they're ready (the host starting is their ready).
+  const hostSeat = view?.seats.find((s) => s.kind === "human")?.id;
+  const notReady = view?.seats.filter((s) => s.kind === "human" && s.playerName && s.id !== hostSeat && !s.ready).length ?? 0;
   const mapName = view && isMapId(view.setup.map) ? MAPS[view.setup.map].name : "";
   return (
-    <main className="setup lobby" data-testid="lobby">
+    <main className="setup setup-v2 lobby" data-testid="lobby">
       <header className="setup-head">
         <button
           type="button"
@@ -173,17 +178,26 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
                 <b>{s.party.name}</b>
                 <small>{candidateName(s.leaderId)}</small>
                 <span className={s.kind === "human" && !s.playerName ? "muted" : ""}>
-                  {s.kind === "ai" ? `Computer · ${LEVEL[s.level]}` : s.playerName ? `${s.playerName}${s.id === view.you ? " (you)" : ""}` : "Waiting for a friend…"}
+                  {s.kind === "ai"
+                    ? `Computer · ${LEVEL[s.level]}`
+                    : s.playerName
+                      ? `${s.playerName}${s.id === view.you ? " (you)" : ""} · ${view.seats.length && s.id === view.seats.find((x) => x.kind === "human")?.id ? "host" : s.ready ? "ready" : "choosing"}`
+                      : "Waiting for a friend…"}
                 </span>
               </li>
             ))}
           </ul>
+          {view.you && <LobbyParty link={link} view={view} />}
           {view.youHost ? (
-            <button type="button" className="primary start" disabled={open > 0 || link.status !== "open"} onClick={() => (link.clearError(), link.start())} data-testid="lobby-start">
-              {open > 0 ? `Waiting for ${open} more ${open === 1 ? "friend" : "friends"}` : "Start the campaign"}
+            <button type="button" className="primary start" disabled={open > 0 || notReady > 0 || link.status !== "open"} onClick={() => (link.clearError(), link.start())} data-testid="lobby-start">
+              {open > 0
+                ? `Waiting for ${open} more ${open === 1 ? "friend" : "friends"}`
+                : notReady > 0
+                  ? `Waiting for ${notReady} to get ready`
+                  : "Start the campaign"}
             </button>
           ) : (
-            view.you && <p className="small">Waiting for the host to start the match.</p>
+            view.you && <p className="small">{view.seats.find((x) => x.id === view.you)?.ready ? "You're ready. Waiting for the host to start the match." : "Pick your party, then press I'm ready."}</p>
           )}
         </>
       )}
@@ -259,5 +273,123 @@ export function OngoingScreen({ onBack, onOpen }: { onBack: () => void; onOpen: 
       )}
       <NotifyButton />
     </main>
+  );
+}
+
+/**
+ * Your party in the lobby (design: Parliamentary online setup, "Your party here"): name, colour and emblem, first come
+ * first served with taken ones crossed out, and the leader; Presidential maps pick the candidate only. Friends press
+ * I'm ready to lock their picks; the host's Start is their ready.
+ */
+function LobbyParty({ link, view }: { link: MatchLink; view: RoomView }) {
+  const mine = view.seats.find((s) => s.id === view.you)!;
+  const others = view.seats.filter((s) => s.id !== mine.id);
+  const presidential = map.pack.gameType === "presidential";
+  const locked = mine.ready && !view.youHost;
+  const [name, setName] = useState(mine.party.name);
+  useEffect(() => setName(mine.party.name), [mine.party.name]);
+  const takenBy = (pred: (s: RoomView["seats"][number]) => boolean) => others.find(pred)?.party.name;
+  const sendName = () => {
+    const n = name.trim();
+    if (n && n !== mine.party.name) link.pick({ name: n });
+  };
+  return (
+    <section className="backup lobby-party" data-testid="lobby-party" style={{ borderTopColor: mine.party.color }}>
+      <div className="setup-card-head">
+        <h2>{presidential ? "Your candidate" : "Your party here"}</h2>
+        {!view.youHost && (
+          <button type="button" className={mine.ready ? "" : "primary"} onClick={() => link.setReady(!mine.ready)} data-testid="lobby-ready">
+            {mine.ready ? "Change my pick" : "I'm ready"}
+          </button>
+        )}
+      </div>
+      <fieldset disabled={locked} className="lobby-party-fields">
+        {!presidential && (
+          <>
+            <label className="party-name">
+              <span className="field-label">PARTY NAME</span>
+              <span className="party-name-box">
+                <span className="party-name-emblem" style={{ background: mine.party.color }}>
+                  <EmblemIcon emblem={mine.party.emblem} color="#fff7e2" size={26} />
+                </span>
+                <input
+                  value={name}
+                  maxLength={28}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={sendName}
+                  onKeyDown={(e) => e.key === "Enter" && sendName()}
+                  aria-label="Your party name"
+                  data-testid="lobby-name"
+                />
+              </span>
+            </label>
+            <div className="field">
+              <span className="field-label">COLOUR</span>
+              <div className="swatches" role="radiogroup" aria-label="Your colour">
+                {COLORS.map((c) => {
+                  const by = takenBy((s) => s.party.color.toLowerCase() === c.hex);
+                  return (
+                    <button
+                      key={c.hex}
+                      type="button"
+                      role="radio"
+                      aria-checked={mine.party.color.toLowerCase() === c.hex}
+                      aria-label={by ? `${c.name}, taken by ${by}` : c.name}
+                      disabled={Boolean(by)}
+                      className="swatch"
+                      style={{ background: c.hex }}
+                      onClick={() => link.pick({ color: c.hex })}
+                    >
+                      {by && (
+                        <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+                          <path d="M6 26L26 6" stroke="#fff7e2" strokeWidth="7" strokeLinecap="round" />
+                          <path d="M6 26L26 6" stroke="#2b2440" strokeWidth="3" strokeLinecap="round" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="field">
+              <span className="field-label">EMBLEM</span>
+              <div className="emblems" role="radiogroup" aria-label="Your emblem">
+                {EMBLEMS.map((e) => {
+                  const by = takenBy((s) => s.party.emblem === e);
+                  const on = mine.party.emblem === e;
+                  return (
+                    <button
+                      key={e}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      aria-label={by ? `${EMBLEM_NAME[e]}, taken by ${by}` : EMBLEM_NAME[e]}
+                      disabled={Boolean(by)}
+                      className="emblem-pick"
+                      style={on ? { boxShadow: `0 0 0 3px ${mine.party.color}, 0 4px 0 3px #2b2440` } : undefined}
+                      onClick={() => link.pick({ emblem: e })}
+                    >
+                      <EmblemIcon emblem={e} color={on ? mine.party.color : by ? "#dcdce2" : "#fff7e2"} size={30} />
+                      <span>{by ? "TAKEN" : EMBLEM_NAME[e]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+        <label className="field">
+          <span className="field-label">{presidential ? "CANDIDATE" : "LEADER"}</span>
+          <select value={mine.leaderId} onChange={(e) => link.pick({ leaderId: e.target.value })} aria-label="Your leader" data-testid="lobby-leader">
+            {map.pack.candidates.map((c) => (
+              <option key={c.id} value={c.id} disabled={others.some((s) => s.leaderId === c.id)}>
+                {c.name} · {c.affiliation}
+              </option>
+            ))}
+          </select>
+        </label>
+        <small className="muted">Crossed out: someone in this lobby picked it first. {view.youHost ? "" : "Picks lock when you're ready."}</small>
+      </fieldset>
+    </section>
   );
 }
