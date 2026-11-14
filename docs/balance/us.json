@@ -1,0 +1,589 @@
+{
+  "games": 4000,
+  "duels": {
+    "balanced": {
+      "games": 668,
+      "wins": 501,
+      "fair": 334
+    },
+    "big-regions": {
+      "games": 668,
+      "wins": 393,
+      "fair": 334
+    },
+    "small-regions": {
+      "games": 668,
+      "wins": 36,
+      "fair": 334
+    },
+    "groups": {
+      "games": 668,
+      "wins": 450,
+      "fair": 334
+    },
+    "rush": {
+      "games": 664,
+      "wins": 321,
+      "fair": 332
+    },
+    "hoard": {
+      "games": 664,
+      "wins": 299,
+      "fair": 332
+    }
+  },
+  "duelMatrix": {
+    "balanced": {
+      "big-regions": 82,
+      "small-regions": 133,
+      "groups": 78,
+      "rush": 101,
+      "hoard": 107
+    },
+    "big-regions": {
+      "balanced": 52,
+      "small-regions": 125,
+      "groups": 73,
+      "rush": 76,
+      "hoard": 67
+    },
+    "small-regions": {
+      "balanced": 1,
+      "big-regions": 9,
+      "groups": 3,
+      "rush": 16,
+      "hoard": 7
+    },
+    "groups": {
+      "balanced": 56,
+      "big-regions": 61,
+      "small-regions": 131,
+      "rush": 88,
+      "hoard": 114
+    },
+    "rush": {
+      "balanced": 32,
+      "big-regions": 57,
+      "small-regions": 117,
+      "groups": 45,
+      "hoard": 70
+    },
+    "hoard": {
+      "balanced": 26,
+      "big-regions": 66,
+      "small-regions": 126,
+      "groups": 19,
+      "rush": 62
+    }
+  },
+  "duelGames": {
+    "balanced": {
+      "big-regions": 134,
+      "small-regions": 134,
+      "groups": 134,
+      "rush": 133,
+      "hoard": 133
+    },
+    "big-regions": {
+      "balanced": 134,
+      "small-regions": 134,
+      "groups": 134,
+      "rush": 133,
+      "hoard": 133
+    },
+    "small-regions": {
+      "balanced": 134,
+      "big-regions": 134,
+      "groups": 134,
+      "rush": 133,
+      "hoard": 133
+    },
+    "groups": {
+      "balanced": 134,
+      "big-regions": 134,
+      "small-regions": 134,
+      "rush": 133,
+      "hoard": 133
+    },
+    "rush": {
+      "balanced": 133,
+      "big-regions": 133,
+      "small-regions": 133,
+      "groups": 133,
+      "hoard": 132
+    },
+    "hoard": {
+      "balanced": 133,
+      "big-regions": 133,
+      "small-regions": 133,
+      "groups": 133,
+      "rush": 132
+    }
+  },
+  "field": {
+    "rush": {
+      "games": 1298,
+      "wins": 326,
+      "fair": 324.76666666666307
+    },
+    "small-regions": {
+      "games": 1330,
+      "wins": 39,
+      "fair": 332.3333333333295
+    },
+    "big-regions": {
+      "games": 1326,
+      "wins": 926,
+      "fair": 337.7833333333297
+    },
+    "balanced": {
+      "games": 1347,
+      "wins": 296,
+      "fair": 338.31666666666234
+    },
+    "groups": {
+      "games": 1348,
+      "wins": 145,
+      "fair": 337.3499999999956
+    },
+    "hoard": {
+      "games": 1309,
+      "wins": 268,
+      "fair": 329.4499999999963
+    }
+  },
+  "leaders": {
+    "barack-obama": {
+      "games": 723,
+      "wins": 230,
+      "fair": 239.83333333333246
+    },
+    "donald-trump": {
+      "games": 685,
+      "wins": 278,
+      "fair": 230.51666666666574
+    },
+    "joe-biden": {
+      "games": 685,
+      "wins": 264,
+      "fair": 226.93333333333229
+    },
+    "ross-perot": {
+      "games": 715,
+      "wins": 242,
+      "fair": 235.649999999999
+    },
+    "ronald-reagan": {
+      "games": 696,
+      "wins": 225,
+      "fair": 230.5499999999991
+    },
+    "john-f-kennedy": {
+      "games": 703,
+      "wins": 208,
+      "fair": 235.76666666666554
+    },
+    "kamala-harris": {
+      "games": 739,
+      "wins": 227,
+      "fair": 247.04999999999893
+    },
+    "ron-desantis": {
+      "games": 725,
+      "wins": 260,
+      "fair": 246.3499999999989
+    },
+    "jd-vance": {
+      "games": 719,
+      "wins": 264,
+      "fair": 240.91666666666575
+    },
+    "theodore-roosevelt": {
+      "games": 718,
+      "wins": 248,
+      "fair": 239.86666666666594
+    },
+    "josh-shapiro": {
+      "games": 683,
+      "wins": 246,
+      "fair": 228.01666666666566
+    },
+    "nikki-haley": {
+      "games": 663,
+      "wins": 200,
+      "fair": 220.79999999999907
+    },
+    "abraham-lincoln": {
+      "games": 705,
+      "wins": 245,
+      "fair": 238.59999999999906
+    },
+    "franklin-roosevelt": {
+      "games": 710,
+      "wins": 245,
+      "fair": 243.14999999999932
+    },
+    "tim-walz": {
+      "games": 680,
+      "wins": 186,
+      "fair": 228.76666666666594
+    },
+    "bernie-sanders": {
+      "games": 709,
+      "wins": 223,
+      "fair": 237.03333333333217
+    },
+    "george-washington": {
+      "games": 700,
+      "wins": 209,
+      "fair": 230.19999999999914
+    }
+  },
+  "seats": {
+    "2p seat 1": {
+      "games": 2000,
+      "wins": 1014,
+      "fair": 1000
+    },
+    "2p seat 2": {
+      "games": 2000,
+      "wins": 986,
+      "fair": 1000
+    },
+    "5p seat 1": {
+      "games": 650,
+      "wins": 157,
+      "fair": 130.00000000000117
+    },
+    "5p seat 2": {
+      "games": 650,
+      "wins": 130,
+      "fair": 130.00000000000117
+    },
+    "5p seat 3": {
+      "games": 650,
+      "wins": 137,
+      "fair": 130.00000000000117
+    },
+    "5p seat 4": {
+      "games": 650,
+      "wins": 112,
+      "fair": 130.00000000000117
+    },
+    "5p seat 5": {
+      "games": 650,
+      "wins": 114,
+      "fair": 130.00000000000117
+    },
+    "3p seat 1": {
+      "games": 692,
+      "wins": 241,
+      "fair": 230.66666666666885
+    },
+    "3p seat 2": {
+      "games": 692,
+      "wins": 219,
+      "fair": 230.66666666666885
+    },
+    "3p seat 3": {
+      "games": 692,
+      "wins": 232,
+      "fair": 230.66666666666885
+    },
+    "4p seat 1": {
+      "games": 658,
+      "wins": 161,
+      "fair": 164.5
+    },
+    "4p seat 2": {
+      "games": 658,
+      "wins": 160,
+      "fair": 164.5
+    },
+    "4p seat 3": {
+      "games": 658,
+      "wins": 158,
+      "fair": 164.5
+    },
+    "4p seat 4": {
+      "games": 658,
+      "wins": 179,
+      "fair": 164.5
+    }
+  },
+  "turns": {
+    "mean": 16.59175000000025,
+    "min": 9,
+    "max": 36
+  },
+  "secondRounds": 1132,
+  "capped": 0,
+  "winnerSeatShare": 0.6303722118959099,
+  "majorityWins": 3991,
+  "lostShare": 0.27513915831693353,
+  "lineups": [
+    {
+      "levels": [
+        "normal",
+        "easy",
+        "easy"
+      ],
+      "games": 320,
+      "share": {
+        "normal": 1
+      },
+      "lost": 0.08817675272256027
+    },
+    {
+      "levels": [
+        "hard",
+        "easy",
+        "easy"
+      ],
+      "games": 320,
+      "share": {
+        "hard": 1
+      },
+      "lost": 0.08785814118636835
+    },
+    {
+      "levels": [
+        "hard",
+        "normal",
+        "normal"
+      ],
+      "games": 320,
+      "share": {
+        "hard": 0.39375,
+        "normal": 0.60625
+      },
+      "lost": 0.2989181442201384
+    },
+    {
+      "levels": [
+        "hard",
+        "hard",
+        "normal"
+      ],
+      "games": 320,
+      "share": {
+        "hard": 0.709375,
+        "normal": 0.290625
+      },
+      "lost": 0.27721673880390113
+    }
+  ],
+  "customs": [
+    {
+      "id": "custom-max-new-england",
+      "modifiers": {
+        "new-england": 15,
+        "mid-atlantic": 5
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 66,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-mid-atlantic",
+      "modifiers": {
+        "mid-atlantic": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 57,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-rust-belt",
+      "modifiers": {
+        "rust-belt": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 55,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-old-south",
+      "modifiers": {
+        "old-south": 15
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 72,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-sun-belt",
+      "modifiers": {
+        "sun-belt": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 83,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-farm-belt",
+      "modifiers": {
+        "farm-belt": 15,
+        "mid-atlantic": 5
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 57,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-mountain-west",
+      "modifiers": {
+        "mountain-west": 15,
+        "mid-atlantic": 5
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 71,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-pacific",
+      "modifiers": {
+        "pacific": 15
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 41,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-energy",
+      "modifiers": {
+        "energy": 15
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 93,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-unions",
+      "modifiers": {
+        "unions": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 39,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-business",
+      "modifiers": {
+        "business": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 44,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-seniors",
+      "modifiers": {
+        "seniors": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 55,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-youth",
+      "modifiers": {
+        "youth": 15
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 41,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-veterans",
+      "modifiers": {
+        "veterans": 15
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 53,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-faith",
+      "modifiers": {
+        "faith": 10
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 47,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-penalties-1",
+      "modifiers": {
+        "mid-atlantic": -15,
+        "rust-belt": 15
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 51,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-penalties-2",
+      "modifiers": {
+        "mid-atlantic": -15,
+        "rust-belt": -15,
+        "sun-belt": 15,
+        "unions": 5
+      },
+      "points": 6,
+      "tally": {
+        "games": 160,
+        "wins": 104,
+        "fair": 57.91666666666671
+      }
+    }
+  ]
+}

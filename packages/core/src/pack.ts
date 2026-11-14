@@ -138,8 +138,13 @@ export function validatePack(pack: MapPack): PackIssue[] {
   });
 
   for (const level of ["normal", "hard"] as const) {
-    const noise = pack.aiTuning?.[level]?.noise;
-    if (noise !== undefined && !(noise >= 0 && noise <= 1)) add(`aiTuning.${level}.noise`, "must be between 0 and 1");
+    const t = pack.aiTuning?.[level];
+    if (t?.noise !== undefined && !(t.noise >= 0 && t.noise <= 1)) add(`aiTuning.${level}.noise`, "must be between 0 and 1");
+    for (const key of ["anticipate", "groupBias"] as const) {
+      const v = t?.[key];
+      if (v !== undefined && !(v >= 0 && v <= 10)) add(`aiTuning.${level}.${key}`, "must be between 0 and 10");
+    }
+    if (t?.seatBias !== undefined && !(t.seatBias >= -2 && t.seatBias <= 2)) add(`aiTuning.${level}.seatBias`, "must be between -2 and 2");
   }
 
   if (pack.customBudget !== undefined && (!Number.isInteger(pack.customBudget) || pack.customBudget < 1)) add("customBudget", "must be a whole number of at least 1");

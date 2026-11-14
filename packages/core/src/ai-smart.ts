@@ -42,9 +42,9 @@ export interface Tuning {
   timing: boolean;
   /** Rival steps to expect in each open region, per rival, even before they arrive: values early, cheap steps. 0 plans only for rivals already there. */
   anticipate: number;
-  /** Strategy: above 0 favours regions with many seats, below 0 small ones. 0 is neutral. */
+  /** Strategy: above 0 favours regions with many seats, below 0 small ones. 0 is neutral. A strategy's value adds to the map's. */
   seatBias: number;
-  /** Strategy: how much group income matters, as a multiple of the usual value. 1 is neutral. */
+  /** Strategy: how much group income matters, as a multiple of the usual value. 1 is neutral. A strategy's value multiplies the map's. */
   groupBias: number;
   /** Strategy: extra value, in seats per seat of the region, for bringing a region into contention (ending the campaign sooner). */
   rush: number;
@@ -94,7 +94,12 @@ export function likelyTargets(pack: MapPack, state: GameState, playerId: string,
 }
 
 export function planSmart(pack: MapPack, state: GameState, playerId: string, level: SmartLevel, rng: number, tuning?: Partial<Tuning>): AiResult {
-  const t = { ...TUNING[level], ...pack.aiTuning?.[level], ...tuning };
+  // The map's own settings, then the strategy or personality on top. Strategies are relative to the map: they scale
+  // its group value and shift its preference for big regions (on the UK and Pakistan those start neutral).
+  const base: Tuning = { ...TUNING[level], ...pack.aiTuning?.[level] };
+  const t: Tuning = { ...base, ...tuning };
+  if (tuning?.groupBias !== undefined) t.groupBias = base.groupBias * tuning.groupBias;
+  if (tuning?.seatBias !== undefined) t.seatBias = base.seatBias + tuning.seatBias;
   const rand = () => {
     const [v, next] = nextRandom(rng);
     rng = next;
@@ -176,15 +181,15 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
       const theirs = Math.max(others.reduce((a, id) => a + steps(track, id), 0), final ? 0 : others.length * t.anticipate);
       const share = (pips: number) => (pips + theirs === 0 ? 0 : pips / (pips + theirs));
       const from = steps(track, playerId);
-      // Presidential: the leader takes every electoral vote, so a step is worth the chance of holding the lead it adds.
-      // On the final turn only a strict lead holds (an equal rival got there first); before that, rivals are expected
-      // to climb a little, and a full meter locks the region for good.
+      // Presidential: the leader takes every electoral vote, so a step is worth the chance of holding the lead it adds at
+      // the count. A bigger lead is safer but never certain while rivals can still climb (more so with more turns left);
+      // only a full meter, which locks the region, is.
       const rivalTop = Math.max(0, ...others.map((id) => steps(track, id)));
+      const climb = (t.anticipate / 2) * Math.sqrt(final ? 1 : turnsLeft);
       const hold = (pips: number) => {
         if (pips <= 0) return 0;
         if (pips >= pack.rules.steps) return 1;
-        if (final) return pips > rivalTop ? 1 : 0;
-        return Math.min(1, Math.max(0, 0.5 + 0.3 * (pips - rivalTop - t.anticipate / 2)));
+        return 1 / (1 + Math.exp(-(pips - rivalTop - climb)));
       };
       const gain = presidential ? hold(to) - hold(from) : share(to) - share(from);
       // A general seat also brings its share of any reserved seats decided by seats won here.
