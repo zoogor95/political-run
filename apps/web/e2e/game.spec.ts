@@ -153,8 +153,9 @@ test("rival view and a whole match through to the results", async ({ page }) => 
   await expect(page.getByTestId("results")).toBeVisible();
   await expect(page.getByTestId("results")).toContainText("wins the most seats");
   await expect(page.getByTestId("match-headline")).toContainText("HEADLINE OF THE MATCH");
+  await expect(page.getByTestId("race").or(page.getByTestId("ranks"))).toBeVisible(); // the ranking cards
   await page.getByTestId("level").selectOption("hard");
-  await page.getByRole("button", { name: "Play again" }).click();
+  await page.getByRole("button", { name: "Rematch" }).click();
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
   await page.getByTestId("tab-rivals").click();
   await expect(page.getByTestId("rivals-panel")).toContainText("AI · Hard");
@@ -261,11 +262,18 @@ test("election night ending in a hung parliament forms a coalition government", 
   await expect(formation).toContainText("Tea Break Party is second: main opposition 214");
   await expect(formation).toContainText("Queue Appreciation Society joins the government +162");
   await expect(formation).toContainText("Majority reached with 436");
-  await expect(page.getByTestId("turn")).toContainText("Result");
-  await expect(page.getByTestId("stats")).toContainText("TURNS");
+  // The banner: the winner's headline, their seats out of 650, and how the government came about.
+  await expect(page.getByTestId("results")).toContainText("You win the most seats!");
+  await expect(page.getByTestId("results")).toContainText("274 of 650 · no majority, so a government is formed");
+  await expect(page.getByTestId("ranks")).toContainText("Forms the government");
+  await expect(page.getByTestId("stats")).toContainText("CLOSEST REGION");
+  // Replay map plays the board from the start; the slider scrubs to any turn.
+  await page.getByTestId("replay-open").click();
   await page.getByTestId("replay").fill("0");
-  await expect(page.getByText("Replay the map: start")).toBeVisible();
-  await page.getByRole("button", { name: "Play again" }).click();
+  await expect(page.getByText("Start", { exact: true })).toBeVisible();
+  await page.getByTestId("replay-close").click();
+  await expect(page.getByTestId("replay")).toHaveCount(0);
+  await page.getByRole("button", { name: "Rematch" }).click();
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
 });
 
@@ -321,8 +329,8 @@ test("luck factor: the odds show on regions, every seat is a draw on election ni
   await page.getByTestId("night-skip").click();
   await page.getByTestId("night-done").click();
   await expect(page.getByTestId("luck-note")).toBeVisible();
-  // The bar shows the seats actually won, and they add up to the parliament.
-  await expect(page.getByTestId("tally")).toContainText("Seats won");
+  // The banner shows the seats actually won, and they add up to the parliament.
+  await expect(page.getByTestId("results")).toContainText("of 650");
   const seats = await page.evaluate(() => Object.values((window as unknown as HookWindow).__game!.game.election!.result.seats));
   expect(seats.reduce((a: number, b: number) => a + b, 0)).toBe(650);
 });
