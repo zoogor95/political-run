@@ -9,7 +9,10 @@
  */
 import {
   activePlayers,
+  candidateParties,
   createMatch,
+  PARTY_COLORS,
+  PARTY_EMBLEMS,
   planComputers,
   playOut,
   playTurn,
@@ -57,6 +60,16 @@ export interface RoomSeat extends SeatSetup {
   /** The person in this seat, once someone has taken it. */
   accountId?: string;
   playerName?: string;
+  /** In the lobby: this person has made their picks and is ready to start. */
+  ready?: boolean;
+}
+
+/** What a person can change about their own seat in the lobby. */
+export interface PickChange {
+  name?: string;
+  color?: string;
+  emblem?: string;
+  leaderId?: string;
 }
 
 /** One resolved turn as sent to every device: all plans, and the random stream left after the computers planned. */
@@ -100,7 +113,7 @@ export interface RoomView {
   /** Your seat, once you have one. */
   you: string | null;
   setup: MatchSetup;
-  seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: SeatSetup["party"]; leaderId: string; playerName: string | null }[];
+  seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: SeatSetup["party"]; leaderId: string; playerName: string | null; ready: boolean }[];
   /** The board now (from the start of the match). */
   state: GameState | null;
   /** How many turns have resolved: the board is the one after that many. */
@@ -178,7 +191,7 @@ export function view(room: RoomData, accountId: string, now = Date.now()): RoomV
     youHost: room.host === accountId,
     you: mine?.id ?? null,
     setup: room.setup,
-    seats: room.seats.map((s) => ({ id: s.id, kind: s.kind, label: s.label, level: s.level, party: s.party, leaderId: s.leaderId, playerName: s.playerName ?? null })),
+    seats: room.seats.map((s) => ({ id: s.id, kind: s.kind, label: s.label, level: s.level, party: s.party, leaderId: s.leaderId, playerName: s.playerName ?? null, ready: Boolean(s.ready) })),
     state: room.state,
     turnsPlayed: room.log.length,
     submitted: Object.keys(room.plans),
@@ -203,7 +216,69 @@ export function join(room: RoomData, accountId: string, name: string): RoomSeat 
   if (!free) throw new RoomError("This match is full");
   free.accountId = accountId;
   free.playerName = name;
+  free.ready = false;
+  // A seat the host left with its placeholder name becomes the newcomer's party ("Ali Party"), if no one has that name.
+  const own = `${name} Party`.slice(0, 28);
+  const presidential = packFor(room.setup).gameType === "presidential";
+  if (!presidential && /^(Friend|Player) \d+ Party$/.test(free.party.name) && !room.seats.some((s) => s !== free && s.party.name.toLowerCase() === own.toLowerCase())) {
+    free.party = { ...free.party, name: own };
+  }
   return free;
+}
+
+const cleanName = (n: string) => n.trim().replace(/\s+/g, " ");
+
+/**
+ * A person changes their own party in the lobby: name, colour, emblem or leader (Presidential: the candidate, and the
+ * party follows). First come, first served: what another seat has is refused. Picks lock once you're ready.
+ */
+export function pick(room: RoomData, accountId: string, change: PickChange): void {
+  const mine = seatOf(room, accountId);
+  if (!mine) throw new RoomError("You don't have a seat in this match");
+  if (room.status !== "lobby") throw new RoomError("The match has already started");
+  if (mine.ready) throw new RoomError("You're ready: choose Change my pick first");
+  const pack = packFor(room.setup);
+  const others = room.seats.filter((s) => s !== mine);
+  if (change.leaderId !== undefined) {
+    const known = pack.candidates.some((c) => c.id === change.leaderId);
+    if (!known) throw new RoomError("Unknown leader");
+    if (others.some((s) => s.leaderId === change.leaderId)) throw new RoomError("Another seat has that leader");
+    mine.leaderId = change.leaderId;
+  }
+  if (pack.gameType === "presidential") {
+    // Every party follows from its candidate, as on the setup screen.
+    const names = Object.fromEntries((room.setup.customs ?? []).map((c) => [c.id, c.name]));
+    const parties = candidateParties(pack, room.seats, names);
+    room.seats.forEach((s, i) => (s.party = parties[i]!.party));
+    return;
+  }
+  const party = { ...mine.party };
+  if (change.name !== undefined) {
+    const n = typeof change.name === "string" ? cleanName(change.name) : "";
+    if (n.length < 1 || n.length > 28) throw new RoomError("Party names are 1 to 28 characters");
+    if (others.some((s) => s.party.name.toLowerCase() === n.toLowerCase())) throw new RoomError("Another party has that name");
+    party.name = n;
+  }
+  if (change.color !== undefined) {
+    const c = String(change.color).toLowerCase();
+    if (!PARTY_COLORS.some((x) => x.hex === c)) throw new RoomError("Unknown colour");
+    if (others.some((s) => s.party.color.toLowerCase() === c)) throw new RoomError("Someone picked that colour first");
+    party.color = c;
+  }
+  if (change.emblem !== undefined) {
+    if (!PARTY_EMBLEMS.includes(change.emblem)) throw new RoomError("Unknown emblem");
+    if (others.some((s) => s.party.emblem === change.emblem)) throw new RoomError("Someone picked that emblem first");
+    party.emblem = change.emblem;
+  }
+  mine.party = party;
+}
+
+/** Ready (picks locked) or not. */
+export function setReady(room: RoomData, accountId: string, ready: boolean): void {
+  const mine = seatOf(room, accountId);
+  if (!mine) throw new RoomError("You don't have a seat in this match");
+  if (room.status !== "lobby") throw new RoomError("The match has already started");
+  mine.ready = ready;
 }
 
 /** Leaving the lobby frees the seat; the host can't leave (closing the lobby is simply not starting it). */
@@ -220,6 +295,8 @@ export function start(room: RoomData, accountId: string, now = Date.now()): void
   if (room.host !== accountId) throw new RoomError("Only the host can start the match");
   if (room.status !== "lobby") throw new RoomError("The match has already started");
   if (room.seats.some((s) => s.kind === "human" && !s.accountId)) throw new RoomError("Wait until every friend's seat is taken");
+  // The host starting is their ready; everyone else says so themselves.
+  if (room.seats.some((s) => s.kind === "human" && s.accountId !== room.host && !s.ready)) throw new RoomError("Wait until everyone is ready");
   room.state = createMatch(packFor(room.setup), { seed: room.seed, players: playersOf(room.seats), ...(room.setup.luck ? { luck: true } : {}) });
   room.status = "active";
   room.deadline = nextDeadline(room, now);

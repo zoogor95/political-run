@@ -12,3 +12,4 @@ export * from "./summary.js";
 export * from "./news.js";
 export * from "./custom.js";
 export * from "./match.js";
+export * from "./parties.js";

@@ -1,5 +1,5 @@
 /** Match setup: who sits at the table (2 to 5 seats, human or computer), each party's name, colour, emblem and leader. */
-import type { AiLevel, PlayerSetup } from "@majority-map/core";
+import { candidateParties, PARTY_COLORS, PARTY_EMBLEMS, PARTY_SHADES as SHADES, type AiLevel, type PlayerSetup } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
 import { map, type MapId } from "./model";
 
@@ -42,23 +42,10 @@ export const TURN_TIMERS: { seconds: number | null; label: string }[] = [
 ];
 
 /** The colour palette from the designs: colours are first come, first served. */
-export const COLORS: { name: string; hex: string }[] = [
-  { name: "Purple", hex: "#6a3fc8" },
-  { name: "Teal", hex: "#0f8a7e" },
-  { name: "Coral", hex: "#e8604c" },
-  { name: "Navy", hex: "#24408e" },
-  { name: "Gold", hex: "#d9a21b" },
-  { name: "Pink", hex: "#d63f8c" },
-  { name: "Olive", hex: "#6b8e23" },
-  { name: "Sky", hex: "#2f8fd6" },
-  { name: "Brown", hex: "#8d5a33" },
-  { name: "Slate", hex: "#4b5563" },
-  { name: "Lime", hex: "#7cb518" },
-  { name: "Plum", hex: "#8e2a6b" },
-];
+export const COLORS: { name: string; hex: string }[] = PARTY_COLORS;
 
 /** Our own emblems; symbols real parties use on ballots are never offered. */
-export const EMBLEMS = ["megaphone", "owl", "lighthouse", "paper-plane", "compass", "balloon", "mountain", "acorn"];
+export const EMBLEMS = PARTY_EMBLEMS;
 /** Each emblem's drawing (40×40, from the design's emblem set), filled with the party colour and outlined in ink. */
 export const EMBLEM_PATH: Record<string, string> = {
   megaphone: "M7 16h6l16-8v24l-16-8H7z M13 24l3 9h5l-2-9",
@@ -88,27 +75,14 @@ const firstFree = <T,>(options: T[], used: T[]) => options.find((o) => !used.inc
 export const isPresidential = () => map.pack.gameType === "presidential";
 
 /** Presidential party colours: each party's family, a different shade for each of its candidates at the table. */
-export const PARTY_SHADES: Record<string, string[]> = {
-  Republican: ["#c8102e", "#e8604c", "#8b1a1a", "#d9822b", "#5c0f12"],
-  Democratic: ["#1f4fb4", "#2f8fd6", "#24408e", "#0f8a7e", "#0b2e6b"],
-  Independent: ["#6a3fc8", "#8e2a6b", "#4b5563", "#b58ae0", "#2d3748"],
-};
+export const PARTY_SHADES = SHADES;
 
 /**
  * Presidential: every seat's party follows from its candidate. The name is the candidate's, the colour a shade of the
  * candidate's party (Independent for anyone else, custom candidates included), the emblem simply the next free one.
  */
 export function withCandidateParties(seats: Seat[], customs: CustomCandidate[] = []): Seat[] {
-  const used: Record<string, number> = {};
-  return seats.map((s, i) => {
-    const c = map.pack.candidates.find((x) => x.id === s.leaderId);
-    const name = c?.name ?? customs.find((x) => x.id === s.leaderId)?.name ?? s.leaderId;
-    const family = c && PARTY_SHADES[c.affiliation] ? c.affiliation : "Independent";
-    const k = used[family] ?? 0;
-    used[family] = k + 1;
-    const shades = PARTY_SHADES[family]!;
-    return { ...s, party: { name, color: shades[k % shades.length]!, emblem: EMBLEMS[i % EMBLEMS.length]! } };
-  });
+  return candidateParties(map.pack, seats, Object.fromEntries(customs.map((c) => [c.id, c.name])));
 }
 
 /** A computer seat with the next free made-up party name, colour, emblem and leader. */

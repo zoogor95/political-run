@@ -3665,3 +3665,28 @@
 .region-groups {
   margin: 0;
 }
+
+/* The lobby's own party panel (design: Parliamentary online setup, "Your party here"). */
+.lobby-party {
+  border-top-width: 8px;
+  max-width: 720px;
+}
+
+.lobby-party-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-party-fields:disabled {
+  opacity: 0.6;
+}
+
+.lobby-party .setup-card-head h2 {
+  font: 400 22px "Lilita One", sans-serif;
+  margin: 0;
+}

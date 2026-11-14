@@ -4,7 +4,7 @@
  */
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
-import { join, leave, newRoom, packFor, RoomError, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
+import { join, leave, newRoom, packFor, pick, RoomError, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
 
 /** A plan is small; anything bigger than this isn't one. */
 const MAX_MESSAGE = 32_000;
@@ -100,7 +100,7 @@ export class MatchRoom extends DurableObject<Env> {
     const room = await this.load();
     if (!room) return;
     if (typeof message !== "string" || message.length > MAX_MESSAGE) return this.send(ws, { type: "error", message: "That message is too large." });
-    let msg: { type?: string; turn?: number; plan?: unknown };
+    let msg: { type?: string; turn?: number; plan?: unknown; change?: object; ready?: unknown };
     try {
       msg = JSON.parse(message) as typeof msg;
     } catch {
@@ -117,6 +117,14 @@ export class MatchRoom extends DurableObject<Env> {
         await this.save();
         await this.afterTurns(room, out);
         if (!out.turns.length) await this.recordWaiting(room);
+      } else if (msg.type === "pick") {
+        pick(room, accountId, (msg as { change?: object }).change ?? {});
+        await this.save();
+        this.broadcastViews(room);
+      } else if (msg.type === "ready") {
+        setReady(room, accountId, Boolean((msg as { ready?: unknown }).ready));
+        await this.save();
+        this.broadcastViews(room);
       } else if (msg.type === "leave") {
         leave(room, accountId);
         await this.save();
