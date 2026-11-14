@@ -378,9 +378,9 @@
       "id": "custom-max-new-england",
       "modifiers": {
         "new-england": 15,
-        "mid-atlantic": 5
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
         "wins": 66,
@@ -390,9 +390,23 @@
     {
       "id": "custom-max-mid-atlantic",
       "modifiers": {
-        "mid-atlantic": 10
+        "mid-atlantic": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
+      "tally": {
+        "games": 160,
+        "wins": 50,
+        "fair": 57.91666666666671
+      }
+    },
+    {
+      "id": "custom-max-rust-belt",
+      "modifiers": {
+        "rust-belt": 5,
+        "mountain-west": 5
+      },
+      "points": 5,
       "tally": {
         "games": 160,
         "wins": 57,
@@ -400,38 +414,28 @@
       }
     },
     {
-      "id": "custom-max-rust-belt",
-      "modifiers": {
-        "rust-belt": 10
-      },
-      "points": 6,
-      "tally": {
-        "games": 160,
-        "wins": 55,
-        "fair": 57.91666666666671
-      }
-    },
-    {
       "id": "custom-max-old-south",
       "modifiers": {
-        "old-south": 15
+        "old-south": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 72,
+        "wins": 70,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-sun-belt",
       "modifiers": {
-        "sun-belt": 10
+        "sun-belt": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 83,
+        "wins": 69,
         "fair": 57.91666666666671
       }
     },
@@ -439,82 +443,87 @@
       "id": "custom-max-farm-belt",
       "modifiers": {
         "farm-belt": 15,
-        "mid-atlantic": 5
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 57,
+        "wins": 52,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-mountain-west",
       "modifiers": {
-        "mountain-west": 15,
-        "mid-atlantic": 5
+        "mountain-west": 10,
+        "new-england": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 71,
+        "wins": 64,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-pacific",
       "modifiers": {
-        "pacific": 15
+        "pacific": 10,
+        "new-england": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 41,
+        "wins": 49,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-energy",
       "modifiers": {
-        "energy": 15
+        "energy": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 93,
+        "wins": 61,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-unions",
       "modifiers": {
-        "unions": 10
+        "unions": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 39,
+        "wins": 51,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-business",
       "modifiers": {
-        "business": 10
+        "business": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 44,
+        "wins": 54,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-seniors",
       "modifiers": {
-        "seniors": 10
+        "seniors": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
         "wins": 55,
@@ -524,64 +533,39 @@
     {
       "id": "custom-max-youth",
       "modifiers": {
-        "youth": 15
+        "youth": 10,
+        "new-england": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 41,
+        "wins": 44,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-veterans",
       "modifiers": {
-        "veterans": 15
+        "veterans": 10,
+        "new-england": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 53,
+        "wins": 54,
         "fair": 57.91666666666671
       }
     },
     {
       "id": "custom-max-faith",
       "modifiers": {
-        "faith": 10
+        "faith": 5,
+        "mountain-west": 5
       },
-      "points": 6,
+      "points": 5,
       "tally": {
         "games": 160,
-        "wins": 47,
-        "fair": 57.91666666666671
-      }
-    },
-    {
-      "id": "custom-penalties-1",
-      "modifiers": {
-        "mid-atlantic": -15,
-        "rust-belt": 15
-      },
-      "points": 6,
-      "tally": {
-        "games": 160,
-        "wins": 51,
-        "fair": 57.91666666666671
-      }
-    },
-    {
-      "id": "custom-penalties-2",
-      "modifiers": {
-        "mid-atlantic": -15,
-        "rust-belt": -15,
-        "sun-belt": 15,
-        "unions": 5
-      },
-      "points": 6,
-      "tally": {
-        "games": 160,
-        "wins": 104,
+        "wins": 43,
         "fair": 57.91666666666671
       }
     }

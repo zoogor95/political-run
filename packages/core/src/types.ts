@@ -106,6 +106,10 @@ export interface MapPack {
   reservedSeats?: ReservedSeatsDef[];
   /** Points a custom candidate's bonuses may cost on this map (see custom.ts). */
   customBudget?: number;
+  /** Custom candidate prices per 5% bonus for groups the formula misjudges on this map, set from the balance simulator. */
+  customPrices?: Record<string, number>;
+  /** Share of a group's price a 5% penalty gives back (0.5 when absent). Low on maps where groups you skip cost you little. */
+  customRefundShare?: number;
   /**
    * Computer player settings for this map, on top of the defaults (see TUNING in ai-smart.ts). Maps differ: the right
    * amount of randomness depends on how many regions there are to choose between. Set from the balance simulator.

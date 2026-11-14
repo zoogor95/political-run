@@ -884,7 +884,7 @@
     "hi",
     "ak"
   ],
-  "customBudget": 6,
+  "customBudget": 5,
   "aiTuning": {
     "normal": {
       "groupBias": 2
@@ -894,5 +894,11 @@
       "anticipate": 0.75,
       "noise": 0.9
     }
-  }
+  },
+  "customPrices": {
+    "mountain-west": 2,
+    "energy": 3,
+    "old-south": 3
+  },
+  "customRefundShare": 0.25
 }

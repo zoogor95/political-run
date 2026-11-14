@@ -74,3 +74,19 @@ describe("playing a custom candidate", () => {
     expect(groupModifier(pack, s.players[0]!, "unions")).toBe(15);
   });
 });
+
+describe("map price settings", () => {
+  it("lets a map set a group's price and how much penalties give back", () => {
+    const tuned = { ...testPack, customPrices: { capital: 4 }, customRefundShare: 0.25 };
+    expect(validatePack(tuned)).toEqual([]);
+    expect(customPrice(tuned, "capital")).toBe(4);
+    expect(customPrice(tuned, "mainland")).toBe(customPrice(testPack, "mainland")); // not set: the formula
+    expect(customRefund(tuned, "capital")).toBe(1); // a quarter of 4
+    expect(customRefund(testPack, "capital")).toBe(Math.floor(customPrice(testPack, "capital") / 2));
+  });
+
+  it("checks the settings name real groups and sensible values", () => {
+    const bad = { ...testPack, customPrices: { nowhere: 2, capital: 0 }, customRefundShare: 0.9 };
+    expect(validatePack(bad).map((i) => i.path).sort()).toEqual(["customPrices.capital", "customPrices.nowhere", "customRefundShare"]);
+  });
+});

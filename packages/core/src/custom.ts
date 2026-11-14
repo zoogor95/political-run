@@ -36,6 +36,8 @@ export interface CustomCandidate extends CandidateDef {
 export function customPrice(pack: MapPack, groupId: string): number {
   const group = pack.groups.find((g) => g.id === groupId);
   if (!group) throw new Error(`Unknown group "${groupId}"`);
+  const set = pack.customPrices?.[groupId];
+  if (set !== undefined) return set;
   if (group.kind === "national") return Math.max(1, Math.round((15 * group.income) / pack.rules.baseIncome));
   const seats = pack.regions.filter((r) => group.regions.includes(r.id)).reduce((a, r) => a + r.seats * seatWeight(pack, r.id), 0);
   return Math.max(1, Math.round((15 * seats) / totalSeats(pack)));
@@ -43,7 +45,7 @@ export function customPrice(pack: MapPack, groupId: string): number {
 
 /** Points back for each 5% penalty on a group. */
 export function customRefund(pack: MapPack, groupId: string): number {
-  return Math.floor(customPrice(pack, groupId) / 2);
+  return Math.floor(customPrice(pack, groupId) * (pack.customRefundShare ?? 0.5));
 }
 
 /** Points a set of modifiers costs: bonuses minus what penalties give back. */
