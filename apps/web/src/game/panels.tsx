@@ -128,9 +128,11 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
   const planned = plan.steps?.[trackId];
   const locked = state.locked[trackId] !== undefined;
   const max = mine.entered ? pack.rules.steps : Math.min(pack.rules.steps, pack.rules.firstEntryMax);
-  const target = planned ?? Math.min(max, mine.steps + 1);
+  // What the stepper shows: the planned step, or where you are now when nothing is planned here.
+  const shown = planned ?? mine.steps;
   const you = plannedPlayer(state, plan, game.viewer);
-  const cost = target > mine.steps ? moveCost(pack, you, trackId, mine.steps, target) : 0;
+  const cost = shown > mine.steps ? moveCost(pack, you, trackId, mine.steps, shown) : 0;
+  const nextCost = mine.steps < max ? moveCost(pack, you, trackId, mine.steps, mine.steps + 1) : 0;
   const canAdd = !locked && mine.steps < max && state.phase !== "finished";
   const wallets = eligibleWallets(pack, trackId).filter((w) => (you.wallets[w] ?? 0) > 0);
   const ranking = [...state.players].sort((a, b) => meterOf(state, trackId, b.id).steps - meterOf(state, trackId, a.id).steps);
@@ -160,32 +162,47 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
       </div>
       {region && state.luck && <LuckOdds state={state} regionId={region.id} label={game.label} />}
       {canAdd ? (
+        // One control: + plans a step (and another), − takes one back, down to nothing planned.
         <div className="planner">
           <div className="stepper">
-            <button type="button" aria-label="One step less" disabled={target <= mine.steps + 1} onClick={() => game.setTarget(trackId, target - 1)}>
+            <button
+              type="button"
+              aria-label="One step less"
+              disabled={planned === undefined}
+              onClick={() => game.setTarget(trackId, shown - 1 > mine.steps ? shown - 1 : null)}
+              data-testid="step-down"
+            >
               −
             </button>
             <div>
-              <small>TARGET</small>
-              <b data-testid="target">Step {target}</b>
+              <small>{planned === undefined ? "NOW" : "PLANNED"}</small>
+              <b data-testid="target">Step {shown}</b>
             </div>
-            <button type="button" aria-label="One step more" disabled={target >= max} onClick={() => game.setTarget(trackId, target + 1)}>
+            <button type="button" aria-label="One step more" disabled={shown >= max} onClick={() => game.setTarget(trackId, shown + 1)} data-testid="step-up">
               +
             </button>
           </div>
           <div className="cost">
-            <b>{money(cost)}</b>
-            <small>
-              for {target - mine.steps} step{target - mine.steps === 1 ? "" : "s"}
-              {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
-            </small>
+            {planned === undefined ? (
+              <>
+                <b>{money(nextCost)}</b>
+                <small>
+                  for the next step: press + to plan it
+                  {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
+                </small>
+              </>
+            ) : (
+              <>
+                <b>{money(cost)}</b>
+                <small>
+                  for {shown - mine.steps} step{shown - mine.steps === 1 ? "" : "s"}
+                  {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
+                </small>
+              </>
+            )}
           </div>
-          {planned === undefined ? (
-            <button type="button" className="primary" onClick={() => game.setTarget(trackId, target)} data-testid="add-to-plan">
-              Add to plan
-            </button>
-          ) : (
-            <button type="button" onClick={() => game.setTarget(trackId, null)}>
+          {planned !== undefined && (
+            <button type="button" onClick={() => game.setTarget(trackId, null)} data-testid="remove-steps">
               Remove
             </button>
           )}

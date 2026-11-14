@@ -57,12 +57,21 @@ test("plan steps in a region, submit, and the AI plays its turn", async ({ page 
   await expect(page.getByTestId("turn")).toContainText("Turn 1");
   await tapRegion(page, "lon");
   await expect(page.getByTestId("region-card").locator("h2")).toHaveText("London");
-  await page.getByTestId("add-to-plan").click();
+  // One control: nothing is planned until + is pressed, − takes steps back, and Remove clears the region.
+  await expect(page.getByTestId("target")).toHaveText("Step 0");
+  await expect(page.getByTestId("step-down")).toBeDisabled();
+  await page.getByTestId("step-up").click();
   await expect(page.getByTestId("target")).toHaveText("Step 1");
   await page.getByRole("button", { name: "One step more" }).click();
   await expect(page.getByTestId("target")).toHaveText("Step 2");
   // First entry is capped at 2 steps.
   await expect(page.getByRole("button", { name: "One step more" })).toBeDisabled();
+  await page.getByTestId("step-down").click();
+  await page.getByTestId("step-down").click();
+  await expect(page.getByTestId("target")).toHaveText("Step 0");
+  await expect(page.getByTestId("remove-steps")).toHaveCount(0);
+  await page.getByTestId("step-up").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.getByTestId("plan-list")).toContainText("London");
   await expect(page.getByTestId("plan-list")).toContainText("0 → 2");
@@ -77,7 +86,7 @@ test("plan steps in a region, submit, and the AI plays its turn", async ({ page 
 test("pick a party member on turn 5 and assign them to a region you've entered", async ({ page }) => {
   await start(page);
   await tapRegion(page, "nw");
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   for (let t = 1; t < 5; t++) await submitTurn(page);
   expect(await turn(page)).toBe(5);
@@ -104,7 +113,7 @@ test("national groups open their own meter from the groups view", async ({ page 
   await page.getByTestId("tab-groups").click();
   await page.getByTestId("groups-panel").getByText("Trade unions").click();
   await expect(page.getByTestId("region-card").locator("h2")).toHaveText("Trade unions");
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   await page.getByTestId("tab-plan").click();
   await expect(page.getByTestId("plan-list")).toContainText("Trade unions");
@@ -134,7 +143,7 @@ test("after a turn: BREAKING card, region-by-region recap, then the turn summary
   const errors = await start(page);
   await expect(page.getByTestId("ticker")).toContainText(/\w/);
   await tapRegion(page, "lon");
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   await page.getByTestId("submit").click();
 

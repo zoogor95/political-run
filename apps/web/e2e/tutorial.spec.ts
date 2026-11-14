@@ -21,7 +21,7 @@ async function finishTurn(page: Page) {
 async function addRegion(page: Page, id: string) {
   await page.getByTestId("tab-plan").click();
   await page.getByTestId("find-region").selectOption(id);
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
 }
 
@@ -45,7 +45,9 @@ test("a new player follows the coach from the menu to the end of Learn to play",
   await expect(coach(page)).toContainText("Pick a region");
   await page.getByTestId("find-region").selectOption("lon");
   await expect(coach(page)).toContainText("Campaign there");
-  // + plans the second step straight away.
+  // Nothing is planned until + is pressed; each press plans one more step.
+  await expect(page.getByTestId("target")).toHaveText("Step 0");
+  await page.getByRole("button", { name: "One step more" }).click();
   await page.getByRole("button", { name: "One step more" }).click();
   await expect(page.getByTestId("target")).toHaveText("Step 2");
   await page.getByRole("button", { name: "Close" }).click();
@@ -63,7 +65,7 @@ test("a new player follows the coach from the menu to the end of Learn to play",
   await page.getByTestId("tab-groups").click();
   await expect(coach(page)).toContainText("Voter groups");
   await page.getByTestId("groups-panel").getByText("Trade unions").click();
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
 
   await expect(coach(page)).toContainText("When the campaign ends");
