@@ -35,7 +35,8 @@ test("unlock the creator, build a candidate within the budget, and lead a match 
 
   await page.getByTestId("creator-save").click();
   await expect(creator).toHaveCount(0);
-  await expect(page.getByLabel("Player 1 leader").locator("option:checked")).toHaveText("Zara Zoogor · Your candidate");
+  await expect(page.getByTestId("pick-leader-you")).toContainText("Zara Zoogor");
+  await expect(page.getByTestId("pick-leader-you")).toContainText("Your candidate");
   await expect(page.getByTestId("edit-candidate-you")).toBeVisible();
 
   await page.getByTestId("start-match").click();

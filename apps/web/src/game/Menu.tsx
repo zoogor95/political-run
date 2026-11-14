@@ -1,6 +1,7 @@
 /** Main menu, match setup (solo or pass and play) and settings. */
 import { useState } from "react";
 import type { CustomCandidate } from "@majority-map/core";
+import { CandidatePicker } from "./Candidates";
 import { CandidateCreator, UnlockCard } from "./Creator";
 import { loadCustoms, useCustoms } from "./customs";
 import { majority } from "@majority-map/core";
@@ -136,6 +137,7 @@ function PartyEditor({
   customs,
   onChange,
   onCreate,
+  onChoose,
 }: {
   seat: Seat;
   config: MatchConfig;
@@ -143,16 +145,18 @@ function PartyEditor({
   customs: CustomCandidate[];
   onChange: (s: Seat) => void;
   onCreate: (edit?: CustomCandidate) => void;
+  onChoose: () => void;
 }) {
   const presidential = isPresidential();
   const mine = customs.find((c) => c.id === seat.leaderId);
   const others = config.seats.filter((s) => s.id !== seat.id);
   const takenColor = new Map(others.map((s) => [s.party.color, s.party.name || s.label]));
   const takenEmblem = new Map(others.map((s) => [s.party.emblem, s.party.name || s.label]));
-  const takenLeader = new Set(others.map((s) => s.leaderId));
   const set = (patch: Partial<Seat["party"]>) => onChange({ ...seat, party: { ...seat.party, ...patch } });
   const canToggle = mode === "hotseat" || (mode === "online" && seat.id !== "you");
-  const affiliation = map.pack.candidates.find((c) => c.id === seat.leaderId)?.affiliation ?? "Independent";
+  const leader = map.pack.candidates.find((c) => c.id === seat.leaderId);
+  const leaderName = mine?.name ?? leader?.name ?? seat.leaderId;
+  const affiliation = leader?.affiliation ?? "Independent";
   const title =
     seat.kind === "ai"
       ? presidential
@@ -253,27 +257,19 @@ function PartyEditor({
           <p className="small muted">Crossed out: another seat picked it first. Change a pick and the old one frees up.</p>
         </>
       )}
-      <label className="field">
+      <div className="field">
         <span className="field-label">{presidential ? "CANDIDATE" : "LEADER"}</span>
-        <select value={seat.leaderId} onChange={(e) => onChange({ ...seat, leaderId: e.target.value })} aria-label={`${seat.label} leader`}>
-          {seat.kind === "human" && customs.length > 0 && (
-            <optgroup label="Your candidates">
-              {customs.map((c) => (
-                <option key={c.id} value={c.id} disabled={takenLeader.has(c.id)}>
-                  {c.name} · Your candidate
-                </option>
-              ))}
-            </optgroup>
-          )}
-          <optgroup label={map.name}>
-            {map.pack.candidates.map((c) => (
-              <option key={c.id} value={c.id} disabled={takenLeader.has(c.id)}>
-                {c.name} · {c.affiliation}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-      </label>
+        <button type="button" className="leader-pick" onClick={onChoose} aria-label={`${seat.label} leader: ${leaderName}. Choose another`} data-leader={seat.leaderId} data-testid={`pick-leader-${seat.id}`}>
+          <span className="leader-pick-face" style={{ background: tint(seat.party.color), borderColor: seat.party.color }} aria-hidden="true">
+            {mine ? <Portrait avatar={toAvatar(mine.avatar)} size={36} label="" /> : initials(leaderName)}
+          </span>
+          <span className="leader-pick-text">
+            <b>{leaderName}</b>
+            <small>{mine ? "Your candidate" : (leader?.affiliation ?? "")}</small>
+          </span>
+          <span className="leader-pick-change">Change</span>
+        </button>
+      </div>
       {seat.kind === "human" && (
         <div className="custom-leader" data-testid="custom-leader">
           {mine && <Portrait avatar={toAvatar(mine.avatar)} size={44} label={`Portrait of ${mine.name}`} />}
@@ -318,6 +314,8 @@ export function SetupScreen({
   // The creator opens over the setup screen, so the table being set up stays as it is.
   const [creating, setCreating] = useState<{ seatId: string; edit?: CustomCandidate | undefined } | null>(null);
   const [unlocking, setUnlocking] = useState<string | null>(null);
+  // The seat whose candidate (or leader) is being chosen on the Choose your candidate screen.
+  const [choosing, setChoosing] = useState<string | null>(null);
   const issues = checkConfig(config);
   const selected = config.seats.find((s) => s.id === selectedId) ?? config.seats[0]!;
   const openCreator = (seatId: string, edit?: CustomCandidate) => (owned ? setCreating({ seatId, edit }) : setUnlocking(seatId));
@@ -479,7 +477,7 @@ export function SetupScreen({
         </section>
 
         <div className="setup-side">
-          <PartyEditor key={selected.id} seat={selected} config={config} mode={mode} customs={customs} onChange={update} onCreate={(edit) => openCreator(selected.id, edit)} />
+          <PartyEditor key={selected.id} seat={selected} config={config} mode={mode} customs={customs} onChange={update} onCreate={(edit) => openCreator(selected.id, edit)} onChoose={() => setChoosing(selected.id)} />
           <section className="setup-card match-options">
             <h2>Match options</h2>
             <div className="field">
@@ -538,6 +536,21 @@ export function SetupScreen({
           </section>
         </div>
       </div>
+      {choosing && config.seats.some((s) => s.id === choosing) && (
+        <CandidatePicker
+          seat={config.seats.find((s) => s.id === choosing)!}
+          config={config}
+          customs={customs}
+          owned={owned}
+          onPick={(leaderId) => update({ ...config.seats.find((s) => s.id === choosing)!, leaderId })}
+          onCreate={() => {
+            const id = choosing;
+            setChoosing(null);
+            openCreator(id);
+          }}
+          onClose={() => setChoosing(null)}
+        />
+      )}
       {unlocking && (
         <UnlockCard
           onClose={() => setUnlocking(null)}
