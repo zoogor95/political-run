@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BoardView } from "@majority-map/board";
 import { regionSeats, reservedScope } from "@majority-map/core";
-import { board, boardStyles, electionStyles, pack, playerOf, trackName } from "./model";
+import { board, boardStyles, electionStyles, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import { play } from "./audio";
 import { useSettings } from "./settings";
 import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
@@ -63,13 +63,15 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const replay = replayAt ?? game.boards.length - 1;
   const [coaching, setCoaching] = useState(() => game.config.tutorial === true);
   // Election night and results show the seat map; results can switch back to the campaign board.
-  const [seatView, setSeatView] = useState(true);
+  // Presidential: each state goes whole to its winner, so the real map is the results map.
+  const [seatView, setSeatView] = useState(() => !presidential());
   const [litGroup, setLitGroup] = useState<string | null>(null);
+  // A new count (a new night, or the deciding count once the computer candidates finish the race) starts afresh.
   useEffect(() => {
     if (!onNight) return;
     setNightPhase("suspense");
     setCalled(0);
-  }, [onNight]);
+  }, [onNight, night]);
   useEffect(() => {
     if (!onNight || !night) return;
     if (nightPhase === "suspense") {
@@ -201,11 +203,17 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     <div className="game">
       <Ticker headlines={game.ticker} />
       {onNight ? (
-        <ElectionNightView night={night} called={called} phase={nightPhase} onSkip={skipNight} onDone={game.endElection} you={game.solo ? game.humans[0]! : null} />
+        <ElectionNightView night={night} called={called} phase={nightPhase} onSkip={skipNight} onDone={game.endElection} you={game.solo ? game.humans[0]! : null} humans={game.humans} />
       ) : (
         <TopBar game={game} onMenu={onMenu} onSettings={onSettings} />
       )}
       {game.secondRound && <div className="banner">Tie for most seats! Second round: everyone loses 5 pips in every region and the campaign goes on.</div>}
+      {game.eliminated && (
+        <div className="banner" data-testid="eliminated-banner">
+          No majority: {game.label(game.eliminated)} {game.solo && game.eliminated === game.humans[0] ? "are" : "is"} out of the race. Their pips are off the map and the
+          campaign goes on.
+        </div>
+      )}
       <main className="game-body">
         <div className="board-wrap">
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
@@ -287,7 +295,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
                     <option value="">Choose a region or group…</option>
                     {pack.regions.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} ({r.seats} seats)
+                        {r.name} ({r.seats} {votesWord()})
                       </option>
                     ))}
                     {pack.groups

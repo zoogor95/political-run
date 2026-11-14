@@ -49,6 +49,8 @@ export interface ElectionNight {
   calls: ElectionCall[];
   result: ElectionResult;
   tie: boolean;
+  /** Presidential: the campaign goes on after this count (someone was eliminated and no one has won yet). */
+  continues?: boolean;
   turn: number;
 }
 
@@ -93,6 +95,8 @@ export interface GameApi {
   boards: GameState[];
   summaries: TurnSummary[];
   secondRound: boolean;
+  /** Presidential: the candidate eliminated at the last count, while the campaign goes on. */
+  eliminated: string | null;
   /** Difficulty of the computer parties, for the rematch picker (the first computer seat's level). */
   level: AiLevel;
   setTarget(trackId: string, target: number | null): void;
@@ -113,6 +117,32 @@ function startState(start: GameStart, config: MatchConfig): GameState {
   return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config), ...(config.luck ? { luck: true } : {}) });
 }
 
+/**
+ * Presidential, once every human is out of the race: the computer candidates play on to a winner. Returns the end
+ * state, the deciding result and the board at that count.
+ */
+function playOut(from: GameState, levelOf: (id: string) => AiLevel | null): { state: GameState; result: ElectionResult; atCount: GameState } {
+  let s = from;
+  let rng = s.rng;
+  for (let guard = 0; guard < 400; guard++) {
+    if (s.phase === "election") {
+      const done = finishElection(pack, s);
+      if (done.state.phase === "finished") return { state: done.state, result: done.result, atCount: s };
+      s = done.state;
+      continue;
+    }
+    const plans: Record<string, Plan> = {};
+    for (const p of s.players) {
+      const r = planAi(pack, { ...s, rng }, p.id, levelOf(p.id) ?? "normal", rng);
+      rng = r.rng;
+      plans[p.id] = r.plan;
+    }
+    s = resolveTurn(pack, { ...s, rng }, plans).state;
+  }
+  const result = finishElection(pack, { ...s, phase: "election" });
+  return { state: result.state, result: result.result, atCount: s };
+}
+
 export function useGame(start: GameStart): GameApi {
   const save = start.save;
   const [config, setConfig] = useState<MatchConfig>(() => save?.config ?? start.config ?? defaultConfig("solo"));
@@ -126,6 +156,8 @@ export function useGame(start: GameStart): GameApi {
   const [lastEvents, setLastEvents] = useState<TurnEvent[]>([]);
   const [result, setResult] = useState<ElectionResult | null>(() => save?.result ?? null);
   const [secondRound, setSecondRound] = useState(() => save?.secondRound ?? false);
+  // Presidential: the candidate eliminated at the last count, shown while the campaign goes on.
+  const [eliminated, setEliminated] = useState<string | null>(() => save?.eliminated ?? null);
   const [report, setReport] = useState<TurnReport | null>(() => save?.report ?? null);
   // Pass and play opens on the hand-off screen, so even the first player's plan starts private.
   const [stage, setStage] = useState<Stage>(() => save?.stage ?? (config.seats.filter((x) => x.kind === "human").length > 1 ? "handoff" : "planning"));
@@ -151,8 +183,8 @@ export function useGame(start: GameStart): GameApi {
   // Autosave after every change. Scenarios are test boards and are never saved.
   useEffect(() => {
     if (start.scenario) return;
-    saveMatch({ config, state, plans, submitted, current, stage, report, election, result, secondRound, boards, summaries, ticker, matchHeadline, newsRng });
-  }, [start.scenario, config, state, plans, submitted, current, stage, report, election, result, secondRound, boards, summaries, ticker, matchHeadline, newsRng]);
+    saveMatch({ config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng });
+  }, [start.scenario, config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng]);
 
   const updatePlan = useCallback((fn: (p: Plan) => Plan) => setPlans((all) => ({ ...all, [current]: fn(all[current] ?? {}) })), [current]);
 
@@ -209,12 +241,14 @@ export function useGame(start: GameStart): GameApi {
     let tie = false;
     let finalResult: ElectionResult | null = null;
     setSecondRound(false);
+    setEliminated(null);
     if (next.phase === "election") {
       const calls = electionCalls(pack, next);
       const done = finishElection(pack, next);
-      setElection({ state: next, calls, result: done.result, tie: done.result.secondRound, turn: state.turn });
+      const continues = !done.result.secondRound && done.state.phase !== "finished";
+      setElection({ state: next, calls, result: done.result, tie: done.result.secondRound, continues, turn: state.turn });
       next = done.state;
-      tie = done.result.secondRound;
+      tie = done.result.secondRound || continues;
       if (!tie) {
         setResult(done.result);
         finalResult = done.result;
@@ -234,7 +268,7 @@ export function useGame(start: GameStart): GameApi {
       const earned = [...turn.earned];
       if (finalResult) {
         const clashed = [...summaries, summary].some((s) => s.parties.some((p) => humans.includes(p.playerId) && p.conflicts.length > 0));
-        const match = afterMatch(table, finalResult, stats, { clashed, secondRound: next.round > 1 });
+        const match = afterMatch(table, finalResult, stats, { clashed, secondRound: pack.gameType === "parliamentary" && next.round > 1 });
         stats = match.stats;
         earned.push(...match.earned);
       }
@@ -253,14 +287,15 @@ export function useGame(start: GameStart): GameApi {
     setState(next);
     setPlans({});
     setSubmitted([]);
-    setCurrent(humans[0]!);
+    setCurrent(humans.find((h) => playerOf(next, h).eliminated === undefined) ?? humans[0]!);
     setLastEvents(events);
   }, [state, humans, idleAi, levelOf, newsRng, start.scenario, config, summaries]);
 
   const submit = useCallback(() => {
     if (validatePlan(pack, state, current, plan).length > 0) return;
     const done = [...submitted, current];
-    const waiting = humans.filter((h) => !done.includes(h));
+    // Eliminated candidates (Presidential) don't plan any more.
+    const waiting = humans.filter((h) => !done.includes(h) && playerOf(state, h).eliminated === undefined);
     if (waiting.length > 0) {
       // Pass and play: hand the device to the next player; nobody sees anyone else's plan.
       setSubmitted(done);
@@ -282,8 +317,42 @@ export function useGame(start: GameStart): GameApi {
       setSecondRound(true);
       setElection(null);
       setStage(humans.length > 1 ? "handoff" : "planning");
-    } else setStage("results");
-  }, [election, humans]);
+      return;
+    }
+    if (!election.continues) {
+      setStage("results");
+      return;
+    }
+    // Presidential, no majority: the campaign goes on without the eliminated candidate.
+    const out = election.result.eliminated;
+    const left = humans.filter((h) => playerOf(state, h).eliminated === undefined);
+    if (left.length > 0) {
+      setEliminated(out);
+      setElection(null);
+      setCurrent(left[0]!);
+      setStage(left.length > 1 ? "handoff" : "planning");
+      return;
+    }
+    // Every human is out of the race: the computer candidates play it to the end, and the deciding count is shown.
+    const played = playOut(state, levelOf);
+    if (!start.scenario) {
+      const table: Table = {
+        pack,
+        humans,
+        ai: config.seats.filter((x) => x.kind === "ai").map((x) => x.level),
+        passAndPlay: humans.length > 1,
+        ownCandidate: humans.some((h) => pack.candidates.some((c) => c.id === playerOf(state, h).leaderId && "custom" in c)),
+      };
+      const clashed = summaries.some((x) => x.parties.some((p) => humans.includes(p.playerId) && p.conflicts.length > 0));
+      const match = afterMatch(table, played.result, loadProfile().stats, { clashed, secondRound: false });
+      record(match.stats, match.earned);
+    }
+    setState(played.state);
+    setResult(played.result);
+    setElection({ state: played.atCount, calls: electionCalls(pack, played.atCount), result: played.result, tie: false, continues: false, turn: played.atCount.turn - 1 });
+    setBoards((b) => [...b, played.atCount]);
+    setStage("election");
+  }, [election, humans, state, levelOf, start.scenario, config, summaries]);
 
   const restart = useCallback((next?: AiLevel) => {
     const nextConfig: MatchConfig = next ? { ...config, seats: config.seats.map((s) => (s.kind === "ai" ? { ...s, level: next } : s)) } : config;
@@ -296,6 +365,7 @@ export function useGame(start: GameStart): GameApi {
     setLastEvents([]);
     setResult(null);
     setSecondRound(false);
+    setEliminated(null);
     setReport(null);
     setStage(humans.length > 1 ? "handoff" : "planning");
     setTicker(openingHeadlines(fresh, humans[0]!));
@@ -328,6 +398,7 @@ export function useGame(start: GameStart): GameApi {
     boards,
     summaries,
     secondRound,
+    eliminated,
     level,
     setTarget,
     setPick,

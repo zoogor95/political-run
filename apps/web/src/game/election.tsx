@@ -1,6 +1,6 @@
 /** Election night (suspense card, region-by-region calls, the tally racing to the majority) and the results panel. */
 import { controllers, majority, totalSeats, type AiLevel, type GameState } from "@majority-map/core";
-import { groupName, money, pack, playerOf, trackName } from "./model";
+import { groupName, money, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import type { ElectionNight as Night, GameApi } from "./useGame";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
@@ -18,7 +18,7 @@ function Tally({ night, called }: { night: Night; called: number }) {
   const reservedCalled = called - regionsCalled;
   return (
     <div className="night-tally" data-testid="night-tally">
-      <div className="tally" role="img" aria-label={`Seats declared: ${night.state.players.map((p) => `${p.party.name} ${totals[p.id] ?? 0}`).join(", ")}`}>
+      <div className="tally" role="img" aria-label={`${presidential() ? "Electoral votes" : "Seats"} declared: ${night.state.players.map((p) => `${p.party.name} ${totals[p.id] ?? 0}`).join(", ")}`}>
         {night.state.players.map((p) => (
           <div key={p.id} style={{ width: `${(100 * (totals[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: totals[p.id] ? 8 : 0 }}>
             <span>{totals[p.id] ? totals[p.id] : ""}</span>
@@ -28,22 +28,42 @@ function Tally({ night, called }: { night: Night; called: number }) {
       </div>
       <div className="tally-note">
         <span>
-          {regionsCalled} of {regionCalls} regions declared
+          {regionsCalled} of {regionCalls} {presidential() ? "states called" : "regions declared"}
           {reservedCalled > 0 ? ` · ${reservedCalled} of ${night.calls.length - regionCalls} reserved seat lists` : ""}
         </span>
-        <span>{need} FOR A MAJORITY</span>
+        <span>
+          {need} {presidential() ? "TO WIN" : "FOR A MAJORITY"}
+        </span>
       </div>
     </div>
   );
 }
 
-export function ElectionNightView({ night, called, phase, onSkip, onDone, you }: { night: Night; called: number; phase: NightPhase; onSkip: () => void; onDone: () => void; you: string | null }) {
+export function ElectionNightView({
+  night,
+  called,
+  phase,
+  onSkip,
+  onDone,
+  you,
+  humans,
+}: {
+  night: Night;
+  called: number;
+  phase: NightPhase;
+  onSkip: () => void;
+  onDone: () => void;
+  you: string | null;
+  humans: string[];
+}) {
   const s = night.state;
   const call = called > 0 ? night.calls[called - 1] : undefined;
   const result = night.result;
   const winner = result.ranking[0]!;
   const hasMajority = (result.seats[winner] ?? 0) >= majority(pack);
   const votes = Object.values(result.popularVote).reduce((a, b) => a + b, 0);
+  // Presidential: every human eliminated, so the computer candidates finish the race.
+  const youOut = night.continues === true && humans.every((h) => h === result.eliminated || playerOf(night.state, h).eliminated !== undefined);
   return (
     <>
       <Tally night={night} called={called} />
@@ -61,10 +81,14 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone, you }:
             {Object.entries(call.seats)
               .filter(([, n]) => n > 0)
               .sort((a, b) => b[1] - a[1])
-              .map(([id, n]) => `${partyName(s, id)} ${n}`)
+              .map(([id, n]) => (presidential() ? `${partyName(s, id)}, ${n} electoral votes` : `${partyName(s, id)} ${n}`))
               .join(" · ") || "No votes cast"}
           </span>
-          {call.majorityFor && <em>{partyName(s, call.majorityFor)} passes {majority(pack)} seats!</em>}
+          {call.majorityFor && (
+            <em>
+              {partyName(s, call.majorityFor)} passes {majority(pack)} {votesWord()}!
+            </em>
+          )}
         </div>
       )}
       {phase !== "done" && (
@@ -74,21 +98,27 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone, you }:
       )}
       {phase === "done" && (
         <div className="overlay">
-          <div className={`night-end${night.tie ? " tie" : hasMajority ? " majority" : ""}`} data-testid="night-end">
-            <span className="breaking-tag">{night.tie ? "DEAD HEAT" : hasMajority ? "MAJORITY" : "HUNG PARLIAMENT"}</span>
-            <h2>
-              {night.tie
-                ? "Tie for most seats! A second round begins."
-                : hasMajority
-                  ? `${winner === you ? "You win" : `${partyName(s, winner)} wins`} a majority!`
-                  : `Hung parliament: ${partyName(s, winner)} has the most seats, but no majority`}
-            </h2>
-            {night.tie && <p className="muted">Every party loses 5 pips in every region, locks open, and the campaign goes on until every region is in contention again.</p>}
+          <div className={`night-end${night.tie || night.continues ? " tie" : hasMajority ? " majority" : ""}`} data-testid="night-end">
+            {presidential() ? (
+              <PresidentialEnd night={night} you={you} />
+            ) : (
+              <>
+                <span className="breaking-tag">{night.tie ? "DEAD HEAT" : hasMajority ? "MAJORITY" : "HUNG PARLIAMENT"}</span>
+                <h2>
+                  {night.tie
+                    ? "Tie for most seats! A second round begins."
+                    : hasMajority
+                      ? `${winner === you ? "You win" : `${partyName(s, winner)} wins`} a majority!`
+                      : `Hung parliament: ${partyName(s, winner)} has the most seats, but no majority`}
+                </h2>
+                {night.tie && <p className="muted">Every party loses 5 pips in every region, locks open, and the campaign goes on until every region is in contention again.</p>}
+              </>
+            )}
             <table className="list">
               <thead>
                 <tr>
-                  <th>Party</th>
-                  <th>Seats</th>
+                  <th>{presidential() ? "Candidate" : "Party"}</th>
+                  <th>{presidential() ? "Electoral votes" : "Seats"}</th>
                   <th>Popular vote</th>
                 </tr>
               </thead>
@@ -111,11 +141,43 @@ export function ElectionNightView({ night, called, phase, onSkip, onDone, you }:
               </tbody>
             </table>
             <button type="button" className="primary" onClick={onDone} data-testid="night-done">
-              {night.tie ? "Start the second round" : "See the results"}
+              {night.tie ? "Start the second round" : night.continues ? (youOut ? "See how the race ends" : "Continue the campaign") : "See the results"}
             </button>
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/** Presidential end of election night: a winner, or no majority and an elimination. */
+function PresidentialEnd({ night, you }: { night: Night; you: string | null }) {
+  const s = night.state;
+  const result = night.result;
+  const winner = result.ranking[0]!;
+  const out = result.eliminated;
+  if (night.continues && out) {
+    return (
+      <>
+        <span className="breaking-tag">NO MAJORITY</span>
+        <h2>
+          Nobody reaches {majority(pack)}. {out === you ? "You are eliminated." : `${partyName(s, out)} is eliminated.`}
+        </h2>
+        <p className="muted">
+          {out === you ? "Your" : "Their"} pips come off the map, locks included. Everyone left plays on: a final turn again if every state is still in contention,
+          otherwise the campaign continues until it is.
+        </p>
+      </>
+    );
+  }
+  const lastStanding = out !== null;
+  return (
+    <>
+      <span className="breaking-tag">{lastStanding ? "LAST ONE STANDING" : "WINNER"}</span>
+      <h2>
+        {winner === you ? "You win the presidency!" : `${partyName(s, winner)} wins the presidency!`}
+        {lastStanding ? ` ${partyName(s, out)} is eliminated, leaving one candidate.` : ""}
+      </h2>
     </>
   );
 }
@@ -149,7 +211,15 @@ export function ResultsPanel({
   const lastBoard = game.boards.length - 1;
   return (
     <section data-testid="results">
-      <h2 className="results-title">{game.solo && winner === me ? "You win the most seats!" : `${partyName(s, winner)} wins the most seats`}</h2>
+      <h2 className="results-title">
+        {presidential()
+          ? game.solo && winner === me
+            ? "You win the presidency!"
+            : `${partyName(s, winner)} wins the presidency`
+          : game.solo && winner === me
+            ? "You win the most seats!"
+            : `${partyName(s, winner)} wins the most seats`}
+      </h2>
       {game.matchHeadline && (
         <p className="headline-of-turn" data-testid="match-headline">
           <span className="breaking-tag">HEADLINE OF THE MATCH</span> {game.matchHeadline.text}
@@ -161,6 +231,33 @@ export function ResultsPanel({
           Luck factor on: every seat was drawn by chance, weighted by pips with each pip of lead counting double.
         </p>
       )}
+      {presidential() ? (
+        <>
+          <h3>The race</h3>
+          <ol className="formation" data-testid="race">
+            {result.ranking.map((id) => {
+              const p = playerOf(s, id);
+              return (
+                <li key={id}>
+                  <i className="chip" style={{ background: p.party.color }} />
+                  {p.party.name}
+                  {youTag(id)}
+                  {p.eliminated !== undefined || id === result.eliminated ? (
+                    <span className="muted"> · eliminated</span>
+                  ) : (
+                    <b>
+                      {" "}
+                      {result.seats[id]} {result.seats[id] === 1 ? "electoral vote" : "electoral votes"}
+                    </b>
+                  )}
+                </li>
+              );
+            })}
+            <li className="muted">{need} electoral votes to win.</li>
+          </ol>
+        </>
+      ) : (
+        <>
       <h3>How the government formed</h3>
       <ol className="formation" data-testid="formation">
         <li>
@@ -185,13 +282,15 @@ export function ResultsPanel({
             : `No majority even together: a minority government with ${gov.seats} seats.`}
         </li>
       </ol>
+        </>
+      )}
 
       <table className="list">
         <thead>
           <tr>
             <th>#</th>
             <th>Party</th>
-            <th>Seats</th>
+            <th>{presidential() ? "EV" : "Seats"}</th>
             <th>Votes</th>
             <th>Groups</th>
           </tr>
@@ -235,7 +334,7 @@ export function ResultsPanel({
                     <i className="chip" style={{ background: owner ? partyColor(s, owner) : "#fff" }} title={owner ? `Held by ${partyName(s, owner)}` : "Nobody holds it"} />
                     {g.name}
                   </span>
-                  <span className="rg-seats">{top.map(([id, n]) => `${partyName(s, id)} ${n}`).join(" · ") || "No seats won"}</span>
+                  <span className="rg-seats">{top.map(([id, n]) => `${partyName(s, id)} ${n}`).join(" · ") || (presidential() ? "No states won" : "No seats won")}</span>
                 </button>
               </li>
             );

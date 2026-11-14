@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { updateSettings, useSettings } from "./settings";
 import type { GameState, Headline, PartySummary } from "@majority-map/core";
-import { candidateName, groupName, money, pack, playerOf, trackName } from "./model";
+import { candidateName, groupName, money, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import type { GameApi, TurnReport } from "./useGame";
 
 /** The always-visible news bar from the fictional MMN channel. It can be hidden; the choice is remembered. */
@@ -87,7 +87,7 @@ export function RecapPanel({ report, regionId, controls, label }: { report: Turn
       {region && (
         <div className="recap-card" key={region.id} data-testid="recap-card">
           <h2>{region.name}</h2>
-          <p className="muted">{region.seats} seats</p>
+          <p className="muted">{region.seats} {votesWord()}</p>
           <ul>
             {lines.map((l, i) => (
               <li key={i} className={l.bad ? "bad" : ""}>
@@ -154,7 +154,7 @@ export function SummaryView({ game }: { game: GameApi }) {
           <thead>
             <tr>
               <th>Party</th>
-              <th>Seats</th>
+              <th>{presidential() ? "EV" : "Seats"}</th>
               <th>Spent</th>
               <th>Conflicts</th>
               <th>Groups</th>
