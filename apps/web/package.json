@@ -10,7 +10,8 @@
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "e2e": "playwright test --trace off",
-    "test": "vitest run src"
+    "test": "vitest run src",
+    "deploy:site": "vite build && node site/build.mjs && wrangler deploy -c site/wrangler.toml"
   },
   "dependencies": {
     "@majority-map/board": "workspace:*",
@@ -25,6 +26,7 @@
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "4.7.0",
-    "vite": "6.4.5"
+    "vite": "6.4.5",
+    "wrangler": "4.156.0"
   }
 }

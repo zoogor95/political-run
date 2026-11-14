@@ -1,0 +1,5 @@
+# The game's public web site. Deploy with `pnpm --filter @majority-map/web deploy:site` (builds, packs, deploys).
+name = "majority-map"
+main = "worker.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
