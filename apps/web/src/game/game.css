@@ -2355,15 +2355,27 @@
   color: #6b6380;
 }
 
+/* Cream with a dot of the party colour: white text on the lighter party colours can't reach readable contrast. */
 .seat-chip {
   margin-top: 4px;
   font-size: 11px;
   font-weight: 900;
-  color: #fff;
+  color: var(--ink);
+  background: var(--cream);
   border: 2px solid var(--ink);
   border-radius: 10px;
-  padding: 1px 8px;
-  text-shadow: 0 1px 0 var(--ink);
+  padding: 1px 8px 1px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.seat-chip i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  flex: none;
 }
 
 .seat-level {

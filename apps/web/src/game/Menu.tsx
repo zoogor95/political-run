@@ -103,7 +103,8 @@ function SeatTile({
           <span className="seat-leader">{leaderName}</span>
           <span className="seat-aff">{custom ? "Your candidate" : (leader?.affiliation ?? "")}</span>
           {!presidential && (
-            <span className="seat-chip" style={{ background: seat.party.color }}>
+            <span className="seat-chip">
+              <i style={{ background: seat.party.color }} aria-hidden="true" />
               {COLORS.find((c) => c.hex === seat.party.color)?.name ?? "Colour"} · {EMBLEM_NAME[seat.party.emblem] ?? seat.party.emblem}
             </span>
           )}
