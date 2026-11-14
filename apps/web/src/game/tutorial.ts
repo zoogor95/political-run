@@ -44,7 +44,7 @@ export const TUTORIAL: CoachStep[] = [
   {
     id: "add-steps",
     title: "Campaign there",
-    text: "Each region has a meter of 15 steps. Seats are shared out by how many steps each party has, so more steps means more seats. Press Add to plan for one step, or + to plan two: a first visit can be up to 2 steps.",
+    text: "Each region has a meter of 15 steps. Seats are shared out by how many steps each party has, so more steps means more seats. Press + to plan a step, and + again for a second: a first visit can be up to 2 steps.",
     target: "region-card",
     done: (c) => planned(c).length > 0,
   },

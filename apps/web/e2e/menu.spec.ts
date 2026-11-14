@@ -68,13 +68,13 @@ test("solo setup: choose the table, start, and the match survives closing the br
 
   // Play a turn, start planning the next, then close the browser.
   await tapRegion(page, "lon");
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   await page.getByTestId("submit").click();
   await finishTurn(page);
   await expect(page.getByTestId("turn")).toContainText("Turn 2");
   await page.getByTestId("find-region").selectOption("nw");
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   const storage = await page.context().storageState();
   await page.close();
@@ -104,7 +104,7 @@ test("pass and play: each player plans in secret behind a hand-off screen", asyn
   await expect(page.getByTestId("handoff")).toContainText("Pass the device to Player 1");
   await page.getByTestId("ready").click();
   await tapRegion(page, "sco");
-  await page.getByTestId("add-to-plan").click();
+  await page.getByTestId("step-up").click();
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.getByTestId("plan-list")).toContainText("Scotland");
   await page.getByTestId("submit").click();
