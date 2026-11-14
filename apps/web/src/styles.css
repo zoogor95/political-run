@@ -64,6 +64,21 @@ body {
   cursor: pointer;
 }
 
+.lab-back {
+  font: 800 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 6px 10px;
+  text-decoration: none;
+}
+
+.lab-back:hover,
+.lab-back:focus-visible {
+  background: var(--gold);
+}
+
 .boards button[aria-pressed="true"] {
   background: var(--gold);
 }

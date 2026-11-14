@@ -21,6 +21,21 @@ async function open(page: Page, board: string) {
   });
   await page.goto(`/?lab&board=${board}`);
   await page.waitForFunction((id) => { const h = (window as unknown as HookWindow).__board; return Boolean(h?.ready && h.boardId === id); }, board, { timeout: 30_000 });
+  // Measure only once the page has settled: when the web fonts arrive, the top bar can wrap onto another line on a
+  // phone and move the board down.
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  await page.waitForFunction(
+    () => {
+      const r = (window as unknown as HookWindow).__board!.view.app.canvas.getBoundingClientRect();
+      const key = `${r.left},${r.top},${r.width},${r.height}`;
+      const w = window as unknown as { __boardRect?: string };
+      const steady = w.__boardRect === key;
+      w.__boardRect = key;
+      return steady;
+    },
+    null,
+    { polling: 250, timeout: 10_000 },
+  );
   return errors;
 }
 
@@ -86,4 +101,13 @@ test("small regions are tappable through their enlarged piece", async ({ page })
   await open(page, "pk");
   await tapAt(page, await pointOf(page, "islamabad", "piece"));
   await expect(page.getByTestId("region-card").locator("h2")).toHaveText("Islamabad");
+});
+
+test("the board lab links back to the main menu", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Board lab" }).click();
+  await expect(page.getByTestId("lab-back")).toBeVisible();
+  await page.getByTestId("lab-back").click();
+  await expect(page.getByTestId("main-menu")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
 });
