@@ -343,3 +343,30 @@ test("a tie for most seats starts a second round that plays through to a result"
   await expect(page.getByTestId("results")).toBeVisible();
   await expect(page.getByTestId("formation")).toContainText("forms the government");
 });
+
+test("a plan can't spend more than you have: + stops at what you can pay for and says why", async ({ page }) => {
+  const errors = await start(page);
+  const options = await page.getByTestId("find-region").locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+  let stopped = false;
+  for (const id of options) {
+    await page.getByTestId("find-region").selectOption(id);
+    for (let i = 0; i < 3 && !stopped; i++) {
+      const up = page.getByTestId("step-up");
+      if (await up.isDisabled()) {
+        // Disabled for money (not because the first-entry limit was reached): the card says so.
+        stopped = (await page.getByTestId("short-money").count()) > 0;
+        break;
+      }
+      await up.click();
+    }
+    await page.getByRole("button", { name: "Close" }).click();
+    if (stopped) break;
+  }
+  expect(stopped).toBe(true);
+  // The plan is always one you can pay for: money left is never below zero and the turn can be sent.
+  const left = await page.getByTestId("remaining").textContent();
+  expect(left).not.toContain("-");
+  await expect(page.getByTestId("issues")).toHaveCount(0);
+  await expect(page.getByTestId("submit")).toBeEnabled();
+  expect(errors).toEqual([]);
+});

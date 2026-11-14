@@ -8,6 +8,7 @@ import {
   createMatch,
   electionCalls,
   headlinesForTurn,
+  meterOf,
   planComputers,
   playOut as playOutMatch,
   playTurn,
@@ -143,6 +144,9 @@ function startState(start: GameStart, config: MatchConfig): GameState {
 
 const levelsOf = (config: MatchConfig) => Object.fromEntries(config.seats.filter((s) => s.kind === "ai").map((s) => [s.id, s.level])) as Record<string, AiLevel>;
 
+/** True when a plan costs more than the money the player can spend on it (group money only goes so far). */
+export const overspends = (state: GameState, playerId: string, plan: Plan) => validatePlan(pack, state, playerId, plan).some((i) => i.code === "not_enough_money");
+
 export function useGame(start: GameStart): GameApi {
   const save = start.save;
   const online = start.online;
@@ -203,9 +207,13 @@ export function useGame(start: GameStart): GameApi {
       const steps = { ...(p.steps ?? {}) };
       if (target === null) delete steps[trackId];
       else steps[trackId] = target;
-      return { ...p, steps };
+      const next = { ...p, steps };
+      // A plan can't spend more than you have: a step you can't pay for isn't added (taking steps back always works).
+      const raising = target !== null && target > (p.steps?.[trackId] ?? meterOf(state, trackId, current).steps);
+      if (raising && overspends(state, current, next) && !overspends(state, current, p)) return p;
+      return next;
     });
-  }, [updatePlan]);
+  }, [updatePlan, state, current]);
 
   const setPick = useCallback((candidateId: string | null) => {
     updatePlan((p) => {

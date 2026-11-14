@@ -19,7 +19,7 @@ import {
 } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
 import { Portrait, toAvatar } from "./Portrait";
-import type { GameApi } from "./useGame";
+import { overspends, type GameApi } from "./useGame";
 import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, presidential, trackName, votesWord } from "./model";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
@@ -177,6 +177,9 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
   const cost = shown > mine.steps ? moveCost(pack, you, trackId, mine.steps, shown) : 0;
   const nextCost = mine.steps < max ? moveCost(pack, you, trackId, mine.steps, mine.steps + 1) : 0;
   const canAdd = !locked && mine.steps < max && state.phase !== "finished";
+  // One more step only if the whole plan can still be paid for (group money only counts where it may be spent).
+  const affordable = shown < max && !overspends(state, game.viewer, { ...plan, steps: { ...(plan.steps ?? {}), [trackId]: shown + 1 } });
+  const stepAfter = shown < max ? moveCost(pack, you, trackId, mine.steps, shown + 1) - cost : 0;
   const wallets = eligibleWallets(pack, trackId).filter((w) => (you.wallets[w] ?? 0) > 0);
   const ranking = [...state.players].sort((a, b) => meterOf(state, trackId, b.id).steps - meterOf(state, trackId, a.id).steps);
   return (
@@ -222,7 +225,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               <small>{planned === undefined ? "NOW" : "PLANNED"}</small>
               <b data-testid="target">Step {shown}</b>
             </div>
-            <button type="button" aria-label="One step more" disabled={shown >= max} onClick={() => game.setTarget(trackId, shown + 1)} data-testid="step-up">
+            <button type="button" aria-label="One step more" disabled={shown >= max || !affordable} onClick={() => game.setTarget(trackId, shown + 1)} data-testid="step-up">
               +
             </button>
           </div>
@@ -231,7 +234,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               <>
                 <b>{money(nextCost)}</b>
                 <small>
-                  for the next step: press + to plan it
+                  for the next step{affordable ? ": press + to plan it" : ""}
                   {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
                 </small>
               </>
@@ -245,6 +248,11 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               </>
             )}
           </div>
+          {shown < max && !affordable && (
+            <p className="short-money" data-testid="short-money" role="status">
+              Not enough money for step {shown + 1} here: it costs {money(stepAfter)} more than your plan can pay. Take steps back elsewhere to free some up.
+            </p>
+          )}
           {planned !== undefined && (
             <button type="button" onClick={() => game.setTarget(trackId, null)} data-testid="remove-steps">
               Remove
@@ -326,6 +334,10 @@ export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string
         <b>{money(total)}</b>
         <span>Your money</span>
         <b data-testid="money">{money(totalMoney(you))}</b>
+        <span className="sums-left">Remaining</span>
+        <b className={`sums-left${totalMoney(you) - total < 0 ? " bad" : ""}`} data-testid="remaining">
+          {money(totalMoney(you) - total)}
+        </b>
       </div>
       {issues.length > 0 && (
         <ul className="issues" data-testid="issues">

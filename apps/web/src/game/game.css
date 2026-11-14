@@ -153,6 +153,20 @@
   width: 380px;
 }
 
+/* The plan's money: what's left after the planned steps. */
+.sums .sums-left {
+  border-top: 2px solid var(--ink);
+  padding-top: 4px;
+  margin-top: 2px;
+}
+
+.short-money {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #a3221d;
+}
+
 /* Contention: the count and a bar filling as regions come into play. */
 .contention {
   min-width: 150px;
