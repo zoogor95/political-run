@@ -79,3 +79,42 @@ test("two friends on different devices play a private match to the end", async (
   const result = (page: Page) => page.evaluate(() => JSON.stringify((window as unknown as { __game: { game: { result: unknown } } }).__game.game.result));
   expect(await result(friend)).toBe(await result(host));
 });
+
+test("a turn timer moves the match on without a friend who's away, and the ongoing list shows whose move it is", async ({ browser }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough: it waits out a real one-minute timer");
+  test.setTimeout(240_000);
+  const host = await device(browser);
+  const friend = await device(browser);
+
+  await host.goto("/");
+  await host.getByTestId("new-online").click();
+  await host.getByTestId("online-create").click();
+  await host.getByTestId("setup-timer").selectOption("60");
+  await host.getByTestId("start-match").click();
+  await expect(host.getByTestId("lobby")).toContainText("1:00 per turn");
+  const code = (await host.getByTestId("invite-code").textContent())!;
+  await friend.goto(`/?join=${code}`);
+  await expect(friend.getByTestId("lobby-seats")).toContainText("(you)");
+  await host.getByTestId("lobby-start").click();
+  for (const page of [host, friend]) await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+
+  // The clock is running for both; only the host plans.
+  await expect(friend.getByTestId("online-banner")).toContainText("Plan before the timer runs out");
+  await expect(friend.getByTestId("online-banner")).toContainText(/0:\d\d left/);
+  const before = [await boards(host), await boards(friend)] as const;
+  await host.getByTestId("submit").click();
+  await expect(host.getByTestId("online-banner")).toContainText("Waiting for");
+
+  // A minute later the server plays the turn anyway; the friend sat it out.
+  await Promise.all([catchUp(host, before[0]), catchUp(friend, before[1])]);
+  await expect(friend.getByTestId("online-banner")).toContainText("You missed the last turn");
+
+  // The host steps out to the menu: the match is listed with their move waiting, and opens again.
+  await host.goto("/");
+  await host.getByTestId("open-ongoing").click();
+  const row = host.getByTestId(`ongoing-${code}`);
+  await expect(row).toContainText("Turn 2 · Your move!");
+  await row.click();
+  await host.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  await expect(host.getByTestId("turn")).toContainText("Turn 2");
+});
