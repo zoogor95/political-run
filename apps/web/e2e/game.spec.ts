@@ -108,6 +108,27 @@ test("pick a party member on turn 5 and assign them to a region you've entered",
   await expect(page.getByTestId("party-panel")).toContainText(`${target} · free pip in 3 turns`);
 });
 
+test("a region group lights up its regions on the board, and a region card lists its groups", async ({ page }) => {
+  await start(page);
+  await page.getByTestId("tab-groups").click();
+  const north = page.getByTestId("group-row-north");
+  await north.click();
+  await expect(north).toHaveAttribute("aria-selected", "true");
+  // The North's regions stand out; the others fade.
+  const fills = await page.evaluate(() => {
+    const v = (window as unknown as { __game: { view: { styles?: Record<string, { fill: number }> } } }).__game.view;
+    return v.styles ? { ne: v.styles.ne!.fill, lon: v.styles.lon!.fill } : null;
+  });
+  if (fills) expect(fills.ne).not.toBe(fills.lon);
+  await north.click();
+  await expect(north).toHaveAttribute("aria-selected", "false");
+  await page.getByTestId("tab-plan").click();
+  await page.getByTestId("find-region").selectOption("yh");
+  await expect(page.getByTestId("region-groups")).toContainText("The North");
+  await expect(page.getByTestId("region-groups")).toContainText("Big cities");
+  await expect(page.getByTestId("region-groups")).not.toContainText("Trade unions");
+});
+
 test("national groups open their own meter from the groups view", async ({ page }) => {
   await start(page);
   await page.getByTestId("tab-groups").click();

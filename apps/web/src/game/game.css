@@ -2055,3 +2055,12 @@
   font-size: 13px;
   margin-top: 2px;
 }
+
+/* Groups tab: the region group lit up on the board. */
+.list.groups tr.on td {
+  background: var(--gold);
+}
+
+.region-groups {
+  margin: 0;
+}
