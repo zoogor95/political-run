@@ -47,6 +47,8 @@ export interface RegionStyle {
   member?: boolean;
   /** Your plan this turn adds steps here: the badge gets a gold ring. */
   planned?: boolean;
+  /** Part of the group being looked at: a thick gold outline, whatever colour the region is. */
+  outlined?: boolean;
 }
 
 export interface Point {

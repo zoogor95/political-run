@@ -468,6 +468,7 @@ export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string
           </tbody>
         </table>
       )}
+      <MoneySources game={game} lines={lines} />
       <div className="sums">
         <span>Plan total</span>
         <b>{money(total)}</b>
@@ -486,6 +487,50 @@ export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string
         </ul>
       )}
     </section>
+  );
+}
+
+/**
+ * Where your money is and where it can go: base money (anywhere), each region group's money (only in that group's
+ * regions) and national group money (anywhere), with what the plan takes from each and what's left.
+ */
+function MoneySources({ game, lines }: { game: GameApi; lines: ReturnType<typeof planLines> }) {
+  const you = playerOf(game.state, game.viewer);
+  const used: Record<string, number> = {};
+  for (const l of lines) for (const [w, n] of Object.entries(l.paidFrom ?? {})) used[w] = (used[w] ?? 0) + n;
+  const groups = pack.groups.filter((g) => (you.wallets[g.id] ?? 0) > 0 || (used[g.id] ?? 0) > 0);
+  if (groups.length === 0) return null;
+  const rows = [
+    { id: "base", name: "Base money", where: "anywhere", have: you.money },
+    ...groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      where: g.kind === "national" ? "anywhere" : `only in ${g.regions.length === 1 ? trackName(g.regions[0]!) : `its ${g.regions.length} regions`}`,
+      have: you.wallets[g.id] ?? 0,
+    })),
+  ];
+  return (
+    <table className="list money-sources" data-testid="money-sources">
+      <thead>
+        <tr>
+          <th>Your money</th>
+          <th>Planned</th>
+          <th>Left</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.id}>
+            <td>
+              {r.name}
+              <small className="muted"> · {r.where}</small>
+            </td>
+            <td>{used[r.id] ? money(used[r.id]!) : "–"}</td>
+            <td>{money(r.have - (used[r.id] ?? 0))}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

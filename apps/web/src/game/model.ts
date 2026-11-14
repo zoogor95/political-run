@@ -177,9 +177,10 @@ export function boardStyles(state: GameState, plan: Plan, highlight: string | nu
     let fill = leader ? shadeFor(color[leader.id]!, leader.steps, pack.rules.steps) : EMPTY;
     // Rival view: regions that rival leads stay lit, the rest fade.
     if (highlight && leader?.id !== highlight) fill = tint(fill, 0.65);
-    // Group view: the group's regions stand out (blank ones turn light gold), the rest fade.
+    // Group view: the group's regions get a gold outline (blank ones also turn light gold), the rest fade further, so
+    // the group reads clearly whoever leads its regions.
     if (focus) {
-      if (!focus.includes(r.id)) fill = tint(fill, 0.75);
+      if (!focus.includes(r.id)) fill = tint(fill, 0.82);
       else if (!leader) fill = FOCUS_FILL;
     }
     styles[r.id] = {
@@ -188,6 +189,7 @@ export function boardStyles(state: GameState, plan: Plan, highlight: string | nu
       locked: state.locked[r.id] !== undefined,
       member: (you?.members.some((m) => m.regionId === r.id) ?? false) || Object.values(plan.assign ?? {}).includes(r.id),
       planned: plan.steps?.[r.id] !== undefined,
+      outlined: focus?.includes(r.id) ?? false,
     };
   }
   return styles;

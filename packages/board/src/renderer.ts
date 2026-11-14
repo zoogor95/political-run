@@ -107,9 +107,10 @@ export class BoardView {
     this.styles = styles;
     for (const p of this.layout.pieces) {
       const fill = styles[p.id]?.fill ?? EMPTY;
-      this.paint(this.faces.get(p.id)!, p.shapes, fill, this.opts.lineWidth);
+      const outlined = styles[p.id]?.outlined ?? false;
+      this.paint(this.faces.get(p.id)!, p.shapes, fill, this.opts.lineWidth, outlined);
       const big = this.enlarged.get(p.id);
-      if (big) this.paint(big, p.shapes, fill, this.opts.lineWidth / p.enlarge!.k + 0.4);
+      if (big) this.paint(big, p.shapes, fill, this.opts.lineWidth / p.enlarge!.k + 0.4, outlined);
     }
     for (const [id, v] of this.badgeViews) this.drawBadgeExtras(v.bar, v.flags, v.layout, styles[id]);
     if (this.selected) this.drawLift(this.selected);
@@ -198,11 +199,16 @@ export class BoardView {
     }
   }
 
-  private paint(g: Graphics, shapes: Shape[], fill: number, width: number) {
+  private paint(g: Graphics, shapes: Shape[], fill: number, width: number, outlined = false) {
     g.clear();
     for (const s of shapes) {
       g.poly(s.outer, true).fill({ color: fill });
       for (const h of s.holes) g.poly(h, true).cut();
+    }
+    if (outlined) {
+      // A gold band just inside the edge, then the ink line: readable on any party's shade.
+      this.trace(g, shapes);
+      g.stroke({ width: width * 4, color: GOLD, join: "round", alignment: 1 });
     }
     this.trace(g, shapes);
     g.stroke({ width, color: INK, join: "round" });
