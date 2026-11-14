@@ -4395,3 +4395,280 @@
     font-size: 26px;
   }
 }
+
+/* Election night (design: Election night): the table at night, a live ticker, and the count over the map. */
+.game.night {
+  position: relative;
+  background-color: #25204a;
+  background-image: radial-gradient(#332c62 1.8px, transparent 1.9px);
+  background-size: 22px 22px;
+}
+
+.game.night .ticker {
+  background: #df4338;
+  color: #fff;
+}
+
+.game.night .ticker-tag {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.game.night .ticker-tag::after {
+  content: "\00a0LIVE";
+}
+
+.game.night .game-side {
+  display: none;
+}
+
+.game.night .seat-map {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.night-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 40px 0;
+}
+
+.night-head h2 {
+  font: 400 30px "Lilita One", sans-serif;
+  color: var(--cream);
+  margin: 0;
+}
+
+.night-head h2 small {
+  font: 800 16px "Nunito", sans-serif;
+  color: #c9c0e6;
+}
+
+.night-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.night-buttons button {
+  font: 900 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 4px 0 #120e26;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.night-buttons button.primary {
+  background: var(--gold);
+}
+
+.night-buttons button[aria-pressed="true"] {
+  background: var(--gold);
+}
+
+.game.night .night-tally {
+  padding: 8px 40px 0;
+}
+
+.game.night .night-tally .tally {
+  height: 40px;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--cream);
+  display: flex;
+}
+
+.game.night .night-tally .tally > div {
+  font-size: 19px;
+  white-space: nowrap;
+}
+
+.night-tally .not-called {
+  flex-grow: 1;
+  align-self: center;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: #5a5270;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.game.night .tally-note {
+  color: #c9c0e6;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.game.night .night-need {
+  color: var(--gold);
+}
+
+.popular-so-far {
+  position: absolute;
+  z-index: 4;
+  left: 40px;
+  bottom: 22px;
+  width: 230px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.popular-so-far small {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #5a5270;
+}
+
+.popular-so-far div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.popular-so-far div span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.night-progress {
+  position: absolute;
+  z-index: 4;
+  right: 40px;
+  bottom: 22px;
+  margin: 0;
+  color: #c9c0e6;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* The latest call: a cream card tilted over the map's corner. */
+.call-card {
+  position: absolute;
+  z-index: 15;
+  right: 30px;
+  bottom: 70px;
+  max-width: min(420px, calc(100% - 300px));
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 6px 0 #120e26;
+  padding: 10px 16px 10px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: rotate(-2deg);
+  animation: pop 0.25s ease-out;
+}
+
+.call-face {
+  width: 58px;
+  height: 58px;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 22px "Lilita One", sans-serif;
+  color: var(--ink);
+}
+
+.call-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.call-text small {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #a3221d;
+}
+
+.call-text b {
+  font: 400 24px/1.05 "Lilita One", sans-serif;
+}
+
+.call-text span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.call-text em {
+  font-style: normal;
+  font-weight: 900;
+  color: #a3221d;
+}
+
+@media (max-height: 520px), (max-width: 760px) {
+  .night-head {
+    padding: 6px 14px 0;
+  }
+
+  .night-head h2 {
+    font-size: 20px;
+  }
+
+  .night-head h2 small {
+    font-size: 12px;
+  }
+
+  .game.night .night-tally {
+    padding: 6px 14px 0;
+  }
+
+  .game.night .night-tally .tally {
+    height: 28px;
+    border-width: 3px;
+  }
+
+  .game.night .night-tally .tally > div {
+    font-size: 13px;
+  }
+
+  .popular-so-far {
+    display: none;
+  }
+
+  .call-card {
+    right: 14px;
+    bottom: 40px;
+    max-width: calc(100% - 28px);
+    padding: 6px 12px 6px 6px;
+  }
+
+  .call-face {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
+
+  .call-text b {
+    font-size: 18px;
+  }
+
+  .night-progress {
+    right: 14px;
+    bottom: 10px;
+    font-size: 11px;
+  }
+}
