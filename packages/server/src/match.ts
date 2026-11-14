@@ -4,7 +4,7 @@
  */
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
-import { join, leave, newRoom, packFor, pick, RoomError, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
+import { join, leave, newRoom, packFor, pick, resign, RoomError, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
 
 /** A plan is small; anything bigger than this isn't one. */
 const MAX_MESSAGE = 32_000;
@@ -114,6 +114,11 @@ export class MatchRoom extends DurableObject<Env> {
         this.broadcastViews(room);
       } else if (msg.type === "plan") {
         const out = submit(room, accountId, Number(msg.turn), msg.plan as never, Date.now());
+        await this.save();
+        await this.afterTurns(room, out);
+        if (!out.turns.length) await this.recordWaiting(room);
+      } else if (msg.type === "resign") {
+        const out = resign(room, accountId, Date.now());
         await this.save();
         await this.afterTurns(room, out);
         if (!out.turns.length) await this.recordWaiting(room);

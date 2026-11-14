@@ -83,10 +83,11 @@ export function RankCards({ game }: { game: GameApi }) {
         const affiliation = pack.candidates.find((c) => c.id === p.leaderId)?.affiliation;
         const groups = Object.values(ctrl).filter((o) => o === id).length;
         const out = p.eliminated !== undefined || id === result.eliminated;
-        const kind = id === me && (game.solo || game.online) ? "YOU" : game.levelOf(id) ? "AI" : "PLAYER";
+        const resigned = game.resignedSeats.includes(id);
+        const kind = id === me && (game.solo || game.online) ? "YOU" : resigned ? "RESIGNED" : game.levelOf(id) ? "AI" : "PLAYER";
         const line = presidential()
-          ? [out ? "Eliminated" : "", `${votesText(result.popularVote[id] ?? 0)} popular votes`, `${groups} ${groups === 1 ? "group" : "groups"}`]
-          : [role(id), affiliation ? `leader from ${affiliation}` : "", `${votesText(result.popularVote[id] ?? 0)} popular votes`];
+          ? [resigned ? "Resigned: the computer played on" : "", out ? "Eliminated" : "", `${votesText(result.popularVote[id] ?? 0)} popular votes`, `${groups} ${groups === 1 ? "group" : "groups"}`]
+          : [resigned ? "Resigned: the computer played on" : "", role(id), affiliation ? `leader from ${affiliation}` : "", `${votesText(result.popularVote[id] ?? 0)} popular votes`];
         return (
           <li key={id} className={`rank-card${kind === "YOU" ? " you" : ""}`} title={`${groups} ${groups === 1 ? "group" : "groups"} held`}>
             <span className="rank-place">{i + 1}</span>

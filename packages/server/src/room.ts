@@ -102,6 +102,8 @@ export interface RoomData {
   missed: Record<string, number>;
   /** Seats the computer is playing for after too many missed turns. */
   autopilot: string[];
+  /** Seats whose person resigned: the computer (Normal) plays them for the rest of the match. Absent in older rooms. */
+  resigned?: string[];
 }
 
 /** What one device is told about the match; the plans other people have sent stay secret until the turn resolves. */
@@ -126,6 +128,7 @@ export interface RoomView {
   deadline: number | null;
   missed: Record<string, number>;
   autopilot: string[];
+  resigned: string[];
   /** The server's clock when this view was made, so a device can show the time left whatever its own clock says. */
   now: number;
 }
@@ -200,6 +203,7 @@ export function view(room: RoomData, accountId: string, now = Date.now()): RoomV
     deadline: room.deadline,
     missed: room.missed,
     autopilot: room.autopilot,
+    resigned: room.resigned ?? [],
     now,
   };
 }
@@ -334,6 +338,7 @@ export function submit(room: RoomData, accountId: string, turn: number, plan: Pl
   const state = room.state;
   if (!humansIn(room, state).some((s) => s.id === mine.id)) throw new RoomError("You're out of the race");
   if (!plan || typeof plan !== "object" || validatePlan(pack, state, mine.id, plan).length > 0) throw new RoomError("That plan breaks the rules");
+  if (room.resigned?.includes(mine.id)) throw new RoomError("You resigned from this match");
   room.plans[mine.id] = plan;
   room.missed[mine.id] = 0;
   room.autopilot = room.autopilot.filter((id) => id !== mine.id);
@@ -353,6 +358,34 @@ export function timeout(room: RoomData, now = Date.now()): SubmitOutcome {
     else room.plans[id] = {};
   }
   return resolve(room, now);
+}
+
+/** The most turns a match can play on its own once every person has resigned (a safety net: matches end long before). */
+const PLAY_ON_LIMIT = 400;
+
+/**
+ * A person resigns: the computer (Normal) takes their seat for the rest of the match, and they can't plan again. If
+ * everyone else has already sent a plan, the turn resolves now; if nobody is left to plan, the match plays out to the
+ * end, every turn sent to the devices as usual.
+ */
+export function resign(room: RoomData, accountId: string, now = Date.now()): SubmitOutcome {
+  const mine = seatOf(room, accountId);
+  if (!mine) throw new RoomError("You don't have a seat in this match");
+  if (room.status !== "active" || !room.state) throw new RoomError("The match isn't being played");
+  if (!humansIn(room, room.state).some((s) => s.id === mine.id)) throw new RoomError("You're out of the race");
+  room.resigned = [...new Set([...(room.resigned ?? []), mine.id])];
+  if (!room.autopilot.includes(mine.id)) room.autopilot.push(mine.id);
+  delete room.plans[mine.id];
+  const out: SubmitOutcome = { turns: [], finished: false };
+  // Resolve while nobody is left to wait for: once for the turn in hand, or to the end if every person has resigned.
+  const anyoneLeft = () => room.status === "active" && room.state !== null && humansIn(room, room.state).some((s) => !room.resigned!.includes(s.id));
+  if (waitingOn(room).length > 0) return out;
+  do {
+    const step = resolve(room, now);
+    out.turns.push(...step.turns);
+    out.finished = step.finished;
+  } while (!anyoneLeft() && room.status === "active" && out.turns.length < PLAY_ON_LIMIT);
+  return out;
 }
 
 /** Plays the turn: the computers (and anyone on autopilot) plan, everything resolves, and the next deadline is set. */
