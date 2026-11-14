@@ -265,7 +265,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
             </div>
           )}
         </div>
-        <div className="game-side">
+        <div className={`game-side${selected && !recapping && !onNight && game.stage !== "results" ? " card-open" : ""}`}>
         <aside className="panel game-panel">
           {game.stage === "results" && night ? (
             <ResultsPanel game={game} replay={replay} onReplay={setReplay} litGroup={litGroup} onGroup={(id) => {

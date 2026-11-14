@@ -485,6 +485,296 @@
   background: #f1eafd;
 }
 
+/* The last step locks the region: drawn as a cream cell outlined in ink. */
+.cell.lock {
+  background: #f4ecd2;
+  border-color: var(--ink);
+}
+
+/* Region card (design: Region card and Parliamentary region card) */
+/* overflow: clip rounds the corners without making the card a scroll box, so the step control can stick. */
+.region-card {
+  padding: 0;
+  overflow: clip;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The card clips its corners, so it must not let the scrolling panel squash it or its parts. */
+.region-card,
+.region-card > * {
+  flex-shrink: 0;
+}
+
+.region-card > :not(.region-band) {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+
+.region-card > :last-child {
+  margin-bottom: 14px;
+}
+
+.region-band {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 4px solid var(--ink);
+}
+
+.region-title {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.region-title h2 {
+  font: 400 30px/1 "Lilita One", sans-serif;
+  margin: 0;
+}
+
+.region-title span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.game-panel .region-band .close {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  background: var(--cream);
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.region-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.group-chip {
+  font-size: 12.5px;
+  font-weight: 900;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 2px 10px 2px 6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.group-chip .chip {
+  margin-right: 5px;
+}
+
+.group-chip.plus {
+  background: #d6f3dc;
+}
+
+.group-chip.minus {
+  background: #fde7e5;
+}
+
+.region-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.region-stats > div {
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.region-stats > div + div {
+  border-left: 2px solid #e6dcc0;
+}
+
+.region-stats small,
+.meters-head,
+.region-seats small,
+.region-member small {
+  font-size: 11px;
+  font-weight: 900;
+  color: #5a5270;
+  letter-spacing: 0.02em;
+}
+
+.region-stats b {
+  font: 400 22px "Lilita One", sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.region-stats s {
+  font: 800 12px "Nunito", sans-serif;
+  color: #6a6280;
+  margin-left: 6px;
+}
+
+.region-card .meters {
+  margin: 0;
+}
+
+.meters-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 50px;
+}
+
+.region-card .meter-row {
+  grid-template-columns: 44px 1fr 96px;
+  gap: 8px;
+}
+
+.region-card .meter-row .who {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.region-card .cell {
+  height: 22px;
+  border-radius: 5px;
+}
+
+.face {
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 17px "Lilita One", sans-serif;
+  color: var(--ink);
+  flex: none;
+}
+
+.region-extra {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+.region-seats,
+.region-member,
+.region-hint {
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.region-seats span {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.share-bar {
+  display: flex;
+  height: 14px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.share-bar span {
+  display: block;
+  height: 100%;
+}
+
+/* The step control stays in view at the foot of a long card. */
+.region-card .planner {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--cream);
+  border-top: 3px solid var(--ink);
+  margin: 0;
+  padding: 10px 14px 14px;
+}
+
+.region-member {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  background: #fffbe6;
+}
+
+.region-member span {
+  display: flex;
+  flex-direction: column;
+}
+
+.region-member em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+  color: #4a4260;
+}
+
+.region-hint b {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.region-hint small {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #4a4260;
+}
+
+/* Phones: the panel is short, so the step control scrolls with the card rather than covering it. */
+@media (max-width: 760px) {
+  .region-card .planner {
+    position: static;
+    border-top: 0;
+    padding: 0 14px 14px;
+  }
+
+  .region-card .cost {
+    flex: 1 1 160px;
+  }
+
+  .region-title h2 {
+    font-size: 24px;
+  }
+
+  .region-stats b {
+    font-size: 18px;
+  }
+}
+
+/* Wide screens: an open region card takes the panel and the Leaders column's room, as wide as the design's card. */
+@media (min-width: 1180px) {
+  .game-side.card-open .game-panel {
+    width: 652px;
+  }
+
+  .game-side.card-open .leaders-card {
+    display: none;
+  }
+}
+
 .planner {
   display: flex;
   flex-wrap: wrap;

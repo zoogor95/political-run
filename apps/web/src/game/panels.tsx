@@ -10,7 +10,10 @@ import {
   personality,
   pickPool,
   projectedSeats,
+  regionSeats,
+  stepCost,
   STRATEGIES,
+  trackBaseCost,
   totalMoney,
   totalSeats,
   type AiLevel,
@@ -147,7 +150,7 @@ function Meter({ state, trackId, playerId, plannedTo }: { state: GameState; trac
   const steps = meterOf(state, trackId, playerId).steps;
   const color = partyColor(state, playerId);
   return (
-    <div className="meter" role="img" aria-label={`${partyName(state, playerId)}: ${steps} of ${pack.rules.steps} steps`}>
+    <div className="meter" role="img" aria-label={`${partyName(state, playerId)}: ${steps} of ${pack.rules.steps} steps`} style={{ gridTemplateColumns: `repeat(${pack.rules.steps}, minmax(0, 1fr))` }}>
       {Array.from({ length: pack.rules.steps }, (_, i) => {
         const n = i + 1;
         const filled = n <= steps;
@@ -155,8 +158,8 @@ function Meter({ state, trackId, playerId, plannedTo }: { state: GameState; trac
         return (
           <span
             key={n}
-            className={`cell${planned ? " planned" : ""}${n === pack.rules.contentionAt ? " notch" : ""}`}
-            style={filled ? { background: color } : planned ? { borderColor: color } : undefined}
+            className={`cell${planned ? " planned" : ""}${n === pack.rules.contentionAt ? " notch" : ""}${n === pack.rules.steps && !filled ? " lock" : ""}`}
+            style={filled ? { background: color, borderColor: "#2b2440" } : planned ? { borderColor: color, background: `color-mix(in srgb, ${color} 25%, #fff)` } : undefined}
           />
         );
       })}
@@ -164,9 +167,37 @@ function Meter({ state, trackId, playerId, plannedTo }: { state: GameState; trac
   );
 }
 
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter((w) => /^[A-Z]/.test(w))
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("");
+
+/** A party's face on the region card: a custom candidate's portrait, or the leader's initials on the party colour. */
+function Face({ state, playerId, size = 44 }: { state: GameState; playerId: string; size?: number }) {
+  const p = playerOf(state, playerId);
+  const c = candidate(p.leaderId);
+  if (c && "custom" in c) return <Portrait avatar={toAvatar((c as CustomCandidate).avatar)} size={size} label={`Portrait of ${c.name}`} />;
+  return (
+    <span className="face" style={{ width: size, height: size, background: `color-mix(in srgb, ${p.party.color} 22%, #fff)`, borderColor: p.party.color }} aria-hidden="true">
+      {initialsOf(candidateName(p.leaderId))}
+    </span>
+  );
+}
+
+const voters = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M` : `${Math.round(n / 1000)}K`);
+
+/**
+ * The region card (design: Region card and Parliamentary region card): the region's band, its groups, seats, your next
+ * step's cost and voters, every party's meter (your planned steps dashed), the seats now and with your plan, your
+ * member there, what your plan would do against the rivals, and the one step control.
+ */
 export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: string; onClose: () => void }) {
   const { state, plan } = game;
   const region = pack.regions.find((r) => r.id === trackId);
+  const national = pack.groups.find((g) => g.id === trackId && g.kind === "national");
   const mine = meterOf(state, trackId, game.viewer);
   const planned = plan.steps?.[trackId];
   const locked = state.locked[trackId] !== undefined;
@@ -175,39 +206,144 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
   const shown = planned ?? mine.steps;
   const you = plannedPlayer(state, plan, game.viewer);
   const cost = shown > mine.steps ? moveCost(pack, you, trackId, mine.steps, shown) : 0;
-  const nextCost = mine.steps < max ? moveCost(pack, you, trackId, mine.steps, mine.steps + 1) : 0;
   const canAdd = !locked && mine.steps < max && state.phase !== "finished";
   // One more step only if the whole plan can still be paid for (group money only counts where it may be spent).
   const affordable = shown < max && !overspends(state, game.viewer, { ...plan, steps: { ...(plan.steps ?? {}), [trackId]: shown + 1 } });
   const stepAfter = shown < max ? moveCost(pack, you, trackId, mine.steps, shown + 1) - cost : 0;
   const wallets = eligibleWallets(pack, trackId).filter((w) => (you.wallets[w] ?? 0) > 0);
   const ranking = [...state.players].sort((a, b) => meterOf(state, trackId, b.id).steps - meterOf(state, trackId, a.id).steps);
+  const top = ranking[0] && meterOf(state, trackId, ranking[0].id).steps > 0 ? ranking[0] : null;
+  const band = locked ? partyColor(state, state.locked[trackId]!) : top ? top.party.color : "#3b5a8c";
+  // Your next step at full price and with your leader's (and members') group bonuses.
+  const nextStep = Math.min(pack.rules.steps, shown + 1);
+  const nextCost = stepCost(pack, you, trackId, nextStep);
+  const fullCost = Math.max(1000, Math.round((trackBaseCost(pack, trackId) * pack.rules.costGrowth ** (nextStep - 1)) / 1000) * 1000);
+  const line = planLines(state, plan, game.viewer).find((l) => l.trackId === trackId);
+  // Seats in this region now, and if your plan goes through as it stands (rivals' moves aren't known).
+  const seatsNow = region ? (regionSeats(pack, state)[trackId] ?? {}) : null;
+  const seatsPlanned = (() => {
+    if (!region || planned === undefined) return null;
+    const next = structuredClone(state);
+    const m = next.meters[trackId]![game.viewer]!;
+    m.steps = planned;
+    m.entered = true;
+    return regionSeats(pack, next)[trackId] ?? {};
+  })();
+  const member = playerOf(state, game.viewer).members.find((m) => m.regionId === trackId);
+  // What the plan does against the parties already here: lead, tie (a clash if they move to the same step) or trail.
+  const rivals = state.players.filter((p) => p.id !== game.viewer).map((p) => ({ p, steps: meterOf(state, trackId, p.id).steps }));
+  const best = rivals.reduce<{ p: (typeof rivals)[number]["p"]; steps: number } | null>((a, r) => (!a || r.steps > a.steps ? r : a), null);
+  const tied = planned !== undefined ? rivals.filter((r) => r.steps === planned) : [];
   return (
-    <section className="card" data-testid="region-card">
-      <div className="card-head">
-        <h2>{trackName(trackId)}</h2>
+    <section className="card region-card" data-testid="region-card">
+      <div className="region-band" style={{ background: band, color: textOn(band) }}>
+        <div className="region-title">
+          <h2>{trackName(trackId)}</h2>
+          <span>
+            {region ? `${presidential() ? "State" : "Investment region"} · ${region.seats} ${votesWord()}` : "National group · its own meter"}
+            {locked ? ` · locked by ${partyName(state, state.locked[trackId]!)}` : top ? ` · ${game.label(top.id)} ${game.label(top.id) === "You" ? "lead" : "leads"}` : ""}
+          </span>
+        </div>
         <button type="button" className="close" aria-label="Close" onClick={onClose}>
           ×
         </button>
       </div>
-      <p className="muted">
-        {region ? `${region.seats} ${votesWord()}` : "National group · its own meter"}
-        {locked ? ` · locked by ${partyName(state, state.locked[trackId]!)}` : ""}
-      </p>
-      {region && <RegionGroups state={state} regionId={region.id} />}
+      {region && <RegionGroups state={state} regionId={region.id} viewer={game.viewer} />}
+      <div className="region-stats">
+        <div>
+          <small>{region ? (presidential() ? "ELECTORAL VOTES" : "SEATS") : "INCOME"}</small>
+          <b>{region ? region.seats : money(national?.income ?? 0)}</b>
+        </div>
+        <div>
+          <small>YOUR STEP {nextStep} COST</small>
+          <b>
+            {money(nextCost)}
+            {fullCost !== nextCost && <s>{money(fullCost)}</s>}
+          </b>
+        </div>
+        <div>
+          <small>{region ? "VOTERS" : "HELD BY"}</small>
+          <b>{region ? voters(region.voters ?? 0) : (() => {
+            const owner = controllers(pack, state)[trackId];
+            return owner ? game.label(owner) : "Nobody";
+          })()}</b>
+        </div>
+      </div>
       <div className="meters">
-        {ranking.map((p) => (
-          <div key={p.id} className="meter-row">
-            <span className="who">
-              <Chip color={p.party.color} />
-              {game.label(p.id)}
-            </span>
-            <Meter state={state} trackId={trackId} playerId={p.id} plannedTo={p.id === game.viewer ? planned : undefined} />
-            <b>{meterOf(state, trackId, p.id).steps}</b>
-          </div>
-        ))}
+        <div className="meters-head">
+          <span>STEPS ({pack.rules.steps})</span>
+          <span>
+            CONTENTION AT {pack.rules.contentionAt} · LOCK AT {pack.rules.steps}
+          </span>
+        </div>
+        {ranking.map((p, i) => {
+          const steps = meterOf(state, trackId, p.id).steps;
+          const own = p.id === game.viewer;
+          return (
+            <div key={p.id} className={`meter-row${own ? " own" : ""}`}>
+              <Face state={state} playerId={p.id} />
+              <Meter state={state} trackId={trackId} playerId={p.id} plannedTo={own ? planned : undefined} />
+              <b className="who">
+                {game.label(p.id) === "You" ? "You" : p.party.name.split(/\s+/).slice(0, 2).join(" ")} {steps}
+                {own && planned !== undefined ? ` → ${planned}` : i === 0 && steps > 0 && !own ? " · leads" : ""}
+              </b>
+            </div>
+          );
+        })}
       </div>
       {region && state.luck && <LuckOdds state={state} regionId={region.id} label={game.label} />}
+      {(seatsNow || member || (planned !== undefined && best)) && (
+        <div className="region-extra">
+          {seatsNow && (
+            <div className="region-seats" data-testid="region-seats">
+              <small>{presidential() ? `LEADER TAKES ALL ${region!.seats}` : "SEATS FROM PIP SHARE"} · NOW{seatsPlanned ? " → WITH YOUR PLAN" : ""}</small>
+              {[seatsNow, ...(seatsPlanned ? [seatsPlanned] : [])].map((s, k) => (
+                <div key={k} className="share-bar" aria-hidden="true">
+                  {state.players
+                    .filter((p) => (s[p.id] ?? 0) > 0)
+                    .map((p) => (
+                      <span key={p.id} style={{ width: `${(100 * (s[p.id] ?? 0)) / region!.seats}%`, background: p.party.color }} />
+                    ))}
+                </div>
+              ))}
+              <span>
+                {state.players
+                  .filter((p) => (seatsNow[p.id] ?? 0) > 0 || (seatsPlanned?.[p.id] ?? 0) > 0)
+                  .map((p) => `${game.label(p.id) === "You" ? "You" : p.party.name.split(/\s+/)[0]} ${seatsNow[p.id] ?? 0}${seatsPlanned ? ` → ${seatsPlanned[p.id] ?? 0}` : ""}`)
+                  .join(" · ") || `No one has ${votesWord()} here yet`}
+              </span>
+            </div>
+          )}
+          {planned !== undefined && best && (
+            <div className="region-hint" data-testid="region-hint">
+              <b>
+                +{planned - mine.steps} step{planned - mine.steps === 1 ? "" : "s"}:{" "}
+                {tied.length
+                  ? `you'd be level with ${tied.map((r) => r.p.party.name).join(" and ")} at ${planned}`
+                  : planned > best.steps
+                    ? `you'd lead ${planned} to ${best.steps}, if ${best.p.party.name} doesn't also move`
+                    : `still behind ${best.p.party.name} (${best.steps})`}
+              </b>
+              <small>Moving to the same step as a rival is a clash: both lose the money for that move.</small>
+            </div>
+          )}
+          {member && (
+            <div className="region-member">
+              <span className="face" style={{ width: 44, height: 44, background: `color-mix(in srgb, ${playerOf(state, game.viewer).party.color} 22%, #fff)`, borderColor: playerOf(state, game.viewer).party.color }} aria-hidden="true">
+                {initialsOf(candidateName(member.candidateId))}
+              </span>
+              <span>
+                <small>PARTY MEMBER HERE</small>
+                <b>{candidateName(member.candidateId)}</b>
+                <em>
+                  +1 free pip every {pack.rules.freePipEvery} turns · never part of a clash
+                </em>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+      {wallets.length > 0 && <p className="small">Group money you can spend here: {wallets.map((w) => `${groupName(w)} ${money(you.wallets[w] ?? 0)}`).join(" · ")}</p>}
       {canAdd ? (
         // One control: + plans a step (and another), − takes one back, down to nothing planned.
         <div className="planner">
@@ -222,7 +358,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               −
             </button>
             <div>
-              <small>{planned === undefined ? "NOW" : "PLANNED"}</small>
+              <small>{planned === undefined ? "NOW" : "TARGET"}</small>
               <b data-testid="target">Step {shown}</b>
             </div>
             <button type="button" aria-label="One step more" disabled={shown >= max || !affordable} onClick={() => game.setTarget(trackId, shown + 1)} data-testid="step-up">
@@ -232,7 +368,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
           <div className="cost">
             {planned === undefined ? (
               <>
-                <b>{money(nextCost)}</b>
+                <b>{money(stepCost(pack, you, trackId, mine.steps + 1))}</b>
                 <small>
                   for the next step{affordable ? ": press + to plan it" : ""}
                   {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
@@ -240,56 +376,59 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
               </>
             ) : (
               <>
-                <b>{money(cost)}</b>
+                <b>
+                  {money(cost)} for {shown - mine.steps} step{shown - mine.steps === 1 ? "" : "s"}
+                </b>
                 <small>
-                  for {shown - mine.steps} step{shown - mine.steps === 1 ? "" : "s"}
+                  {shown - mine.steps <= 3
+                    ? Array.from({ length: shown - mine.steps }, (_, k) => `step ${mine.steps + k + 1} ${money(stepCost(pack, you, trackId, mine.steps + k + 1))}`).join(" + ")
+                    : `steps ${mine.steps + 1} to ${shown}`}
+                  {line?.paidFrom ? ` · paid from ${Object.entries(line.paidFrom).map(([w, n]) => `${w === "base" ? "Base" : groupName(w)} ${money(n)}`).join(" + ")}` : ""}
                   {!mine.entered ? ` · first entry: up to ${pack.rules.firstEntryMax}` : ""}
                 </small>
               </>
             )}
           </div>
-          {shown < max && !affordable && (
-            <p className="short-money" data-testid="short-money" role="status">
-              Not enough money for step {shown + 1} here: it costs {money(stepAfter)} more than your plan can pay. Take steps back elsewhere to free some up.
-            </p>
-          )}
           {planned !== undefined && (
             <button type="button" onClick={() => game.setTarget(trackId, null)} data-testid="remove-steps">
               Remove
             </button>
           )}
+          {shown < max && !affordable && (
+            <p className="short-money" data-testid="short-money" role="status">
+              Not enough money for step {shown + 1} here: it costs {money(stepAfter)} more than your plan can pay. Take steps back elsewhere to free some up.
+            </p>
+          )}
         </div>
       ) : (
         <p className="muted">{locked ? "Nobody can invest here any more." : mine.steps >= pack.rules.steps ? "Your meter is full." : ""}</p>
       )}
-      {wallets.length > 0 && <p className="small">Group money you can spend here: {wallets.map((w) => `${groupName(w)} ${money(you.wallets[w] ?? 0)}`).join(" · ")}</p>}
     </section>
   );
 }
 
-/** The region groups a region belongs to, each with a chip for whoever holds it. */
-function RegionGroups({ state, regionId }: { state: GameState; regionId: string }) {
+function RegionGroups({ state, regionId, viewer }: { state: GameState; regionId: string; viewer: string }) {
   const groups = pack.groups.filter((g) => g.kind === "state" && g.regions.includes(regionId));
   if (groups.length === 0) return null;
   const ctrl = controllers(pack, state);
+  const you = playerOf(state, viewer);
   return (
-    <p className="small region-groups" data-testid="region-groups">
-      <span className="muted">Groups: </span>
-      {groups.map((g, i) => {
+    <div className="region-groups" data-testid="region-groups" aria-label="Region groups">
+      {groups.map((g) => {
         const owner = ctrl[g.id];
+        const mod = Math.round(groupModifier(pack, you, g.id));
         return (
-          <span key={g.id} title={owner ? `Held by ${partyName(state, owner)}` : "Nobody holds it yet"}>
-            {i > 0 ? " · " : ""}
+          <span key={g.id} className={`group-chip${mod > 0 ? " plus" : mod < 0 ? " minus" : ""}`} title={owner ? `Held by ${partyName(state, owner)}` : "Nobody holds it yet"}>
             <Chip color={owner ? partyColor(state, owner) : "#ffffff"} />
             {g.name}
+            {mod !== 0 && ` · you ${mod > 0 ? "−" : "+"}${Math.abs(mod)}% cost`}
           </span>
         );
       })}
-    </p>
+    </div>
   );
 }
 
-/** Luck factor: each party's chance of every seat in a region, from its pips (lead pips count double). */
 function LuckOdds({ state, regionId, label }: { state: GameState; regionId: string; label: (id: string) => string }) {
   const weights = luckWeights(state, regionId);
   const total = Object.values(weights).reduce((a, b) => a + b, 0);
