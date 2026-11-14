@@ -3,77 +3,77 @@
   "duels": {
     "balanced": {
       "games": 1668,
-      "wins": 998,
+      "wins": 1020,
       "fair": 834
     },
     "big-regions": {
       "games": 1668,
-      "wins": 898,
+      "wins": 1052,
       "fair": 834
     },
     "small-regions": {
       "games": 1668,
-      "wins": 858,
+      "wins": 674,
       "fair": 834
     },
     "groups": {
       "games": 1668,
-      "wins": 1067,
+      "wins": 1057,
       "fair": 834
     },
     "rush": {
       "games": 1664,
-      "wins": 1035,
+      "wins": 1036,
       "fair": 832
     },
     "hoard": {
       "games": 1664,
-      "wins": 144,
+      "wins": 161,
       "fair": 832
     }
   },
   "duelMatrix": {
     "balanced": {
-      "big-regions": 195,
-      "small-regions": 198,
-      "groups": 143,
-      "rush": 155,
-      "hoard": 307
+      "big-regions": 159,
+      "small-regions": 235,
+      "groups": 148,
+      "rush": 169,
+      "hoard": 309
     },
     "big-regions": {
-      "balanced": 139,
-      "small-regions": 200,
-      "groups": 149,
-      "rush": 123,
-      "hoard": 287
+      "balanced": 175,
+      "small-regions": 243,
+      "groups": 186,
+      "rush": 148,
+      "hoard": 300
     },
     "small-regions": {
-      "balanced": 136,
-      "big-regions": 134,
-      "groups": 157,
-      "rush": 139,
-      "hoard": 292
+      "balanced": 99,
+      "big-regions": 91,
+      "groups": 116,
+      "rush": 106,
+      "hoard": 262
     },
     "groups": {
-      "balanced": 191,
-      "big-regions": 185,
-      "small-regions": 177,
-      "rush": 191,
-      "hoard": 323
+      "balanced": 186,
+      "big-regions": 148,
+      "small-regions": 218,
+      "rush": 186,
+      "hoard": 319
     },
     "rush": {
-      "balanced": 178,
-      "big-regions": 210,
-      "small-regions": 194,
-      "groups": 142,
-      "hoard": 311
+      "balanced": 164,
+      "big-regions": 185,
+      "small-regions": 227,
+      "groups": 147,
+      "hoard": 313
     },
     "hoard": {
-      "balanced": 26,
-      "big-regions": 46,
-      "small-regions": 41,
-      "groups": 10,
-      "rush": 21
+      "balanced": 24,
+      "big-regions": 33,
+      "small-regions": 71,
+      "groups": 14,
+      "rush": 19
     }
   },
   "duelGames": {
@@ -123,199 +123,199 @@
   "field": {
     "groups": {
       "games": 3424,
-      "wins": 499,
+      "wins": 476,
       "fair": 857.5166666666952
     },
     "balanced": {
       "games": 3323,
-      "wins": 805,
+      "wins": 823,
       "fair": 831.3833333333595
     },
     "small-regions": {
       "games": 3308,
-      "wins": 896,
+      "wins": 780,
       "fair": 832.0500000000254
     },
     "hoard": {
       "games": 3273,
-      "wins": 682,
+      "wins": 659,
       "fair": 817.3166666666916
     },
     "rush": {
       "games": 3301,
-      "wins": 1125,
+      "wins": 1114,
       "fair": 827.1500000000259
     },
     "big-regions": {
       "games": 3316,
-      "wins": 993,
+      "wins": 1148,
       "fair": 834.58333333336
     }
   },
   "leaders": {
     "john-swinney": {
       "games": 1898,
-      "wins": 701,
+      "wins": 622,
       "fair": 637.2166666666742
     },
     "keir-starmer": {
       "games": 1850,
-      "wins": 665,
+      "wins": 691,
       "fair": 618.1000000000051
     },
     "nigel-farage": {
       "games": 1843,
-      "wins": 567,
+      "wins": 523,
       "fair": 616.1000000000048
     },
     "tony-blair": {
       "games": 1954,
-      "wins": 662,
+      "wins": 664,
       "fair": 645.5333333333414
     },
     "sadiq-khan": {
       "games": 1841,
-      "wins": 705,
+      "wins": 666,
       "fair": 612.4666666666694
     },
     "ed-davey": {
       "games": 1867,
-      "wins": 628,
+      "wins": 707,
       "fair": 619.3666666666722
     },
     "rhun-ap-iorwerth": {
       "games": 1953,
-      "wins": 681,
+      "wins": 659,
       "fair": 648.0333333333416
     },
     "rishi-sunak": {
       "games": 1877,
-      "wins": 569,
+      "wins": 525,
       "fair": 625.1500000000048
     },
     "penny-mordaunt": {
       "games": 1875,
-      "wins": 612,
+      "wins": 614,
       "fair": 631.8833333333403
     },
     "wes-streeting": {
       "games": 1899,
-      "wins": 536,
+      "wins": 583,
       "fair": 639.9000000000075
     },
     "andy-burnham": {
       "games": 1861,
-      "wins": 723,
+      "wins": 703,
       "fair": 619.0333333333377
     },
     "angela-rayner": {
       "games": 1880,
-      "wins": 686,
+      "wins": 630,
       "fair": 630.4666666666737
     },
     "winston-churchill": {
       "games": 1869,
-      "wins": 601,
+      "wins": 612,
       "fair": 625.9333333333383
     },
     "kemi-badenoch": {
       "games": 1836,
-      "wins": 600,
+      "wins": 620,
       "fair": 614.0500000000037
     },
     "clement-attlee": {
       "games": 1833,
-      "wins": 534,
+      "wins": 607,
       "fair": 614.0166666666701
     },
     "margaret-thatcher": {
       "games": 1809,
-      "wins": 530,
+      "wins": 574,
       "fair": 602.7500000000014
     }
   },
   "seats": {
     "2p seat 1": {
       "games": 5000,
-      "wins": 2506,
+      "wins": 2513,
       "fair": 2500
     },
     "2p seat 2": {
       "games": 5000,
-      "wins": 2494,
+      "wins": 2487,
       "fair": 2500
     },
     "3p seat 1": {
       "games": 1696,
-      "wins": 563,
+      "wins": 574,
       "fair": 565.3333333333277
     },
     "3p seat 2": {
       "games": 1696,
-      "wins": 601,
+      "wins": 597,
       "fair": 565.3333333333277
     },
     "3p seat 3": {
       "games": 1696,
-      "wins": 532,
+      "wins": 525,
       "fair": 565.3333333333277
     },
     "4p seat 1": {
       "games": 1663,
-      "wins": 425,
+      "wins": 417,
       "fair": 415.75
     },
     "4p seat 2": {
       "games": 1663,
-      "wins": 407,
+      "wins": 411,
       "fair": 415.75
     },
     "4p seat 3": {
       "games": 1663,
-      "wins": 392,
+      "wins": 408,
       "fair": 415.75
     },
     "4p seat 4": {
       "games": 1663,
-      "wins": 439,
+      "wins": 427,
       "fair": 415.75
     },
     "5p seat 1": {
       "games": 1641,
-      "wins": 324,
+      "wins": 319,
       "fair": 328.1999999999899
     },
     "5p seat 2": {
       "games": 1641,
-      "wins": 352,
+      "wins": 327,
       "fair": 328.1999999999899
     },
     "5p seat 3": {
       "games": 1641,
-      "wins": 326,
+      "wins": 325,
       "fair": 328.1999999999899
     },
     "5p seat 4": {
       "games": 1641,
-      "wins": 322,
+      "wins": 314,
       "fair": 328.1999999999899
     },
     "5p seat 5": {
       "games": 1641,
-      "wins": 317,
+      "wins": 356,
       "fair": 328.1999999999899
     }
   },
   "turns": {
-    "mean": 8.261999999999832,
+    "mean": 8.253399999999864,
     "min": 5,
-    "max": 18
+    "max": 17
   },
-  "secondRounds": 30,
+  "secondRounds": 40,
   "capped": 0,
-  "winnerSeatShare": 0.4960155384615335,
-  "majorityWins": 5488,
-  "lostShare": 0.3111181973987375,
+  "winnerSeatShare": 0.5003283076923045,
+  "majorityWins": 5589,
+  "lostShare": 0.3172355942455873,
   "lineups": [
     {
       "levels": [
@@ -325,10 +325,10 @@
       ],
       "games": 800,
       "share": {
-        "normal": 0.57625,
-        "easy": 0.42375
+        "normal": 0.555,
+        "easy": 0.445
       },
-      "lost": 0.21932777159251574
+      "lost": 0.22192262075365693
     },
     {
       "levels": [
@@ -338,10 +338,10 @@
       ],
       "games": 800,
       "share": {
-        "hard": 0.635,
-        "easy": 0.365
+        "hard": 0.64625,
+        "easy": 0.35375
       },
-      "lost": 0.21368050133552496
+      "lost": 0.2162219374896019
     },
     {
       "levels": [
@@ -351,10 +351,10 @@
       ],
       "games": 800,
       "share": {
-        "hard": 0.595,
-        "normal": 0.405
+        "hard": 0.58875,
+        "normal": 0.41125
       },
-      "lost": 0.300037618649343
+      "lost": 0.3002841448581956
     },
     {
       "levels": [
@@ -364,10 +364,10 @@
       ],
       "games": 800,
       "share": {
-        "hard": 0.7875,
-        "normal": 0.2125
+        "hard": 0.79625,
+        "normal": 0.20375
       },
-      "lost": 0.29695664190044335
+      "lost": 0.30323429768368015
     }
   ],
   "customs": [
@@ -379,7 +379,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 152,
+        "wins": 132,
         "fair": 144.58333333333323
       }
     },
@@ -387,7 +387,7 @@
       "id": "custom-max-midlands",
       "modifiers": {
         "midlands": 15,
-        "london": 5
+        "devolved": 5
       },
       "points": 8,
       "tally": {
@@ -405,20 +405,19 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 115,
+        "wins": 119,
         "fair": 144.58333333333323
       }
     },
     {
       "id": "custom-max-london",
       "modifiers": {
-        "london": 15,
-        "midlands": 5
+        "london": 10
       },
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 133,
+        "wins": 129,
         "fair": 144.58333333333323
       }
     },
@@ -431,7 +430,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 153,
+        "wins": 133,
         "fair": 144.58333333333323
       }
     },
@@ -443,7 +442,7 @@
       "points": 7,
       "tally": {
         "games": 400,
-        "wins": 161,
+        "wins": 145,
         "fair": 144.58333333333323
       }
     },
@@ -456,7 +455,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 131,
+        "wins": 116,
         "fair": 144.58333333333323
       }
     },
@@ -468,7 +467,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 102,
+        "wins": 101,
         "fair": 144.58333333333323
       }
     },
@@ -481,7 +480,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 114,
+        "wins": 96,
         "fair": 144.58333333333323
       }
     },
@@ -494,7 +493,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 123,
+        "wins": 108,
         "fair": 144.58333333333323
       }
     },
@@ -507,7 +506,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 125,
+        "wins": 108,
         "fair": 144.58333333333323
       }
     },
@@ -520,7 +519,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 135,
+        "wins": 118,
         "fair": 144.58333333333323
       }
     },
@@ -534,7 +533,7 @@
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 89,
+        "wins": 119,
         "fair": 144.58333333333323
       }
     },
@@ -544,12 +543,12 @@
         "cities": -15,
         "north": -15,
         "south": 15,
-        "business": 10
+        "london": 10
       },
       "points": 8,
       "tally": {
         "games": 400,
-        "wins": 71,
+        "wins": 116,
         "fair": 144.58333333333323
       }
     }
