@@ -7,8 +7,9 @@ import { MAPS, isMapId, map, mapDetail, selectMap, type MapId } from "./model";
 import { Portrait, toAvatar } from "./Portrait";
 import { useOwns } from "./store";
 import { tutorialDone } from "./tutorial";
+import { useCloud } from "./cloud";
 import { loadMatch } from "./saves";
-import {
+import { TURN_TIMERS,
   COLORS,
   EMBLEMS,
   EMBLEM_NAME,
@@ -32,6 +33,7 @@ export function MainMenu({
   onSettings,
   onProfile,
   onOnline,
+  onOngoing,
 }: {
   onContinue: () => void;
   onNew: (mode: Mode) => void;
@@ -39,7 +41,10 @@ export function MainMenu({
   onSettings: () => void;
   onProfile: () => void;
   onOnline: () => void;
+  onOngoing: () => void;
 }) {
+  // Online matches need the online profile, so the list shows once backup is on.
+  const signedIn = useCloud().state !== "off";
   const save = loadMatch();
   // New players see Learn to play first; once it's done or skipped, it moves down the list.
   const newcomer = !tutorialDone() && !save;
@@ -117,6 +122,12 @@ export function MainMenu({
           Play with friends
           <small>A private match online, by invite code</small>
         </button>
+        {signedIn && (
+          <button type="button" className="menu-big" onClick={onOngoing} data-testid="open-ongoing">
+            Ongoing matches
+            <small>Your online matches and whose move it is</small>
+          </button>
+        )}
         {!newcomer && learn}
         <button
           type="button"
@@ -581,6 +592,26 @@ export function SetupScreen({
               either way.
             </small>
           </span>
+        </label>
+      )}
+      {mode === "online" && (
+        <label className="creator-field turn-timer">
+          <span>Turn timer</span>
+          <select
+            value={config.turnSeconds ?? ""}
+            onChange={(e) => setConfig({ ...config, turnSeconds: e.target.value ? Number(e.target.value) : null })}
+            data-testid="setup-timer"
+          >
+            {TURN_TIMERS.map((t) => (
+              <option key={t.label} value={t.seconds ?? ""}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <small className="muted">
+            Time each player has to send a plan. Anyone who runs out of time sits the turn out, and after 3 missed turns in a row the computer plays for them
+            until they're back.
+          </small>
         </label>
       )}
       {issues.length > 0 && (

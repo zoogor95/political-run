@@ -4,6 +4,7 @@ import { regionSeats, reservedScope } from "@majority-map/core";
 import { board, boardStyles, electionStyles, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import { play } from "./audio";
 import { useSettings } from "./settings";
+import { Countdown } from "./Online";
 import { ElectionNightView, ResultsPanel, type NightPhase } from "./election";
 import { GroupsPanel, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
@@ -220,19 +221,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
           campaign goes on.
         </div>
       )}
-      {game.online && game.stage === "planning" && (game.online.sent || game.online.spectating || !game.online.connected || game.online.error) && (
-        <div className="banner" data-testid="online-banner" role="status">
-          {!game.online.connected
-            ? "Connection lost. Reconnecting…"
-            : game.online.error
-              ? game.online.error
-              : game.online.spectating
-                ? `You're out of the race. Watching the others${game.online.waitingFor.length ? `: waiting for ${game.online.waitingFor.map(game.label).join(", ")}` : ""}.`
-                : game.online.waitingFor.length
-                  ? `Plan sent. Waiting for ${game.online.waitingFor.map(game.label).join(", ")}.`
-                  : "Plan sent. Resolving the turn…"}
-        </div>
-      )}
+      {game.online && game.stage === "planning" && <OnlineBanner game={game} />}
       <main className="game-body">
         <div className="board-wrap">
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
@@ -351,6 +340,35 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     </div>
   );
 }
+
+/** Online: the turn timer, who's still planning, and anyone the computer is playing for. */
+function OnlineBanner({ game }: { game: GameApi }) {
+  const o = game.online!;
+  const me = game.humans[0]!;
+  const names = (ids: string[]) => ids.map(game.label).join(", ");
+  const others = o.autopilot.filter((id) => id !== me);
+  let text: string;
+  if (!o.connected) text = "Connection lost. Reconnecting…";
+  else if (o.error) text = o.error;
+  else if (o.spectating) text = `You're out of the race. Watching the others${o.waitingFor.length ? `: waiting for ${names(o.waitingFor)}` : ""}.`;
+  else if (o.sent) text = o.waitingFor.length ? `Plan sent. Waiting for ${names(o.waitingFor)}.` : "Plan sent. Resolving the turn…";
+  else if (o.autopilot.includes(me)) text = "You missed 3 turns, so the computer has been playing for you. Send a plan to take your seat back.";
+  else if (o.deadline) text = (o.missed[me] ?? 0) > 0 ? `You missed the last turn. Plan before the timer runs out.` : "Plan before the timer runs out.";
+  else return null;
+  return (
+    <div className="banner online-banner" data-testid="online-banner" role="status">
+      {o.deadline && !o.spectating && state(game) && (
+        <span className="timer">
+          <Countdown deadline={o.deadline} /> left
+        </span>
+      )}
+      <span>{text}</span>
+      {others.length > 0 && <small> The computer is playing for {names(others)} (missed turns).</small>}
+    </div>
+  );
+}
+
+const state = (game: GameApi) => game.state.phase === "campaign" || game.state.phase === "final";
 
 /** Pass and play: cover the screen between players so nobody sees anyone else's plan. */
 function Handoff({ game }: { game: GameApi }) {

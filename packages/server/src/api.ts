@@ -211,6 +211,24 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     return json({ code }, 201);
   }
 
+  // The player's ongoing matches: lobbies they opened, matches they sit in (with whether it's their move), and
+  // matches that finished in the last three days.
+  if (at("GET", "/api/matches/mine")) {
+    const { accountId } = await authed(req, env, now);
+    const rows = await env.DB.prepare(
+      `SELECT m.invite_code AS code, m.status, m.map_pack_id AS map, m.current_turn AS turn, m.turn_deadline AS deadline, m.created_at AS createdAt,
+              m.finished_at AS finishedAt, s.waiting AS waiting, s.party_name AS party,
+              (SELECT COUNT(*) FROM match_seats x WHERE x.match_id = m.id AND x.account_id IS NOT NULL) AS people
+       FROM matches m LEFT JOIN match_seats s ON s.match_id = m.id AND s.account_id = ?1
+       WHERE m.mode = 'private' AND (s.account_id IS NOT NULL OR (m.created_by = ?1 AND m.status = 'lobby'))
+         AND (m.status IN ('lobby', 'active') OR m.finished_at > ?2)
+       ORDER BY IFNULL(s.waiting, 0) DESC, m.status = 'finished', m.created_at DESC LIMIT 20`,
+    )
+      .bind(accountId, now - 3 * DAY)
+      .all<{ code: string; status: string; map: string; turn: number; deadline: number | null; createdAt: number; finishedAt: number | null; waiting: number | null; party: string | null; people: number }>();
+    return json({ matches: rows.results.map((r) => ({ ...r, yourMove: r.waiting === 1 })), now });
+  }
+
   const ws = /^\/api\/matches\/([0-9A-Za-z]{6})\/ws$/.exec(pathname);
   if (ws && req.method === "GET") {
     if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") throw new ApiError(426, "upgrade", "This is a WebSocket");

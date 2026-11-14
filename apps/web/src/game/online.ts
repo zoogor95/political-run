@@ -15,13 +15,34 @@ export interface RoomView {
   status: "lobby" | "active" | "finished";
   youHost: boolean;
   you: string | null;
-  setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean };
+  setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean; turnSeconds?: number | null };
   seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: Seat["party"]; leaderId: string; playerName: string | null }[];
   state: GameState | null;
   turnsPlayed: number;
   submitted: string[];
   yourPlan: Plan | null;
   result: ElectionResult | null;
+  /** When this turn's plans are due, by the server's clock. */
+  deadline: number | null;
+  missed: Record<string, number>;
+  /** Seats the computer is playing for after missed turns. */
+  autopilot: string[];
+  /** The server's clock when it sent this. */
+  now: number;
+}
+
+/** One of the player's matches, for the ongoing matches list. */
+export interface MatchSummary {
+  code: string;
+  status: "lobby" | "active" | "finished";
+  map: string;
+  turn: number;
+  deadline: number | null;
+  createdAt: number;
+  finishedAt: number | null;
+  party: string | null;
+  people: number;
+  yourMove: boolean;
 }
 
 /** One resolved turn: every party's plan and the random stream left after the computers planned. */
@@ -51,7 +72,7 @@ export function inviteLink(code: string): string {
 /** Opens a lobby for the setup chosen on the setup screen; returns its invite code. */
 export async function openLobby(config: MatchConfig): Promise<string> {
   await ensureAccount();
-  const setup = { map: config.map ?? "uk", seats: config.seats, customs: config.customs ?? [], ...(config.luck ? { luck: true } : {}) };
+  const setup = { map: config.map ?? "uk", seats: config.seats, customs: config.customs ?? [], ...(config.luck ? { luck: true } : {}), turnSeconds: config.turnSeconds ?? null };
   let res: Response;
   try {
     res = await fetch(`${API_URL}/api/matches`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${sessionToken()}` }, body: JSON.stringify({ setup }) });
@@ -63,6 +84,21 @@ export async function openLobby(config: MatchConfig): Promise<string> {
   return data.code;
 }
 
+/** The player's lobbies, matches in play (their move first) and recent results. Times are on this device's clock. */
+export async function myMatches(): Promise<MatchSummary[]> {
+  await ensureAccount();
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/matches/mine`, { headers: { authorization: `Bearer ${sessionToken()}` } });
+  } catch {
+    throw new CloudError("Couldn't reach the game's server. Check your connection and try again.");
+  }
+  const data = (await res.json().catch(() => null)) as { matches: MatchSummary[]; now: number } | null;
+  if (!res.ok || !data) throw new CloudError("The game's server had a problem. Try again in a minute.");
+  const skew = Date.now() - data.now;
+  return data.matches.map((m) => ({ ...m, deadline: m.deadline === null ? null : m.deadline + skew }));
+}
+
 /** The match config the play screen uses, from the server's view: people's seats are named after who sits there. */
 export function configOf(view: RoomView): MatchConfig {
   return {
@@ -71,6 +107,7 @@ export function configOf(view: RoomView): MatchConfig {
     seats: view.seats.map((s) => ({ id: s.id, kind: s.kind, label: s.playerName ?? s.label, level: s.level, party: s.party, leaderId: s.leaderId })),
     ...(view.setup.customs?.length ? { customs: view.setup.customs } : {}),
     ...(view.setup.luck ? { luck: true } : {}),
+    turnSeconds: view.setup.turnSeconds ?? null,
   };
 }
 
@@ -82,6 +119,8 @@ export type LinkStatus = "connecting" | "open" | "reconnecting" | "closed";
  */
 export class MatchLink {
   view: RoomView | null = null;
+  /** This device's clock minus the server's, from the last view. */
+  skew = 0;
   status: LinkStatus = "connecting";
   error: string | null = null;
   private ws: WebSocket | null = null;
@@ -118,7 +157,10 @@ export class MatchLink {
       } catch {
         return;
       }
-      if (msg.type === "room") this.set({ view: msg });
+      if (msg.type === "room") {
+        this.skew = Date.now() - msg.now;
+        this.set({ view: msg });
+      }
       else if (msg.type === "turn") {
         const t: TurnLog = { index: msg.index, turn: msg.turn, plans: msg.plans, rng: msg.rng };
         if (this.turnListeners.size === 0) this.pending.push(t);
@@ -168,6 +210,11 @@ export class MatchLink {
     }
     this.ws.send(JSON.stringify(msg));
     return true;
+  }
+
+  /** When this turn's plans are due, on this device's clock. */
+  deadline(): number | null {
+    return this.view?.deadline ? this.view.deadline + this.skew : null;
   }
 
   start = () => this.send({ type: "start" });

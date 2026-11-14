@@ -27,7 +27,19 @@ export interface MatchConfig {
   tutorial?: boolean;
   /** Luck factor: seats are drawn at random on election night, weighted by pips. */
   luck?: boolean;
+  /** Online: seconds each person has to send a plan; none waits for everyone. */
+  turnSeconds?: number | null;
 }
+
+/** Online turn timers, matching the server's list. */
+export const TURN_TIMERS: { seconds: number | null; label: string }[] = [
+  { seconds: null, label: "No time limit" },
+  { seconds: 60, label: "1 minute" },
+  { seconds: 300, label: "5 minutes" },
+  { seconds: 3600, label: "1 hour" },
+  { seconds: 43_200, label: "12 hours" },
+  { seconds: 86_400, label: "24 hours" },
+];
 
 /** The colour palette from the designs: colours are first come, first served. */
 export const COLORS: { name: string; hex: string }[] = [

@@ -27,6 +27,7 @@ import { saveMatch, type SavedMatch } from "./saves";
 import { defaultConfig, playersOf, type MatchConfig } from "./setup";
 import { afterMatch, afterTurn, type Table } from "./achievements";
 import { loadProfile, record } from "./profile";
+import { nudge } from "./notify";
 import { configOf, type MatchLink, type RoomView, type TurnLog } from "./online";
 
 
@@ -85,6 +86,12 @@ export interface OnlineInfo {
   spectating: boolean;
   connected: boolean;
   error: string | null;
+  /** When this turn's plans are due, on this device's clock (with a turn timer). */
+  deadline: number | null;
+  /** Seats the computer is playing for after missed turns. */
+  autopilot: string[];
+  /** Turns missed in a row, by seat. */
+  missed: Record<string, number>;
 }
 
 export interface GameApi {
@@ -156,10 +163,17 @@ export function useGame(start: GameStart): GameApi {
   const [eliminated, setEliminated] = useState<string | null>(() => save?.eliminated ?? null);
   const [report, setReport] = useState<TurnReport | null>(() => save?.report ?? null);
   // Pass and play opens on the hand-off screen, so even the first player's plan starts private.
-  const [stage, setStage] = useState<Stage>(() => (online ? "planning" : (save?.stage ?? (config.seats.filter((x) => x.kind === "human").length > 1 ? "handoff" : "planning"))));
+  const [stage, setStage] = useState<Stage>(() => (online ? (online.view.result ? "results" : "planning") : (save?.stage ?? (config.seats.filter((x) => x.kind === "human").length > 1 ? "handoff" : "planning"))));
   const [ticker, setTicker] = useState<Headline[]>(() => save?.ticker ?? openingHeadlines(state, humans[0]!));
   const [matchHeadline, setMatchHeadline] = useState<Headline | null>(() => save?.matchHeadline ?? null);
-  const [election, setElection] = useState<ElectionNight | null>(() => save?.election ?? null);
+  const [election, setElection] = useState<ElectionNight | null>(() => {
+    // Opening a finished online match: straight to the results, counted on the final board.
+    if (online?.view.result && online.view.state) {
+      const s = online.view.state;
+      return { state: s, calls: electionCalls(pack, s), result: online.view.result, tie: false, turn: s.turn };
+    }
+    return save?.election ?? null;
+  });
   const [boards, setBoards] = useState<GameState[]>(() => save?.boards ?? [state]);
   const [summaries, setSummaries] = useState<TurnSummary[]>(() => save?.summaries ?? []);
   // Headlines have their own random stream, so the news never changes how the match plays.
@@ -298,7 +312,10 @@ export function useGame(start: GameStart): GameApi {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
     if (!online) return;
-    const offTurn = online.link.onTurn((t) => setQueue((q) => [...q, t]));
+    const offTurn = online.link.onTurn((t) => {
+      setQueue((q) => [...q, t]);
+      nudge(`Turn ${t.turn} is in. Your move!`);
+    });
     const offView = online.link.subscribe(bump);
     return () => {
       offTurn();
@@ -466,6 +483,9 @@ export function useGame(start: GameStart): GameApi {
           spectating,
           connected: online.link.status === "open",
           error: online.link.error,
+          deadline: online.link.deadline(),
+          autopilot: online.link.view?.autopilot ?? [],
+          missed: online.link.view?.missed ?? {},
         }
       : null,
     setTarget,
