@@ -6,6 +6,7 @@ import { candidateName, map, MAPS, isMapId, selectMap } from "./model";
 import { EmblemIcon } from "./Menu";
 import { COLORS, EMBLEMS, EMBLEM_NAME } from "./setup";
 import { useProfile } from "./profile";
+import { enablePush, pushOn, pushSupported } from "./push";
 import { inviteLink, watchLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
 
 /** Re-renders whenever the link changes (a new view, the connection, an error). */
@@ -96,11 +97,22 @@ export function Countdown({ deadline }: { deadline: number }) {
 }
 
 /** Offers browser notifications once, for when the game is in another tab. */
+/**
+ * Turns on "your move" notifications: pushed to this device even when the game is closed where the browser allows it,
+ * otherwise shown by the open tab. Hidden once they're on, or if the player has blocked them.
+ */
 export function NotifyButton() {
-  const [on, setOn] = useState(notificationsOn());
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void pushOn().then((p) => live && setOn(p || (!pushSupported() && notificationsOn())));
+    return () => {
+      live = false;
+    };
+  }, []);
   if (!canNotify() || on || Notification.permission === "denied") return null;
   return (
-    <button type="button" onClick={() => void askToNotify().then(setOn)} data-testid="notify-me">
+    <button type="button" onClick={() => void enablePush().then(async (pushed) => setOn(pushed || (await askToNotify())))} data-testid="notify-me">
       Notify me when it's my move
     </button>
   );
