@@ -459,9 +459,10 @@ function ResignCard({ game, onClose }: { game: GameApi; onClose: () => void }) {
         <span className="breaking-tag">RESIGN</span>
         <h2 id="resign-title">{game.solo && !game.online ? "Resign this match?" : `Resign ${party}?`}</h2>
         <p>
-          The computer (Normal) takes over {game.solo ? "your party" : party} and plays it for the rest of the match.{" "}
-          {others ? (game.online ? "Everyone else plays on, and you can watch." : "The other players carry on.") : "It plays the match to the end and you see the result."} It counts as a match played, not
-          won, and you can't take it back.
+          {others
+            ? `The computer (Normal) takes over ${game.solo ? "your party" : party} for the rest of the match. ${game.online ? "Everyone else plays on, and you can watch." : "The other players carry on."}`
+            : "The computer (Normal) takes over your party and plays the match to the end, then you see the result."}{" "}
+          It counts as a match played, not won, and you can't take it back.
         </p>
         <div className="resign-buttons">
           <button type="button" onClick={onClose} data-testid="resign-cancel">
