@@ -50,7 +50,7 @@ export function textOn(hex: string): string {
 /** A party's name as a short label for the tally: its first word, in capitals. */
 const shortName = (name: string) => (name.trim().split(/\s+/)[0] ?? "").toUpperCase().slice(0, 9);
 
-export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: () => void; onSettings?: () => void }) {
+export function TopBar({ game, onMenu, onSettings, onResign }: { game: GameApi; onMenu?: () => void; onSettings?: () => void; onResign?: () => void }) {
   // During the recap the bar shows the board as it was before the turn, so the reveal isn't given away.
   const state = game.stage === "recap" && game.report ? game.report.before : game.state;
   const { issues } = game;
@@ -72,6 +72,14 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
           {onSettings && (
             <button type="button" onClick={onSettings} aria-label="Settings" data-testid="settings-button">
               ⚙
+            </button>
+          )}
+          {onResign && game.canResign && (
+            <button type="button" onClick={onResign} aria-label="Resign" title="Resign" data-testid="resign-button">
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 21V4" />
+                <path d="M5 4h12l-2.5 4L17 12H5" fill="#fff" />
+              </svg>
             </button>
           )}
         </div>

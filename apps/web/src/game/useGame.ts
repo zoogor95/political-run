@@ -83,8 +83,10 @@ export interface OnlineInfo {
   sent: boolean;
   /** People still to send a plan this turn. */
   waitingFor: string[];
-  /** This device's candidate is out of the race (Presidential): watching the rest. */
+  /** This device's candidate is out of the race (Presidential), or its player resigned: watching the rest. */
   spectating: boolean;
+  /** This device's player resigned; the computer plays their party. */
+  resigned: boolean;
   connected: boolean;
   error: string | null;
   /** When this turn's plans are due, on this device's clock (with a turn timer). */
@@ -135,6 +137,12 @@ export interface GameApi {
   backToPlanning(): void;
   showSummary(): void;
   restart(level?: AiLevel): void;
+  /** Whether the player on screen can resign now (planning, still in the race, not resigned already). */
+  canResign: boolean;
+  /** Seats whose person resigned. */
+  resignedSeats: string[];
+  /** The player on screen resigns: the computer (Normal) plays their party for the rest of the match. */
+  resign(): void;
 }
 
 function startState(start: GameStart, config: MatchConfig): GameState {
@@ -142,7 +150,9 @@ function startState(start: GameStart, config: MatchConfig): GameState {
   return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config), ...(config.luck ? { luck: true } : {}) });
 }
 
-const levelsOf = (config: MatchConfig) => Object.fromEntries(config.seats.filter((s) => s.kind === "ai").map((s) => [s.id, s.level])) as Record<string, AiLevel>;
+/** The computers' levels by seat, including seats whose person resigned (played at Normal). */
+const levelsOf = (config: MatchConfig) =>
+  Object.fromEntries(config.seats.filter((s) => s.kind === "ai" || s.resigned).map((s) => [s.id, s.kind === "ai" ? s.level : "normal"])) as Record<string, AiLevel>;
 
 /** True when a plan costs more than the money the player can spend on it (group money only goes so far). */
 export const overspends = (state: GameState, playerId: string, plan: Plan) => validatePlan(pack, state, playerId, plan).some((i) => i.code === "not_enough_money");
@@ -155,6 +165,8 @@ export function useGame(start: GameStart): GameApi {
   // Online, this device plays one seat; the other people are like computer parties whose plans come from the server.
   const humans = useMemo(() => (online ? [online.view.you!] : config.seats.filter((s) => s.kind === "human").map((s) => s.id)), [config, online]);
   const onlineHumans = useMemo(() => config.seats.filter((s) => s.kind === "human").map((s) => s.id), [config]);
+  // The people still planning on this device: everyone at the table but those who resigned.
+  const playing = useMemo(() => (online ? humans : humans.filter((h) => !config.seats.find((s) => s.id === h)?.resigned)), [online, humans, config]);
   const [plans, setPlans] = useState<Record<string, Plan>>(() => (online?.view.yourPlan ? { [online.view.you!]: online.view.yourPlan } : (save?.plans ?? {})));
   const [submitted, setSubmitted] = useState<string[]>(() => (online?.view.yourPlan ? [online.view.you!] : (save?.submitted ?? [])));
   const [current, setCurrent] = useState<string>(() => save?.current ?? humans[0]!);
@@ -190,8 +202,9 @@ export function useGame(start: GameStart): GameApi {
   const label = useCallback((id: string) => (solo && id === humans[0] ? "You" : playerOf(state, id).party.name), [solo, humans, state]);
   const levelOf = useCallback((id: string) => {
     const seat = seatOf(id);
+    if (seat?.resigned || online?.link.view?.resigned?.includes(id)) return "normal";
     return seat && seat.kind === "ai" ? seat.level : null;
-  }, [seatOf]);
+  }, [seatOf, online]);
   const level = config.seats.find((s) => s.kind === "ai")?.level ?? "normal";
 
   // Autosave after every change. Scenarios are test boards and are never saved; online matches live on the server.
@@ -243,7 +256,7 @@ export function useGame(start: GameStart): GameApi {
    * Plays a turn from the people's plans. On this device the computers plan here; online, `given` carries every plan
    * and the random stream from the server, so the turn plays exactly as it did there.
    */
-  const resolve = useCallback((humanPlans: Record<string, Plan>, given?: { plans: Record<string, Plan>; rng: number }) => {
+  const resolve = useCallback((humanPlans: Record<string, Plan>, given?: { plans: Record<string, Plan>; rng: number }, cfg: MatchConfig = config) => {
     let all: Record<string, Plan>;
     let rng: number;
     if (given) {
@@ -253,7 +266,7 @@ export function useGame(start: GameStart): GameApi {
       all = { ...Object.fromEntries(state.players.filter((p) => !humans.includes(p.id)).map((p) => [p.id, {}])), ...humanPlans };
       rng = state.rng;
     } else {
-      const ai = planComputers(pack, state, levelsOf(config));
+      const ai = planComputers(pack, state, levelsOf(cfg));
       all = { ...ai.plans, ...humanPlans };
       rng = ai.rng;
     }
@@ -281,7 +294,8 @@ export function useGame(start: GameStart): GameApi {
     if (!start.scenario) {
       const table: Table = {
         pack,
-        humans,
+        // Someone who resigned doesn't win with the computer's play.
+        humans: online ? humans : humans.filter((h) => !cfg.seats.find((x) => x.id === h)?.resigned),
         ai: config.seats.filter((s) => s.kind === "ai").map((s) => s.level),
         passAndPlay: humans.length > 1,
         ownCandidate: humans.some((h) => pack.candidates.some((c) => c.id === playerOf(state, h).leaderId && "custom" in c)),
@@ -310,7 +324,8 @@ export function useGame(start: GameStart): GameApi {
     setState(next);
     setPlans({});
     setSubmitted([]);
-    setCurrent(humans.find((h) => playerOf(next, h).eliminated === undefined) ?? humans[0]!);
+    const stillPlaying = online ? humans : humans.filter((h) => !cfg.seats.find((s) => s.id === h)?.resigned);
+    setCurrent(stillPlaying.find((h) => playerOf(next, h).eliminated === undefined) ?? humans[0]!);
     setLastEvents(events);
   }, [state, humans, idleAi, newsRng, start.scenario, config, summaries]);
 
@@ -331,7 +346,8 @@ export function useGame(start: GameStart): GameApi {
     };
   }, [online]);
   const me = online?.view.you ?? null;
-  const spectating = Boolean(me && playerOf(state, me).eliminated !== undefined && state.phase !== "finished");
+  const resignedOnline = Boolean(me && online?.link.view?.resigned?.includes(me));
+  const spectating = Boolean(me && (playerOf(state, me).eliminated !== undefined || resignedOnline) && state.phase !== "finished");
   useEffect(() => {
     if (!online || queue.length === 0 || stage !== "planning") return;
     const t = queue[0]!;
@@ -375,7 +391,7 @@ export function useGame(start: GameStart): GameApi {
     }
     const done = [...submitted, current];
     // Eliminated candidates (Presidential) don't plan any more.
-    const waiting = humans.filter((h) => !done.includes(h) && playerOf(state, h).eliminated === undefined);
+    const waiting = playing.filter((h) => !done.includes(h) && playerOf(state, h).eliminated === undefined);
     if (waiting.length > 0) {
       // Pass and play: hand the device to the next player; nobody sees anyone else's plan.
       setSubmitted(done);
@@ -384,20 +400,20 @@ export function useGame(start: GameStart): GameApi {
       return;
     }
     resolve(plans);
-  }, [state, current, plan, submitted, humans, plans, resolve]);
+  }, [state, current, plan, submitted, playing, plans, resolve, online]);
 
   const ready = useCallback(() => setStage("planning"), []);
   // Only from the recap: a recap timer firing after the player already skipped ahead must not reopen the summary.
   const endRecap = useCallback(() => setStage((s) => (s === "recap" ? "summary" : s)), []);
   // After the summary of the final turn, election night comes before planning (or the results).
-  const backToPlanning = useCallback(() => setStage(election ? "election" : humans.length > 1 ? "handoff" : "planning"), [election, humans]);
+  const backToPlanning = useCallback(() => setStage(election ? "election" : playing.length > 1 ? "handoff" : "planning"), [election, playing]);
   const showSummary = useCallback(() => setStage((s) => (s === "planning" ? "summary" : s)), []);
   const endElection = useCallback(() => {
     if (!election) return;
     if (election.tie) {
       setSecondRound(true);
       setElection(null);
-      setStage(humans.length > 1 ? "handoff" : "planning");
+      setStage(playing.length > 1 ? "handoff" : "planning");
       return;
     }
     if (!election.continues) {
@@ -407,7 +423,7 @@ export function useGame(start: GameStart): GameApi {
     // Presidential, no majority: the campaign goes on without the eliminated candidate.
     const out = election.result.eliminated;
     // Online, anyone still in the race keeps the campaign going (this device watches if its candidate is out).
-    const left = (online ? onlineHumans : humans).filter((h) => playerOf(state, h).eliminated === undefined);
+    const left = (online ? onlineHumans : playing).filter((h) => playerOf(state, h).eliminated === undefined);
     if (left.length > 0) {
       setEliminated(out);
       setElection(null);
@@ -420,7 +436,7 @@ export function useGame(start: GameStart): GameApi {
     if (!start.scenario) {
       const table: Table = {
         pack,
-        humans,
+        humans: playing,
         ai: config.seats.filter((x) => x.kind === "ai").map((x) => x.level),
         passAndPlay: humans.length > 1,
         ownCandidate: humans.some((h) => pack.candidates.some((c) => c.id === playerOf(state, h).leaderId && "custom" in c)),
@@ -434,11 +450,13 @@ export function useGame(start: GameStart): GameApi {
     setElection({ state: played.atCount, calls: electionCalls(pack, played.atCount), result: played.result, tie: false, continues: false, turn: played.atCount.turn - 1 });
     setBoards((b) => [...b, played.atCount]);
     setStage("election");
-  }, [election, humans, onlineHumans, online, me, state, levelOf, start.scenario, config, summaries]);
+  }, [election, humans, playing, onlineHumans, online, me, state, levelOf, start.scenario, config, summaries]);
 
   const restart = useCallback((next?: AiLevel) => {
     if (online) return; // a rematch online is a new lobby
-    const nextConfig: MatchConfig = next ? { ...config, seats: config.seats.map((s) => (s.kind === "ai" ? { ...s, level: next } : s)) } : config;
+    // A rematch starts afresh: anyone who resigned plays again.
+    const base: MatchConfig = { ...config, seats: config.seats.map(({ resigned: _r, ...s }) => s) };
+    const nextConfig: MatchConfig = next ? { ...base, seats: base.seats.map((s) => (s.kind === "ai" ? { ...s, level: next } : s)) } : base;
     const fresh = createMatch(pack, { seed: Date.now() % 1_000_000, players: playersOf(nextConfig), ...(nextConfig.luck ? { luck: true } : {}) });
     setConfig(nextConfig);
     setState(fresh);
@@ -458,6 +476,45 @@ export function useGame(start: GameStart): GameApi {
     setSummaries([]);
     setIdleAi(false);
   }, [config, humans, online]);
+
+  const canResign =
+    stage === "planning" && state.phase !== "finished" && !start.scenario && playerOf(state, current).eliminated === undefined && (online ? !spectating && !submitted.includes(current) : playing.includes(current));
+  const resign = useCallback(() => {
+    if (!canResign) return;
+    if (online) {
+      online.link.resign();
+      return;
+    }
+    const cfg: MatchConfig = { ...config, seats: config.seats.map((s) => (s.id === current ? { ...s, resigned: true } : s)) };
+    const left = playing.filter((h) => h !== current && playerOf(state, h).eliminated === undefined);
+    const rest = Object.fromEntries(Object.entries(plans).filter(([id]) => id !== current));
+    setConfig(cfg);
+    if (left.length > 0) {
+      // Pass and play: the others play on; the turn resolves once they've all planned.
+      const done = submitted.filter((id) => id !== current);
+      const waiting = left.filter((h) => !done.includes(h));
+      setPlans(rest);
+      setSubmitted(done);
+      if (waiting.length > 0) {
+        setCurrent(waiting[0]!);
+        setStage("handoff");
+      } else resolve(rest, undefined, cfg);
+      return;
+    }
+    // Nobody is left to plan: the computers play the match to the end, and the deciding count is shown.
+    const levels = levelsOf(cfg);
+    const played = playOutMatch(pack, state, (id) => levels[id] ?? null);
+    const table: Table = { pack, humans: [], ai: config.seats.filter((x) => x.kind === "ai").map((x) => x.level), passAndPlay: humans.length > 1, ownCandidate: false };
+    const match = afterMatch(table, played.result, loadProfile().stats, { clashed: false, secondRound: false });
+    record(match.stats, match.earned);
+    setPlans({});
+    setSubmitted([]);
+    setState(played.state);
+    setResult(played.result);
+    setElection({ state: played.atCount, calls: electionCalls(pack, played.atCount), result: played.result, tie: false, continues: false, turn: played.atCount.turn - 1 });
+    setBoards((b) => [...b, played.atCount]);
+    setStage("election");
+  }, [canResign, online, config, current, playing, state, plans, submitted, resolve, humans]);
 
   const viewer = stage === "planning" || stage === "handoff" ? current : humans[0]!;
 
@@ -489,6 +546,7 @@ export function useGame(start: GameStart): GameApi {
           sent: submitted.includes(current) || Boolean(online.link.view?.yourPlan && online.link.view.turnsPlayed === applied.current && online.link.view.state?.turn === state.turn),
           waitingFor: online.link.view ? onlineHumans.filter((h) => playerOf(state, h).eliminated === undefined && !online.link.view!.submitted.includes(h) && h !== me) : [],
           spectating,
+          resigned: resignedOnline,
           connected: online.link.status === "open",
           error: online.link.error,
           deadline: online.link.deadline(),
@@ -506,5 +564,8 @@ export function useGame(start: GameStart): GameApi {
     backToPlanning,
     showSummary,
     restart,
+    canResign,
+    resign,
+    resignedSeats: online ? (online.link.view?.resigned ?? []) : config.seats.filter((s) => s.resigned).map((s) => s.id),
   };
 }

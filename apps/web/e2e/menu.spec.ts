@@ -180,3 +180,25 @@ test("phones play sideways: held upright, a card asks to turn the phone", async 
   await expect(side.getByTestId("rotate-notice")).toBeHidden();
   await sideways.close();
 });
+
+test("pass and play: a player who resigns becomes a computer party and the others play on", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-hotseat").click();
+  await page.getByTestId("start-match").click();
+  await boardReady(page);
+  await page.getByTestId("ready").click();
+  // Player 1 resigns their party.
+  await page.getByTestId("resign-button").click();
+  await expect(page.getByTestId("resign-card")).toContainText("The other players carry on");
+  await page.getByTestId("resign-confirm").click();
+  await expect(page.getByTestId("handoff")).toContainText("Pass the device to Player 2");
+  await page.getByTestId("ready").click();
+  await page.getByTestId("submit").click();
+  // Only Player 2 is left to plan: the turn resolves, and Player 2 plans again on their own.
+  const stage = await finishTurn(page);
+  expect(stage).toBe("planning");
+  await expect(page.getByTestId("turn")).toContainText("Turn 2");
+  await page.getByTestId("tab-rivals").click();
+  await expect(page.getByTestId("rivals-panel")).toContainText("AI · Normal");
+});
+

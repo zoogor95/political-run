@@ -383,3 +383,22 @@ test("a plan can't spend more than you have: + stops at what you can pay for and
   await expect(page.getByTestId("submit")).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+test("resigning a solo match: the computer plays your party to the end and you see the result", async ({ page }) => {
+  await page.goto("/?seed=5&ai=easy");
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  await page.getByTestId("resign-button").click();
+  await expect(page.getByTestId("resign-card")).toContainText("Resign this match?");
+  // Changed your mind: nothing happens.
+  await page.getByTestId("resign-cancel").click();
+  await expect(page.getByTestId("resign-card")).toHaveCount(0);
+  await expect(page.getByTestId("turn")).toContainText("Turn 1");
+  await page.getByTestId("resign-button").click();
+  await page.getByTestId("resign-confirm").click();
+  await expect(page.getByTestId("night-tally")).toBeVisible();
+  await page.getByTestId("night-skip").click();
+  await page.getByTestId("night-done").click();
+  await expect(page.getByTestId("results")).toBeVisible();
+  await expect(page.getByTestId("ranks")).toContainText("Resigned: the computer played on");
+});
+

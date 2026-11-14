@@ -27,6 +27,8 @@ export interface RoomView {
   missed: Record<string, number>;
   /** Seats the computer is playing for after missed turns. */
   autopilot: string[];
+  /** Seats whose person resigned (the computer plays them to the end). Absent from older servers. */
+  resigned?: string[];
   /** The server's clock when it sent this. */
   now: number;
 }
@@ -222,6 +224,8 @@ export class MatchLink {
   pick = (change: { name?: string; color?: string; emblem?: string; leaderId?: string }) => this.send({ type: "pick", change });
   setReady = (ready: boolean) => this.send({ type: "ready", ready });
   submit = (turn: number, plan: Plan) => this.send({ type: "plan", turn, plan });
+  /** Hands this seat to the computer for the rest of the match. */
+  resign = () => this.send({ type: "resign" });
   clearError = () => this.set({ error: null });
 
   /** Leaves the lobby (freeing the seat) or simply disconnects from a match in play. */

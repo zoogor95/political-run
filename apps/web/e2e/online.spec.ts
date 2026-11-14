@@ -134,3 +134,37 @@ test("a turn timer moves the match on without a friend who's away, and the ongoi
   await host.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
   await expect(host.getByTestId("turn")).toContainText("Turn 2");
 });
+
+test("a friend who resigns hands their party to the computer, and the host plays on without waiting for them", async ({ browser }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  test.setTimeout(180_000);
+  const host = await device(browser);
+  const friend = await device(browser);
+
+  await host.goto("/");
+  await host.getByTestId("new-online").click();
+  await host.getByTestId("online-create").click();
+  await host.getByTestId("start-match").click();
+  const code = (await host.getByTestId("invite-code").textContent())!;
+  await friend.goto(`/?join=${code}`);
+  await expect(friend.getByTestId("lobby-seats")).toContainText("(you)");
+  await friend.getByTestId("lobby-ready").click();
+  await expect(host.getByTestId("lobby-start")).toBeEnabled();
+  await host.getByTestId("lobby-start").click();
+  for (const page of [host, friend]) await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+
+  // The friend resigns: an "are you sure?" first, then the computer takes their seat.
+  await friend.getByTestId("resign-button").click();
+  await expect(friend.getByTestId("resign-card")).toContainText("Everyone else plays on");
+  await friend.getByTestId("resign-confirm").click();
+  await expect(friend.getByTestId("online-banner")).toContainText("You resigned");
+  await expect(friend.getByTestId("submit")).toBeDisabled();
+  await expect(friend.getByTestId("resign-button")).toHaveCount(0);
+
+  // The host's plan alone resolves the turn: the friend's party is the computer's now.
+  const before = [await boards(host), await boards(friend)] as const;
+  await host.getByTestId("submit").click();
+  await Promise.all([catchUp(host, before[0]), catchUp(friend, before[1])]);
+  await expect(host.getByTestId("turn")).toContainText("Turn 2");
+  await expect(friend.getByTestId("online-banner")).toContainText("You resigned");
+});
