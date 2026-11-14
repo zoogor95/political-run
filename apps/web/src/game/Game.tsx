@@ -74,6 +74,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const [replayAt, setReplay] = useState<number | null>(null);
   const replay = replayAt ?? game.boards.length - 1;
   const [coaching, setCoaching] = useState(() => game.config.tutorial === true);
+  // The "are you sure?" card for resigning.
+  const [resigning, setResigning] = useState(false);
   // Election night and results show the seat map; results can switch back to the campaign board.
   // Presidential: each state goes whole to its winner, so the real map is the results map.
   const [seatView, setSeatView] = useState(() => !presidential());
@@ -234,7 +236,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
       ) : results ? (
         <ResultsBanner game={game} />
       ) : (
-        <TopBar game={game} onMenu={onMenu} onSettings={onSettings} />
+        <TopBar game={game} onMenu={onMenu} onSettings={onSettings} onResign={() => setResigning(true)} />
       )}
       {game.secondRound && <div className="banner">Tie for most seats! Second round: everyone loses 5 pips in every region and the campaign goes on.</div>}
       {game.eliminated && (
@@ -389,6 +391,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
         />
       )}
       {breaking && <BreakingCard headline={breaking} onDone={endBreaking} />}
+      {resigning && game.canResign && <ResignCard game={game} onClose={() => setResigning(false)} />}
       {game.stage === "summary" && report && <SummaryView game={game} />}
       {game.stage === "handoff" && <Handoff game={game} />}
 
@@ -405,6 +408,7 @@ function OnlineBanner({ game }: { game: GameApi }) {
   let text: string;
   if (!o.connected) text = "Connection lost. Reconnecting…";
   else if (o.error) text = o.error;
+  else if (o.resigned) text = `You resigned: the computer plays your party now. Watching the others${o.waitingFor.length ? `: waiting for ${names(o.waitingFor)}` : ""}.`;
   else if (o.spectating) text = `You're out of the race. Watching the others${o.waitingFor.length ? `: waiting for ${names(o.waitingFor)}` : ""}.`;
   else if (o.sent) text = o.waitingFor.length ? `Plan sent. Waiting for ${names(o.waitingFor)}.` : "Plan sent. Resolving the turn…";
   else if (o.autopilot.includes(me)) text = "You missed 3 turns, so the computer has been playing for you. Send a plan to take your seat back.";
@@ -440,6 +444,42 @@ function Handoff({ game }: { game: GameApi }) {
         <button type="button" className="primary" onClick={game.ready} data-testid="ready">
           I'm {seat?.label ?? party.name}: show my turn
         </button>
+      </div>
+    </div>
+  );
+}
+
+/** Are you sure? Resigning hands the party to the computer (Normal) for the rest of the match. */
+function ResignCard({ game, onClose }: { game: GameApi; onClose: () => void }) {
+  const party = playerOf(game.state, game.viewer).party.name;
+  const others = game.online ? true : game.humans.length > 1;
+  return (
+    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="resign-title">
+      <div className="resign-card" data-testid="resign-card">
+        <span className="breaking-tag">RESIGN</span>
+        <h2 id="resign-title">{game.solo && !game.online ? "Resign this match?" : `Resign ${party}?`}</h2>
+        <p>
+          {others
+            ? `The computer (Normal) takes over ${game.solo ? "your party" : party} for the rest of the match. ${game.online ? "Everyone else plays on, and you can watch." : "The other players carry on."}`
+            : "The computer (Normal) takes over your party and plays the match to the end, then you see the result."}{" "}
+          It counts as a match played, not won, and you can't take it back.
+        </p>
+        <div className="resign-buttons">
+          <button type="button" onClick={onClose} data-testid="resign-cancel">
+            Keep playing
+          </button>
+          <button
+            type="button"
+            className="danger"
+            onClick={() => {
+              onClose();
+              game.resign();
+            }}
+            data-testid="resign-confirm"
+          >
+            Resign
+          </button>
+        </div>
       </div>
     </div>
   );

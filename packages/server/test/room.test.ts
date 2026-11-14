@@ -1,7 +1,7 @@
 import { createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
 import { describe, expect, it } from "vitest";
 import { inviteCode } from "../src/api.js";
-import { checkSetup, join, leave, newRoom, packFor, pick, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
+import { checkSetup, join, leave, newRoom, packFor, pick, resign, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
 
 const seat = (id: string, kind: "human" | "ai", leaderId: string, color: string, emblem: string) => ({
   id,
@@ -107,6 +107,60 @@ describe("playing the match", () => {
     expect(room.status).toBe("finished");
     expect(room.result!.ranking).toHaveLength(3);
     expect(() => submit(room, "host", room.state!.turn, {})).toThrow("isn't being played");
+  });
+});
+
+describe("resigning", () => {
+  const begun = () => {
+    const room = lobby();
+    join(room, "friend", "Ali");
+    setReady(room, "friend", true);
+    start(room, "host");
+    return room;
+  };
+
+  it("hands the seat to the computer for good: the turn goes on without waiting for them, and they can't plan again", () => {
+    const room = begun();
+    submit(room, "host", 1, planFor(room, "p1"));
+    const out = resign(room, "friend");
+    // The host had already planned, so the turn resolves with the computer playing the friend's seat.
+    expect(out.turns).toHaveLength(1);
+    expect(Object.keys(out.turns[0]!.plans.p2!).length).toBeGreaterThan(0);
+    expect(view(room, "host")).toMatchObject({ resigned: ["p2"], autopilot: ["p2"] });
+    expect(waitingOn(room)).toEqual(["p1"]);
+    expect(() => submit(room, "friend", room.state!.turn, {})).toThrow("resigned");
+    // Missing the clock doesn't bring them back either: the seat stays the computer's.
+    expect(room.resigned).toEqual(["p2"]);
+  });
+
+  it("waits for the others' plans before resolving", () => {
+    const room = begun();
+    expect(resign(room, "friend").turns).toEqual([]);
+    expect(waitingOn(room)).toEqual(["p1"]);
+    expect(submit(room, "host", 1, planFor(room, "p1")).turns).toHaveLength(1);
+  });
+
+  it("plays the match to the end once every person has resigned, sending every turn so devices can replay it", () => {
+    const room = begun();
+    resign(room, "friend");
+    const out = resign(room, "host");
+    expect(out.finished).toBe(true);
+    expect(room.status).toBe("finished");
+    expect(out.turns.length).toBeGreaterThan(5);
+    expect(out.turns.map((t) => t.index)).toEqual(out.turns.map((_, i) => i));
+    const pack = packFor(room.setup);
+    let device: GameState = createMatch(pack, { seed: 4242, players: room.state!.players.map((p) => ({ id: p.id, leaderId: p.leaderId, party: p.party })) });
+    for (const t of out.turns) device = playTurn(pack, device, t.plans, t.rng).next;
+    expect(device).toEqual(room.state);
+  });
+
+  it("refuses people without a seat, and matches not being played", () => {
+    const room = lobby();
+    join(room, "friend", "Ali");
+    setReady(room, "friend", true);
+    expect(() => resign(room, "host")).toThrow("isn't being played");
+    start(room, "host");
+    expect(() => resign(room, "stranger")).toThrow("seat");
   });
 });
 

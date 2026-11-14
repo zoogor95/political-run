@@ -14,6 +14,8 @@ export interface Seat {
   level: AiLevel;
   party: { name: string; color: string; emblem: string };
   leaderId: string;
+  /** This seat's person resigned: the computer (Normal) plays it for the rest of the match. */
+  resigned?: boolean;
 }
 
 export interface MatchConfig {
