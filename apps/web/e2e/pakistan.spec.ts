@@ -32,7 +32,7 @@ test("choose Pakistan in setup: its leaders, 336 seats, rupees and 169 for a maj
   await page.getByTestId("map-pk").click();
   await expect(page.getByTestId("map-pk")).toHaveAttribute("aria-checked", "true");
   await expect(page.getByTestId("setup")).toContainText("Pakistan · Parliamentary · 336 seats");
-  await expect(page.getByLabel("Player 1 leader")).toHaveValue("shehbaz-sharif");
+  await expect(page.getByTestId("pick-leader-you")).toHaveAttribute("data-leader", "shehbaz-sharif");
   await page.getByTestId("start-match").click();
   await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
   expect((await hook(page)).state.packId).toBe("pk");
@@ -45,7 +45,7 @@ test("choose Pakistan in setup: its leaders, 336 seats, rupees and 169 for a maj
   await page.getByTestId("new-solo").click();
   await expect(page.getByTestId("map-pk")).toHaveAttribute("aria-checked", "true");
   await page.getByTestId("map-uk").click();
-  await expect(page.getByLabel("Player 1 leader")).toHaveValue("keir-starmer");
+  await expect(page.getByTestId("pick-leader-you")).toHaveAttribute("data-leader", "keir-starmer");
 });
 
 test("a whole Pakistan match: reserved seats are declared last and the count reaches 336", async ({ page }) => {

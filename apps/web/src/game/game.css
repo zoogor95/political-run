@@ -5222,3 +5222,624 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* Setup: the candidate (or leader) field, which opens Choose your candidate. */
+.party-editor .leader-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 6px 10px 6px 6px;
+  cursor: pointer;
+}
+
+.leader-pick-face {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  box-sizing: border-box;
+  border: 3px solid;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 15px "Lilita One", sans-serif;
+}
+
+.leader-pick-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.leader-pick-text b {
+  font: 400 17px/1.15 "Lilita One", sans-serif;
+}
+
+.leader-pick-text small {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.leader-pick-change {
+  font-size: 13px;
+  font-weight: 900;
+  background: var(--gold);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 3px 10px;
+}
+
+/* Choose your candidate (design: Candidate select): a full screen over the setup. */
+.overlay.cand-overlay {
+  padding: 0;
+  background-color: var(--water);
+  background-image: radial-gradient(var(--dot) 1.8px, transparent 1.9px);
+  background-size: 22px 22px;
+}
+
+.overlay.cand-overlay > .cand-screen {
+  margin: 0;
+}
+
+.cand-screen {
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 40px 28px;
+  zoom: var(--text-scale, 1);
+}
+
+.cand-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cand-top .back {
+  font: 800 16px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.cand-top h2 {
+  margin: 0;
+  font: 400 34px "Lilita One", sans-serif;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 4px 28px;
+  text-align: center;
+}
+
+.cand-top-space {
+  width: 112px;
+}
+
+.cand-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cand-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 0 12px;
+  width: 280px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.cand-search input {
+  font: 700 15px "Nunito", sans-serif;
+  color: var(--ink);
+  border: 0;
+  outline: none;
+  padding: 10px 0;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.cand-search:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.cand-parties {
+  display: flex;
+  flex-wrap: wrap;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.cand-parties button {
+  font: 900 14px "Nunito", sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.cand-parties button[aria-pressed="true"] {
+  color: var(--cream);
+  background: var(--ink);
+}
+
+.cand-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.cand-sort select {
+  font: 800 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 7px 10px;
+}
+
+.cand-fav-only {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cand-fav-only input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ink);
+}
+
+.cand-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+
+.cand-grid {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  padding-bottom: 8px;
+}
+
+.cand-screen .cand-create {
+  font: inherit;
+  color: var(--ink);
+  border: 3px dashed var(--ink);
+  border-radius: 18px;
+  background: rgba(255, 247, 226, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  min-height: 140px;
+  cursor: pointer;
+}
+
+.cand-screen .cand-create b {
+  font: 400 20px "Lilita One", sans-serif;
+}
+
+.cand-screen .cand-create > span:not(.cand-lock) {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a4260;
+  max-width: 220px;
+  text-align: center;
+}
+
+.cand-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 12.5px;
+  font-weight: 900;
+  background: var(--ink);
+  color: var(--gold);
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+
+.cand-screen .cand-create .cand-lock {
+  align-self: center;
+}
+
+.cand-card {
+  position: relative;
+  min-width: 0;
+}
+
+.cand-screen .cand-pick {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: var(--cream);
+  box-shadow: 0 5px 0 var(--ink);
+  display: flex;
+  gap: 12px;
+  padding: 12px 34px 12px 12px;
+  cursor: pointer;
+}
+
+.cand-screen .cand-card.on .cand-pick {
+  background: #fff;
+  border-width: 4px;
+  box-shadow: 0 0 0 4px var(--gold), 0 6px 0 4px var(--ink);
+}
+
+.cand-screen .cand-card.taken .cand-pick {
+  background: #e9e4dc;
+}
+
+.cand-face {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  box-sizing: border-box;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 24px "Lilita One", sans-serif;
+  color: var(--ink);
+}
+
+.cand-face.big {
+  width: 78px;
+  height: 78px;
+  font-size: 30px;
+}
+
+.cand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.cand-text b {
+  font: 400 19px/1.1 "Lilita One", sans-serif;
+}
+
+.cand-text small {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4a4260;
+}
+
+.cand-text .cand-lock {
+  color: var(--cream);
+}
+
+.cand-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cand-chips span {
+  font-size: 11.5px;
+  font-weight: 900;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+
+.cand-chips .plus {
+  background: #d6f3dc;
+  color: #1e5c2c;
+}
+
+.cand-chips .minus {
+  background: #fbe0dd;
+  color: #8a2017;
+}
+
+.cand-chips .even {
+  background: #fff;
+  color: #4a4260;
+}
+
+.cand-screen .cand-star {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cand-empty {
+  grid-column: 1 / -1;
+  font-weight: 800;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.cand-detail {
+  position: sticky;
+  top: 16px;
+  width: 380px;
+  flex: none;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow: 0 7px 0 var(--ink);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cand-detail-head {
+  border-bottom: 4px solid var(--ink);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cand-detail-head > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 6px 12px;
+  min-width: 0;
+}
+
+.cand-detail-head b {
+  font: 400 26px/1 "Lilita One", sans-serif;
+}
+
+.cand-detail-head small {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.cand-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 16px 18px 8px;
+}
+
+.cand-lists > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cand-lists small {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.cand-lists > div > span {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cand-lists em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a4260;
+}
+
+.cand-lists .good {
+  color: #1e6b30;
+}
+
+.cand-lists .bad {
+  color: #a3281b;
+}
+
+.cand-note {
+  margin: 0;
+  padding: 4px 18px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4a4260;
+}
+
+.cand-screen .cand-choose {
+  margin: 6px 18px 18px;
+  font: 900 18px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--gold);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 12px;
+  cursor: pointer;
+}
+
+.cand-screen .cand-choose:disabled {
+  background: #e9e4dc;
+  cursor: not-allowed;
+}
+
+/* Narrower screens and phones held sideways: tighter spacing and a slimmer detail panel. */
+@media (max-width: 1000px), (max-height: 560px) {
+  .cand-screen {
+    padding: 10px 14px 16px;
+    gap: 10px;
+  }
+
+  .cand-top .back {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .cand-top h2 {
+    font-size: 22px;
+    padding: 2px 16px;
+    border-width: 3px;
+    box-shadow: 0 4px 0 var(--ink);
+  }
+
+  .cand-top-space {
+    width: 80px;
+  }
+
+  .cand-tools {
+    gap: 8px;
+  }
+
+  .cand-search {
+    width: 200px;
+  }
+
+  .cand-search input {
+    padding: 6px 0;
+    font-size: 14px;
+  }
+
+  .cand-parties button {
+    padding: 4px 9px;
+    font-size: 12.5px;
+  }
+
+  .cand-sort select {
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+
+  .cand-body {
+    gap: 14px;
+  }
+
+  .cand-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+  }
+
+  .cand-screen .cand-pick {
+    padding: 8px 30px 8px 8px;
+    gap: 8px;
+  }
+
+  .cand-face {
+    width: 46px;
+    height: 46px;
+    font-size: 17px;
+  }
+
+  .cand-text b {
+    font-size: 16px;
+  }
+
+  .cand-detail {
+    width: 300px;
+    top: 10px;
+  }
+
+  .cand-detail-head {
+    padding: 10px 12px;
+  }
+
+  .cand-detail-head b {
+    font-size: 20px;
+  }
+
+  .cand-face.big {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
+
+  .cand-lists {
+    padding: 10px 12px 4px;
+    gap: 10px;
+  }
+
+  .cand-lists > div > span {
+    font-size: 13px;
+  }
+
+  .cand-screen .cand-choose {
+    margin: 4px 12px 12px;
+    padding: 8px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .cand-body {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .cand-detail {
+    position: static;
+    width: auto;
+  }
+}

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 type GameHook = {
@@ -34,7 +35,10 @@ test("choose the United States: candidates run under their real party, 538 elect
   // No party names, colours or emblems to choose: each seat is a candidate in a shade of their party's colour.
   await expect(page.getByLabel("Player 1 party name")).toHaveCount(0);
   await expect(page.getByTestId("seat-party-you")).toContainText("Runs as an Independent"); // George Washington
-  await page.getByLabel("Player 1 leader").selectOption("abraham-lincoln");
+  await page.getByTestId("pick-leader-you").click();
+  await page.getByTestId("cand-abraham-lincoln").click();
+  await page.getByTestId("choose-candidate").click();
+  await expect(page.getByTestId("candidate-picker")).toHaveCount(0);
   await expect(page.getByTestId("seat-party-you")).toContainText("Runs as the Republican candidate");
   await expect(page.getByTestId("setup-luck")).toHaveCount(0);
   await expect(page.getByTestId("setup-issues")).toHaveCount(0);
@@ -91,6 +95,45 @@ test("a whole US match: a running mate on turn 5, states called on election nigh
   expect(sawCall || night.calls.length === 51).toBe(true);
 });
 
+test("choose your candidate: search, party filter, favorites, and candidates other seats have are taken", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-solo").click();
+  await page.getByTestId("map-us").click();
+  await page.getByTestId("pick-leader-you").click();
+  const picker = page.getByTestId("candidate-picker");
+  await expect(picker).toBeVisible();
+  await expect(page.getByTestId("picker-create")).toBeVisible();
+  const axe = await new AxeBuilder({ page }).include('[data-testid="candidate-picker"]').analyze();
+  expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
+  // The computer candidates' picks are taken: shown, but they can't be chosen.
+  const taken = picker.locator(".cand-card.taken");
+  await expect(taken.first()).toContainText("Taken by");
+  await taken.first().locator(".cand-pick").click();
+  await expect(page.getByTestId("choose-candidate")).toBeDisabled();
+
+  // Search by name or by a group a candidate is strong in; filter by party.
+  await page.getByTestId("picker-search").fill("lincoln");
+  await expect(picker.locator(".cand-card")).toHaveCount(1);
+  await page.getByTestId("picker-search").fill("");
+  await picker.getByRole("button", { name: "Democratic", exact: true }).click();
+  await expect(picker.locator(".cand-card").filter({ hasText: "Republican" })).toHaveCount(0);
+  await expect(page.getByTestId("cand-barack-obama")).toBeVisible();
+
+  // Favorites are remembered.
+  await picker.getByRole("button", { name: "Add Barack Obama to favorites" }).click();
+  await picker.getByLabel("Favorites only").check();
+  await expect(picker.locator(".cand-card")).toHaveCount(1);
+  await page.getByTestId("cand-barack-obama").click();
+  await expect(page.getByTestId("picker-detail")).toContainText("STRENGTHS");
+  await page.getByTestId("choose-candidate").click();
+  await expect(page.getByTestId("pick-leader-you")).toHaveAttribute("data-leader", "barack-obama");
+  await page.getByTestId("pick-leader-you").click();
+  await page.getByLabel("Favorites only").check();
+  await expect(picker.locator(".cand-card")).toHaveCount(1);
+  await page.getByTestId("picker-back").click();
+  await expect(picker).toHaveCount(0);
+});
+
 test("the setup editor lines up: the create button sits under the candidate box, left edges level", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("new-solo").click();
@@ -99,7 +142,7 @@ test("the setup editor lines up: the create button sits under the candidate box,
   // Measured once the web fonts are in: until then the text, and so the boxes, are a different size.
   await page.evaluate(() => document.fonts.ready);
   const layout = async () => {
-    const select = (await page.getByLabel("Player 1 leader").boundingBox())!;
+    const select = (await page.getByTestId("pick-leader-you").boundingBox())!;
     const button = (await page.getByTestId("create-candidate-you").boundingBox())!;
     return { left: Math.abs(select.x - button.x), below: button.y >= select.y + select.height };
   };
