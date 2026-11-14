@@ -1,7 +1,7 @@
 import { createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
 import { describe, expect, it } from "vitest";
 import { inviteCode } from "../src/api.js";
-import { checkSetup, join, leave, newRoom, packFor, start, submit, view, type MatchSetup, type RoomData } from "../src/room.js";
+import { checkSetup, join, leave, newRoom, packFor, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
 
 const seat = (id: string, kind: "human" | "ai", leaderId: string, color: string, emblem: string) => ({
   id,
@@ -103,5 +103,78 @@ describe("playing the match", () => {
     expect(room.status).toBe("finished");
     expect(room.result!.ranking).toHaveLength(3);
     expect(() => submit(room, "host", room.state!.turn, {})).toThrow("isn't being played");
+  });
+});
+
+describe("turn timers", () => {
+  const timed = (seconds: number) => {
+    const room = newRoom("TIME01", "match-2", { ...structuredClone(SETUP), turnSeconds: seconds }, HOST, 99, 0);
+    join(room, "friend", "Ali");
+    start(room, "host", 1000);
+    return room;
+  };
+
+  it("only offers the listed timers", () => {
+    expect(() => checkSetup({ ...SETUP, turnSeconds: 7 })).toThrow("timer");
+    expect(() => checkSetup({ ...SETUP, turnSeconds: 3600 })).not.toThrow();
+    expect(() => checkSetup({ ...SETUP, turnSeconds: null })).not.toThrow();
+  });
+
+  it("sets a deadline each turn, and does nothing before it", () => {
+    const room = timed(60);
+    expect(room.deadline).toBe(61_000);
+    expect(timeout(room, 60_999).turns).toEqual([]);
+    submit(room, "host", 1, {}, 2000);
+    submit(room, "friend", 1, {}, 3000);
+    expect(room.deadline).toBe(63_000); // the next turn's clock starts when the last plan arrives
+  });
+
+  it("resolves the turn when time runs out; whoever missed it campaigns with nothing new", () => {
+    const room = timed(60);
+    const plan = planFor(room, "p1");
+    submit(room, "host", 1, plan, 2000);
+    expect(waitingOn(room)).toEqual(["p2"]);
+    const out = timeout(room, 61_000);
+    expect(out.turns).toHaveLength(1);
+    expect(out.turns[0]!.plans.p2).toEqual({});
+    expect(out.turns[0]!.plans.p1).toEqual(plan);
+    expect(room.missed).toMatchObject({ p2: 1 });
+    expect(room.state!.turn).toBe(2);
+  });
+
+  it("hands a seat to the computer after three missed turns in a row, until its person sends a plan again", () => {
+    const room = timed(60);
+    let clock = 1000;
+    for (let i = 0; i < 3; i++) {
+      submit(room, "host", room.state!.turn, {}, clock);
+      clock = room.deadline!;
+      timeout(room, clock);
+    }
+    expect(room.autopilot).toEqual(["p2"]);
+    // The third missed turn was already played by the computer.
+    expect(Object.keys(room.log[2]!.plans.p2!).length).toBeGreaterThan(0);
+    // On autopilot the friend isn't waited for: the host's plan resolves the turn.
+    expect(waitingOn(room)).toEqual(["p1"]);
+    expect(submit(room, "host", room.state!.turn, {}, clock).turns).toHaveLength(1);
+    // Back from a break: one plan and the seat is theirs again.
+    submit(room, "friend", room.state!.turn, {}, clock);
+    expect(room.autopilot).toEqual([]);
+    expect(room.missed.p2).toBe(0);
+  });
+
+  it("waits for the clock, not for nobody, when every person is on autopilot", () => {
+    const room = timed(60);
+    room.autopilot = ["p1", "p2"];
+    expect(waitingOn(room)).toEqual([]);
+    expect(timeout(room, room.deadline! - 1).turns).toEqual([]);
+    expect(timeout(room, room.deadline!).turns).toHaveLength(1);
+  });
+
+  it("has no deadline without a timer", () => {
+    const room = lobby();
+    join(room, "friend", "Ali");
+    start(room, "host", 1000);
+    expect(room.deadline).toBeNull();
+    expect(timeout(room, 10 ** 13).turns).toEqual([]);
   });
 });

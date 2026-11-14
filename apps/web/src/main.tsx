@@ -12,7 +12,7 @@ import { restartTutorial, tutorialConfig } from "./game/tutorial";
 import { useSettings } from "./game/settings";
 import type { GameStart } from "./game/useGame";
 import { Lab } from "./Lab";
-import { LobbyScreen, OnlineHub } from "./game/Online";
+import { LobbyScreen, OngoingScreen, OnlineHub } from "./game/Online";
 import { MatchLink, normalizeInvite, openLobby, type RoomView } from "./game/online";
 import "./styles.css";
 import "./game/game.css";
@@ -21,6 +21,7 @@ type Screen =
   | { name: "menu" }
   | { name: "profile" }
   | { name: "online" }
+  | { name: "ongoing" }
   | { name: "lobby"; link: MatchLink }
   | { name: "setup"; mode: Mode }
   | { name: "game"; start: GameStart; key: number };
@@ -86,6 +87,7 @@ function App() {
           }}
           onProfile={() => setScreen({ name: "profile" })}
           onOnline={() => setScreen({ name: "online" })}
+          onOngoing={() => setScreen({ name: "ongoing" })}
           onTutorial={() => {
             selectMap("uk");
             restartTutorial();
@@ -110,6 +112,7 @@ function App() {
           onJoin={(code) => setScreen({ name: "lobby", link: new MatchLink(code) })}
         />
       )}
+      {screen.name === "ongoing" && <OngoingScreen onBack={toMenu} onOpen={(code) => setScreen({ name: "lobby", link: new MatchLink(code) })} />}
       {screen.name === "lobby" && <LobbyScreen link={screen.link} onBack={toMenu} onPlay={(view) => play(screen.link, view)} />}
       {screen.name === "setup" && (
         <SetupScreen

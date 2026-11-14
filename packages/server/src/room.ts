@@ -44,7 +44,14 @@ export interface MatchSetup {
   seats: SeatSetup[];
   customs?: CustomCandidate[];
   luck?: boolean;
+  /** Time each person has to send a plan; none means the match waits for everyone. */
+  turnSeconds?: number | null;
 }
+
+/** Turn timers on offer: a minute for a quick game up to a day for a slow one. */
+export const TURN_TIMERS = [60, 300, 3600, 43_200, 86_400];
+/** After this many missed turns in a row, the computer plays a person's turns until they send a plan again. */
+export const AUTOPILOT_AFTER = 3;
 
 export interface RoomSeat extends SeatSetup {
   /** The person in this seat, once someone has taken it. */
@@ -76,6 +83,12 @@ export interface RoomData {
   log: TurnLog[];
   result: ElectionResult | null;
   createdAt: number;
+  /** When this turn's plans are due (with a turn timer). */
+  deadline: number | null;
+  /** Turns missed in a row, by seat. */
+  missed: Record<string, number>;
+  /** Seats the computer is playing for after too many missed turns. */
+  autopilot: string[];
 }
 
 /** What one device is told about the match; the plans other people have sent stay secret until the turn resolves. */
@@ -97,6 +110,11 @@ export interface RoomView {
   /** Your own plan for this turn, if you've sent it (so a reload shows it). */
   yourPlan: Plan | null;
   result: ElectionResult | null;
+  deadline: number | null;
+  missed: Record<string, number>;
+  autopilot: string[];
+  /** The server's clock when this view was made, so a device can show the time left whatever its own clock says. */
+  now: number;
 }
 
 export type ServerMessage = RoomView | ({ type: "turn" } & TurnLog) | { type: "error"; message: string };
@@ -118,6 +136,7 @@ export function checkSetup(setup: MatchSetup): void {
   if (!base) throw new RoomError("Unknown map");
   if (setup.seats.length < 2 || setup.seats.length > 5) throw new RoomError("A match needs 2 to 5 seats");
   if (setup.seats.filter((s) => s.kind === "human").length < 2) throw new RoomError("Leave at least one seat for a friend");
+  if (setup.turnSeconds != null && !TURN_TIMERS.includes(setup.turnSeconds)) throw new RoomError("Unknown turn timer");
   for (const s of setup.seats) {
     if (s.kind !== "human" && s.kind !== "ai") throw new RoomError("Each seat is a person or the computer");
     if (!LEVELS.includes(s.level)) throw new RoomError("Unknown computer level");
@@ -145,12 +164,12 @@ export function newRoom(code: string, matchId: string, setup: MatchSetup, host: 
   const first = seats.find((s) => s.kind === "human")!;
   first.accountId = host.accountId;
   first.playerName = host.name;
-  return { code, matchId, status: "lobby", host: host.accountId, setup, seats, seed, state: null, plans: {}, log: [], result: null, createdAt: now };
+  return { code, matchId, status: "lobby", host: host.accountId, setup, seats, seed, state: null, plans: {}, log: [], result: null, createdAt: now, deadline: null, missed: {}, autopilot: [] };
 }
 
 export const seatOf = (room: RoomData, accountId: string) => room.seats.find((s) => s.accountId === accountId) ?? null;
 
-export function view(room: RoomData, accountId: string): RoomView {
+export function view(room: RoomData, accountId: string, now = Date.now()): RoomView {
   const mine = seatOf(room, accountId);
   return {
     type: "room",
@@ -165,6 +184,10 @@ export function view(room: RoomData, accountId: string): RoomView {
     submitted: Object.keys(room.plans),
     yourPlan: mine ? (room.plans[mine.id] ?? null) : null,
     result: room.result,
+    deadline: room.deadline,
+    missed: room.missed,
+    autopilot: room.autopilot,
+    now,
   };
 }
 
@@ -191,12 +214,15 @@ export function leave(room: RoomData, accountId: string): void {
   delete mine.playerName;
 }
 
-export function start(room: RoomData, accountId: string): void {
+const nextDeadline = (room: RoomData, now: number) => (room.status === "active" && room.setup.turnSeconds ? now + room.setup.turnSeconds * 1000 : null);
+
+export function start(room: RoomData, accountId: string, now = Date.now()): void {
   if (room.host !== accountId) throw new RoomError("Only the host can start the match");
   if (room.status !== "lobby") throw new RoomError("The match has already started");
   if (room.seats.some((s) => s.kind === "human" && !s.accountId)) throw new RoomError("Wait until every friend's seat is taken");
   room.state = createMatch(packFor(room.setup), { seed: room.seed, players: playersOf(room.seats), ...(room.setup.luck ? { luck: true } : {}) });
   room.status = "active";
+  room.deadline = nextDeadline(room, now);
 }
 
 const humansIn = (room: RoomData, state: GameState) => {
@@ -210,11 +236,19 @@ export interface SubmitOutcome {
   finished: boolean;
 }
 
+/** People still to send a plan this turn (the computer plays for anyone on autopilot). */
+export function waitingOn(room: RoomData): string[] {
+  if (room.status !== "active" || !room.state) return [];
+  return humansIn(room, room.state)
+    .filter((s) => !room.autopilot.includes(s.id) && !room.plans[s.id])
+    .map((s) => s.id);
+}
+
 /**
  * A person's plan for this turn. Plans can be changed until the turn resolves; when everyone still in the race has
- * sent one, the turn resolves. Presidential: once no person is left in the race, the computers play on to a winner.
+ * sent one, the turn resolves. Sending a plan also ends any autopilot for that person.
  */
-export function submit(room: RoomData, accountId: string, turn: number, plan: Plan): SubmitOutcome {
+export function submit(room: RoomData, accountId: string, turn: number, plan: Plan, now = Date.now()): SubmitOutcome {
   const mine = seatOf(room, accountId);
   if (!mine) throw new RoomError("You don't have a seat in this match");
   if (room.status !== "active" || !room.state) throw new RoomError("The match isn't being played");
@@ -224,11 +258,36 @@ export function submit(room: RoomData, accountId: string, turn: number, plan: Pl
   if (!humansIn(room, state).some((s) => s.id === mine.id)) throw new RoomError("You're out of the race");
   if (!plan || typeof plan !== "object" || validatePlan(pack, state, mine.id, plan).length > 0) throw new RoomError("That plan breaks the rules");
   room.plans[mine.id] = plan;
-  if (humansIn(room, state).some((s) => !room.plans[s.id])) return { turns: [], finished: false };
+  room.missed[mine.id] = 0;
+  room.autopilot = room.autopilot.filter((id) => id !== mine.id);
+  if (waitingOn(room).length > 0) return { turns: [], finished: false };
+  return resolve(room, now);
+}
 
-  const levels = Object.fromEntries(room.seats.filter((s) => s.kind === "ai").map((s) => [s.id, s.level])) as Record<string, AiLevel>;
+/**
+ * The turn timer ran out: anyone who hasn't sent a plan misses the turn and campaigns with nothing new this turn.
+ * A third miss in a row hands their seat to the computer (Normal) from this turn on, until they send a plan again.
+ */
+export function timeout(room: RoomData, now = Date.now()): SubmitOutcome {
+  if (room.status !== "active" || !room.state || room.deadline === null || now < room.deadline) return { turns: [], finished: false };
+  for (const id of waitingOn(room)) {
+    room.missed[id] = (room.missed[id] ?? 0) + 1;
+    if (room.missed[id]! >= AUTOPILOT_AFTER) room.autopilot.push(id);
+    else room.plans[id] = {};
+  }
+  return resolve(room, now);
+}
+
+/** Plays the turn: the computers (and anyone on autopilot) plan, everything resolves, and the next deadline is set. */
+function resolve(room: RoomData, now: number): SubmitOutcome {
+  const pack = packFor(room.setup);
+  const state = room.state!;
+  const levels = Object.fromEntries([
+    ...room.seats.filter((s) => s.kind === "ai").map((s) => [s.id, s.level]),
+    ...room.autopilot.filter((id) => !room.plans[id]).map((id) => [id, "normal"]),
+  ]) as Record<string, AiLevel>;
   const ai = planComputers(pack, state, levels);
-  const plans = { ...room.plans, ...ai.plans };
+  const plans = { ...ai.plans, ...room.plans };
   const played = playTurn(pack, state, plans, ai.rng);
   const log: TurnLog = { index: room.log.length, turn: state.turn, plans, rng: ai.rng };
   room.log.push(log);
@@ -248,5 +307,6 @@ export function submit(room: RoomData, accountId: string, turn: number, plan: Pl
     room.result = out.result;
     room.status = "finished";
   }
+  room.deadline = nextDeadline(room, now);
   return { turns: [log], finished: room.status === "finished" };
 }

@@ -170,3 +170,36 @@ describe("the web", () => {
     expect((await call("GET", "/api/health", { origin: "https://anywhere.example" })).headers.get("access-control-allow-origin")).toBe("https://anywhere.example");
   });
 });
+
+describe("ongoing matches", () => {
+  it("lists the player's lobbies and matches, their move first, and recent results, but not other people's", async () => {
+    const me = await signIn(KEY, { displayName: "Me" });
+    const other = await signIn("o".repeat(43), { displayName: "Other" });
+    const myId = me.data.account.id as string;
+    const otherId = other.data.account.id as string;
+    const day = 24 * 60 * 60 * 1000;
+    const match = (id: string, code: string, status: string, by: string, createdAt: number, finishedAt: number | null = null) =>
+      env.DB.prepare("INSERT INTO matches (id, mode, game_type, map_pack_id, content_version, engine_version, seed, status, invite_code, created_by, created_at, finished_at) VALUES (?, 'private', 'parliamentary', 'uk', '1', '1', 1, ?, ?, ?, ?, ?)")
+        .bind(id, status, code, by, createdAt, finishedAt)
+        .run();
+    const seat = (matchId: string, n: number, account: string | null, waiting: number) =>
+      env.DB.prepare("INSERT INTO match_seats (match_id, seat, account_id, candidate_kind, candidate_ref, party_name, party_color, party_emblem, waiting) VALUES (?, ?, ?, 'roster', 'x', ?, ?, ?, ?)")
+        .bind(matchId, n, account, `Party ${n}`, `#00000${n}`, `e${n}`, waiting)
+        .run();
+    await match("m1", "AAAAAA", "lobby", myId, T0 - 1000);
+    await match("m2", "BBBBBB", "active", otherId, T0 - 2000);
+    await seat("m2", 0, otherId, 0);
+    await seat("m2", 1, myId, 1);
+    await match("m3", "CCCCCC", "finished", myId, T0 - 10 * day, T0 - day);
+    await seat("m3", 0, myId, 0);
+    await match("m4", "DDDDDD", "finished", myId, T0 - 20 * day, T0 - 10 * day);
+    await seat("m4", 0, myId, 0);
+    await match("m5", "EEEEEE", "lobby", otherId, T0);
+
+    const { data } = await call("GET", "/api/matches/mine", { token: me.data.token as string });
+    expect(data.matches.map((m: { code: string }) => m.code)).toEqual(["BBBBBB", "AAAAAA", "CCCCCC"]);
+    expect(data.matches[0]).toMatchObject({ yourMove: true, status: "active", party: "Party 1", people: 2 });
+    expect(data.matches[1]).toMatchObject({ yourMove: false, status: "lobby" });
+    expect((await call("GET", "/api/matches/mine")).status).toBe(401);
+  });
+});

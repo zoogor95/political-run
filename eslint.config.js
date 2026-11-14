@@ -2,7 +2,7 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/coverage/**", "**/node_modules/**", "**/.wrangler/**"] },
+  { ignores: ["**/dist/**", "**/coverage/**", "**/node_modules/**", "**/.wrangler/**", "**/files.gen.ts"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

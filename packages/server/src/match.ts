@@ -4,7 +4,7 @@
  */
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
-import { join, leave, newRoom, packFor, RoomError, start, submit, view, type MatchSetup, type RoomData, type ServerMessage } from "./room.js";
+import { join, leave, newRoom, packFor, RoomError, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
 
 /** A plan is small; anything bigger than this isn't one. */
 const MAX_MESSAGE = 32_000;
@@ -17,12 +17,35 @@ export class MatchRoom extends DurableObject<Env> {
   private room: RoomData | null | undefined;
 
   private async load(): Promise<RoomData | null> {
-    if (this.room === undefined) this.room = (await this.ctx.storage.get<RoomData>("room")) ?? null;
+    if (this.room === undefined) {
+      const room = (await this.ctx.storage.get<RoomData>("room")) ?? null;
+      // Rooms stored before turn timers existed.
+      this.room = room ? { ...room, deadline: room.deadline ?? null, missed: room.missed ?? {}, autopilot: room.autopilot ?? [] } : null;
+    }
     return this.room;
   }
 
+  /** Saves the room and sets the alarm for the turn timer (or clears it). */
   private async save(): Promise<void> {
     await this.ctx.storage.put("room", this.room);
+    if (this.room?.deadline) await this.ctx.storage.setAlarm(this.room.deadline);
+    else await this.ctx.storage.deleteAlarm();
+  }
+
+  /** After turns resolve: everyone gets the turns, then their new view; the database follows. */
+  private async afterTurns(room: RoomData, out: SubmitOutcome) {
+    for (const t of out.turns) for (const s of this.ctx.getWebSockets()) this.send(s, { type: "turn", ...t });
+    this.broadcastViews(room);
+    if (out.turns.length) await this.recordTurn(room, out.finished);
+  }
+
+  /** The turn timer ran out. */
+  override async alarm(): Promise<void> {
+    const room = await this.load();
+    if (!room) return;
+    const out = timeout(room, Date.now());
+    await this.save();
+    await this.afterTurns(room, out);
   }
 
   private send(ws: WebSocket, msg: ServerMessage) {
@@ -85,16 +108,15 @@ export class MatchRoom extends DurableObject<Env> {
     }
     try {
       if (msg.type === "start") {
-        start(room, accountId);
+        start(room, accountId, Date.now());
         await this.save();
         await this.recordStart(room);
         this.broadcastViews(room);
       } else if (msg.type === "plan") {
-        const out = submit(room, accountId, Number(msg.turn), msg.plan as never);
+        const out = submit(room, accountId, Number(msg.turn), msg.plan as never, Date.now());
         await this.save();
-        for (const t of out.turns) for (const s of this.ctx.getWebSockets()) this.send(s, { type: "turn", ...t });
-        this.broadcastViews(room);
-        if (out.turns.length) await this.recordTurn(room, out.finished);
+        await this.afterTurns(room, out);
+        if (!out.turns.length) await this.recordWaiting(room);
       } else if (msg.type === "leave") {
         leave(room, accountId);
         await this.save();
@@ -122,21 +144,38 @@ export class MatchRoom extends DurableObject<Env> {
     try {
       const pack = packFor(room.setup);
       await this.env.DB.batch([
-        this.env.DB.prepare("UPDATE matches SET status = 'active', current_turn = 1 WHERE id = ?").bind(room.matchId),
+        this.env.DB.prepare("UPDATE matches SET status = 'active', current_turn = 1, turn_deadline = ? WHERE id = ?").bind(room.deadline, room.matchId),
         ...room.seats.map((s, i) =>
           this.env.DB.prepare(
             "INSERT INTO match_seats (match_id, seat, account_id, ai_level, candidate_kind, candidate_ref, party_name, party_color, party_emblem) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
           ).bind(room.matchId, i, s.accountId ?? null, s.kind === "ai" ? s.level : null, pack.candidates.find((c) => c.id === s.leaderId && "custom" in c) ? "custom" : "roster", s.leaderId, s.party.name, s.party.color.toLowerCase(), s.party.emblem),
         ),
+        ...this.waitingWrites(room),
       ]);
     } catch (e) {
       console.error("recordStart", e);
     }
   }
 
+  /** Each seat's "your move" flag, for the list of ongoing matches. */
+  private waitingWrites(room: RoomData) {
+    const waiting = new Set(waitingOn(room));
+    return room.seats.map((s, i) =>
+      this.env.DB.prepare("UPDATE match_seats SET waiting = ?, missed_turns = ? WHERE match_id = ? AND seat = ?").bind(waiting.has(s.id) ? 1 : 0, room.missed[s.id] ?? 0, room.matchId, i),
+    );
+  }
+
+  private async recordWaiting(room: RoomData) {
+    try {
+      await this.env.DB.batch(this.waitingWrites(room));
+    } catch (e) {
+      console.error("recordWaiting", e);
+    }
+  }
+
   private async recordTurn(room: RoomData, finished: boolean) {
     try {
-      const writes = [this.env.DB.prepare("UPDATE matches SET current_turn = ? WHERE id = ?").bind(room.log.length + 1, room.matchId)];
+      const writes = [this.env.DB.prepare("UPDATE matches SET current_turn = ?, turn_deadline = ? WHERE id = ?").bind(room.log.length + 1, room.deadline, room.matchId), ...this.waitingWrites(room)];
       if (finished && room.result) {
         const r = room.result;
         const seatIndex = (id: string | undefined) => (id ? room.seats.findIndex((s) => s.id === id) : -1);

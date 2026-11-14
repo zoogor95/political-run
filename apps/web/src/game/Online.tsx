@@ -1,7 +1,8 @@
 /** Play with friends: create a private match or join one by code, and the lobby where friends gather before it starts. */
 import { useEffect, useReducer, useState } from "react";
+import { askToNotify, canNotify, notificationsOn, nudge } from "./notify";
 import { candidateName, MAPS, isMapId, selectMap } from "./model";
-import { inviteLink, normalizeInvite, type MatchLink, type RoomView } from "./online";
+import { inviteLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
 
 /** Re-renders whenever the link changes (a new view, the connection, an error). */
 export function useLink(link: MatchLink | null): MatchLink | null {
@@ -68,6 +69,36 @@ export function OnlineHub({ onBack, onCreate, onJoin }: { onBack: () => void; on
 
 const LEVEL = { easy: "Easy", normal: "Normal", hard: "Hard" } as const;
 
+/** "4:59", "1h 20m", "23h": the time left, rounded the way a player reads it. */
+export function timeLeft(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  if (s < 3600) return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h >= 10 || m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+/** Re-renders every second while a deadline is running and shows the time left. */
+export function Countdown({ deadline }: { deadline: number }) {
+  const [, tick] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <b className="countdown">{timeLeft(deadline - Date.now())}</b>;
+}
+
+/** Offers browser notifications once, for when the game is in another tab. */
+export function NotifyButton() {
+  const [on, setOn] = useState(notificationsOn());
+  if (!canNotify() || on || Notification.permission === "denied") return null;
+  return (
+    <button type="button" onClick={() => void askToNotify().then(setOn)} data-testid="notify-me">
+      Notify me when it's my move
+    </button>
+  );
+}
+
 /** The lobby: the invite code, who has taken each seat, and the host's Start button. */
 export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; onBack: () => void; onPlay: (view: RoomView) => void }) {
   const link = useLink(raw)!;
@@ -75,7 +106,10 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (view) selectMap(view.setup.map, view.setup.customs ?? []);
-    if (view && view.status !== "lobby" && view.you) onPlay(view);
+    if (view && view.status !== "lobby" && view.you) {
+      if (view.status === "active") nudge("The match has started. Your move!");
+      onPlay(view);
+    }
   }, [view, onPlay]);
 
   const copy = async () => {
@@ -103,7 +137,10 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
           Leave
         </button>
         <h1>Lobby</h1>
-        <span className="muted">{mapName}</span>
+        <span className="muted">
+          {mapName}
+          {view?.setup.turnSeconds ? ` · ${timeLeft(view.setup.turnSeconds * 1000)} per turn` : ""}
+        </span>
       </header>
       <section className="backup lobby-code">
         <h2>Invite code</h2>
@@ -118,6 +155,7 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
           <button type="button" onClick={() => void copy()}>
             {copied ? "Copied" : "Copy invite link"}
           </button>
+          <NotifyButton />
         </div>
       </section>
       {link.status !== "open" && link.status !== "closed" && <p className="small" data-testid="lobby-connecting">{link.status === "connecting" ? "Connecting…" : "Connection lost. Reconnecting…"}</p>}
@@ -148,6 +186,71 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
           )}
         </>
       )}
+    </main>
+  );
+}
+
+/** The player's online matches: their move first, then the rest, then recent results. Tapping one opens it. */
+export function OngoingScreen({ onBack, onOpen }: { onBack: () => void; onOpen: (code: string) => void }) {
+  const [matches, setMatches] = useState<MatchSummary[] | null>(null);
+  const [error, setError] = useState("");
+  const [, tick] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    let live = true;
+    const load = () =>
+      myMatches()
+        .then((m) => live && (setMatches(m), setError("")))
+        .catch((e: unknown) => live && setError(e instanceof Error ? e.message : "Couldn't load your matches."));
+    void load();
+    // Refreshes while open, so a friend's move shows up; the clock ticks the timers.
+    const refresh = setInterval(load, 30_000);
+    const clock = setInterval(tick, 1000);
+    return () => {
+      live = false;
+      clearInterval(refresh);
+      clearInterval(clock);
+    };
+  }, []);
+  const line = (m: MatchSummary) => {
+    if (m.status === "lobby") return "In the lobby";
+    if (m.status === "finished") return "Finished · see the results";
+    const left = m.deadline ? ` · ${timeLeft(m.deadline - Date.now())} left` : "";
+    return `Turn ${m.turn}${m.yourMove ? " · Your move!" : " · Waiting for friends"}${left}`;
+  };
+  return (
+    <main className="setup online" data-testid="ongoing">
+      <header className="setup-head">
+        <button type="button" onClick={onBack}>
+          Back
+        </button>
+        <h1>Ongoing matches</h1>
+      </header>
+      {error && (
+        <p className="backup-error" role="alert">
+          {error}
+        </p>
+      )}
+      {matches === null && !error && <p className="small">Loading…</p>}
+      {matches?.length === 0 && <p className="small">No online matches yet. Start one from Play with friends.</p>}
+      {matches && matches.length > 0 && (
+        <ul className="lobby-seats ongoing-list">
+          {matches.map((m) => (
+            <li key={m.code} className={m.yourMove ? "your-move" : ""} data-testid={`ongoing-${m.code}`}>
+              <button type="button" onClick={() => onOpen(m.code)}>
+                <b>
+                  {isMapId(m.map) ? MAPS[m.map].name : m.map}
+                  {m.party ? ` · ${m.party}` : ""}
+                </b>
+                <small>
+                  Code {m.code} · {m.people} {m.people === 1 ? "player" : "players"}
+                </small>
+                <span>{line(m)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <NotifyButton />
     </main>
   );
 }
