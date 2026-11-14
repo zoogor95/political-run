@@ -65,6 +65,15 @@ describe("device accounts", () => {
     expect(sRow!.token_hash).not.toBe(data.token);
   });
 
+  it("restores only an account that exists when asked not to create one", async () => {
+    expect((await signIn(KEY, { create: false })).status).toBe(404);
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM accounts").first("n")).toBe(0);
+    const first = await signIn();
+    const back = await signIn(KEY, { create: false });
+    expect(back.status).toBe(200);
+    expect(back.data.account.id).toBe(first.data.account.id);
+  });
+
   it("refuses short or malformed keys", async () => {
     expect((await signIn("short")).status).toBe(400);
     expect((await signIn("!".repeat(50))).status).toBe(400);
@@ -154,5 +163,10 @@ describe("the web", () => {
     expect((await call("GET", "/api/health", { origin: "https://evil.example" })).headers.get("access-control-allow-origin")).toBeNull();
     expect((await call("OPTIONS", "/api/me", { origin: "https://majoritymap.example" })).status).toBe(204);
     expect((await call("GET", "/api/nowhere")).status).toBe(404);
+  });
+
+  it("answers any site when the allowed origins are *", async () => {
+    env = { ...env, ALLOWED_ORIGINS: "*" };
+    expect((await call("GET", "/api/health", { origin: "https://anywhere.example" })).headers.get("access-control-allow-origin")).toBe("https://anywhere.example");
   });
 });

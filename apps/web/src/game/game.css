@@ -1161,6 +1161,11 @@
   font-weight: 900;
 }
 
+.setup button.danger {
+  background: #d9534f;
+  color: #fff;
+}
+
 .setup button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1769,6 +1774,89 @@
 /* Profile and achievements */
 .profile-name {
   max-width: 320px;
+}
+
+.backup {
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.backup h2 {
+  font: 400 22px "Lilita One", sans-serif;
+  margin: 0;
+}
+
+.backup p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backup-restore {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.backup-restore input {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.backup-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backup-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: #3fae5a;
+  flex: none;
+}
+
+.backup-dot.syncing {
+  background: var(--gold);
+}
+
+.backup-dot.offline {
+  background: #d9534f;
+}
+
+.backup-code {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border: 3px dashed var(--ink);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.backup-code code {
+  font: 700 clamp(15px, 4.2vw, 22px) ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.backup-error {
+  color: #a3221d;
 }
 
 .stat-grid {

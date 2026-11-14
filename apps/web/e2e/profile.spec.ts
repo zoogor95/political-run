@@ -22,7 +22,7 @@ test("a finished match counts in the profile's stats", async ({ page }) => {
   await page.getByTestId("open-profile").click();
   await expect(page.getByTestId("profile")).toContainText("Achievements · 0 of 18");
   await page.getByLabel("Your name").fill("Zoogor");
-  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Back", exact: true }).click();
 
   // An empty campaign: the computer parties win, and the match still counts as played.
   await page.goto("/?seed=11&ai=easy");
