@@ -1286,6 +1286,8 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  /* Buttons sit level with the select boxes, not halfway down their labels. */
+  align-items: flex-end;
 }
 
 .seat .row label {
