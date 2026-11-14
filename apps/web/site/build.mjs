@@ -1,3 +1,4 @@
+/* global process, URL, console */
 // Packs the built game (apps/web/dist, or the folder given) into files.gen.ts for the site Worker (worker.ts).
 // The files travel inside the Worker's code, so the site deploys with a plain `wrangler deploy`.
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
