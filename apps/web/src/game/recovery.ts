@@ -63,6 +63,7 @@ export interface Remote {
  */
 export function mergeProfile(local: Profile, remote: Remote, nameChangedHere: boolean): Profile {
   return {
+    ...local,
     name: nameChangedHere && local.name ? local.name : remote.name || local.name,
     stats: remote.stats ? newerStats(local.stats, remote.stats) : local.stats,
     unlocked: mergeUnlocked(local.unlocked, remote.unlocked),

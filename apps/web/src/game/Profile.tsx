@@ -8,7 +8,7 @@ import { onUnlock, setProfileName, useProfile } from "./profile";
 
 const LEVEL = { easy: "Easy", normal: "Normal", hard: "Hard" } as const;
 
-export function ProfileScreen({ onBack }: { onBack: () => void }) {
+export function ProfileScreen({ onBack, onParty }: { onBack: () => void; onParty?: () => void }) {
   const p = useProfile();
   const cloud = useCloud();
   const s = p.stats;
@@ -39,6 +39,27 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
         <span>Name</span>
         <input value={p.name} maxLength={28} placeholder="Your name" onChange={(e) => setProfileName(e.target.value)} aria-label="Your name" />
       </label>
+      {onParty && (
+        <section className="backup your-party" data-testid="your-party">
+          <h2>Your party</h2>
+          {p.party ? (
+            <p className="your-party-row">
+              <span className="chip big" style={{ background: p.party.color }} aria-hidden="true" />
+              <span>
+                <b>{p.party.name}</b>
+                <small> · offered to you first in every Parliamentary match</small>
+              </span>
+            </p>
+          ) : (
+            <p>Make a party of your own: a name, colour and emblem that carry over to every Parliamentary match.</p>
+          )}
+          <div className="backup-actions">
+            <button type="button" className="primary" onClick={onParty} data-testid="edit-party">
+              {p.party ? "Edit your party" : "Create your party"}
+            </button>
+          </div>
+        </section>
+      )}
       <BackupPanel />
       <section className="stat-grid" aria-label="Your stats">
         {tiles.map(([k, v]) => (

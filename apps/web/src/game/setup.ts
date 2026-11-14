@@ -2,6 +2,7 @@
 import { candidateParties, PARTY_COLORS, PARTY_EMBLEMS, PARTY_SHADES as SHADES, type AiLevel, type PlayerSetup } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
 import { map, type MapId } from "./model";
+import { loadProfile } from "./profile";
 
 /** "online" is a private match with friends on their own devices. */
 export type Mode = "solo" | "hotseat" | "online";
@@ -108,15 +109,19 @@ export function aiSeat(seats: Seat[], index: number, level: AiLevel = "normal"):
 
 export function humanSeat(seats: Seat[], index: number, online = false): Seat {
   const first = index === 1;
+  // Your own party (Create your party) leads the first seat, its colour and emblem if nobody has them yet.
+  const mine = first ? loadProfile().party : undefined;
+  const takenColors = seats.map((s) => s.party.color);
+  const takenEmblems = seats.map((s) => s.party.emblem);
   return {
     id: first ? "you" : `p${index}`,
     kind: "human",
     label: first && online ? "You" : online ? `Friend ${index - 1}` : `Player ${index}`,
     level: "normal",
     party: {
-      name: first ? "Zoogor Party" : online ? `Friend ${index - 1} Party` : `Player ${index} Party`,
-      color: firstFree(COLORS.map((c) => c.hex), seats.map((s) => s.party.color)),
-      emblem: firstFree(EMBLEMS, seats.map((s) => s.party.emblem)),
+      name: first ? (mine?.name ?? "Zoogor Party") : online ? `Friend ${index - 1} Party` : `Player ${index} Party`,
+      color: firstFree([...(mine ? [mine.color] : []), ...COLORS.map((c) => c.hex)], takenColors),
+      emblem: firstFree([...(mine ? [mine.emblem] : []), ...EMBLEMS], takenEmblems),
     },
     leaderId: firstFree(first ? [map.defaultLeader, ...map.pack.candidates.map((c) => c.id)] : map.pack.candidates.map((c) => c.id), seats.map((s) => s.leaderId)),
   };

@@ -6263,3 +6263,396 @@
   padding: 8px 16px;
   cursor: pointer;
 }
+
+/* Create your party (design: Create your party). */
+.create-party {
+  min-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 36px 28px;
+  zoom: var(--text-scale, 1);
+}
+
+.cp-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cp-top .back {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cp-title {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 6px 22px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-title h1 {
+  margin: 0;
+  font: 400 32px/1.05 "Lilita One", sans-serif;
+}
+
+.cp-title span {
+  font-size: 13px;
+  font-weight: 800;
+  color: #4a4260;
+}
+
+.cp-body {
+  flex: 1;
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+
+.cp-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cp-step {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cp-label {
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #5a5270;
+}
+
+.cp-hint {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4a4260;
+}
+
+.cp-problem {
+  font-size: 13px;
+  font-weight: 900;
+  color: #b8301f;
+}
+
+.cp-name-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.cp-name {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 0 12px;
+}
+
+.cp-name input {
+  flex: 1;
+  min-width: 0;
+  font: 400 24px "Lilita One", sans-serif;
+  color: var(--ink);
+  border: 0;
+  outline: none;
+  padding: 8px 0;
+  background: transparent;
+}
+
+.cp-name:focus-within {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.cp-name small {
+  font-size: 12px;
+  font-weight: 900;
+  color: #5a5270;
+}
+
+.create-party .cp-name-row button,
+.create-party .cp-actions button {
+  font: 900 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.create-party .cp-actions button.primary {
+  background: var(--gold);
+}
+
+.create-party .cp-name-row button:disabled,
+.create-party .cp-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cp-side {
+  width: 400px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cp-preview {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 22px;
+  box-shadow: 0 6px 0 var(--ink);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cp-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cp-badge {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-badge-row > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cp-badge-row b {
+  font: 400 24px/1.1 "Lilita One", sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.cp-badge-row small {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #4a4260;
+}
+
+.cp-leader-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ece4ff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 6px 12px 6px 6px;
+}
+
+.cp-leader-row > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cp-leader-row small {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cp-leader-row b {
+  font: 400 17px "Lilita One", sans-serif;
+}
+
+.cp-seats {
+  font: 400 26px "Lilita One", sans-serif;
+}
+
+.cp-board {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cp-tally {
+  flex: 1;
+  height: 28px;
+  display: flex;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cp-tally > div {
+  color: #fff;
+  font: 400 13px/22px "Lilita One", sans-serif;
+  padding-left: 8px;
+  border-right: 2px solid var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cp-saved-note {
+  background: #2b2440;
+  color: var(--cream);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cp-saved-note b {
+  color: var(--gold);
+  font: 400 17px "Lilita One", sans-serif;
+}
+
+.cp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.your-party-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-party {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lobby-party .use-my-party {
+  align-self: flex-start;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px), (max-height: 560px) {
+  .create-party {
+    padding: 10px 14px 16px;
+    gap: 10px;
+  }
+
+  .cp-title h1 {
+    font-size: 22px;
+  }
+
+  .cp-top .back {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cp-side {
+    width: 300px;
+  }
+
+  .cp-step {
+    padding: 8px 12px;
+    border-width: 3px;
+  }
+
+  .cp-name input {
+    font-size: 19px;
+    padding: 5px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .cp-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cp-side {
+    width: auto;
+  }
+}
+
+.create-party .cp-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.create-party .swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+  padding: 0;
+  cursor: pointer;
+}
+
+.create-party .swatch[aria-checked="true"] {
+  box-shadow: 0 0 0 3px var(--cream), 0 0 0 6px var(--ink);
+}
+
+.create-party .emblem-pick {
+  height: 64px;
+  font: inherit;
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 3px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.create-party .emblem-pick span {
+  font: 900 11px "Nunito", sans-serif;
+}

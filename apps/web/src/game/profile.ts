@@ -2,8 +2,16 @@
 import { useSyncExternalStore } from "react";
 import { ACHIEVEMENTS, EMPTY_STATS, type Stats } from "./achievements";
 
+/** Your own party for Parliamentary matches (Create your party): offered to you first in every match. */
+export interface SavedParty {
+  name: string;
+  color: string;
+  emblem: string;
+}
+
 export interface Profile {
   name: string;
+  party?: SavedParty;
   stats: Stats;
   /** Achievement id to the time it was unlocked. */
   unlocked: Record<string, number>;
@@ -18,7 +26,8 @@ export function loadProfile(): Profile {
   if (cache) return cache;
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<Profile> | null;
-    cache = { name: typeof v?.name === "string" ? v.name : "", stats: { ...EMPTY_STATS, ...(v?.stats ?? {}) }, unlocked: v?.unlocked ?? {} };
+    const party = v?.party && typeof v.party.name === "string" && typeof v.party.color === "string" && typeof v.party.emblem === "string" ? v.party : undefined;
+    cache = { name: typeof v?.name === "string" ? v.name : "", ...(party ? { party } : {}), stats: { ...EMPTY_STATS, ...(v?.stats ?? {}) }, unlocked: v?.unlocked ?? {} };
   } catch {
     cache = { name: "", stats: { ...EMPTY_STATS }, unlocked: {} };
   }
@@ -48,6 +57,11 @@ export function onProfileChange(l: () => void): () => void {
 
 export function setProfileName(name: string) {
   write({ ...loadProfile(), name: name.slice(0, 28) });
+}
+
+/** Saves your party (name, colour and emblem) for every Parliamentary match. */
+export function setProfileParty(party: SavedParty) {
+  write({ ...loadProfile(), party: { name: party.name.trim().slice(0, 24), color: party.color, emblem: party.emblem } });
 }
 
 /** Saves new stats and unlocks earned achievements; tells the toast about the ones that are new. */
