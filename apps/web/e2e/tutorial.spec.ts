@@ -109,5 +109,5 @@ test("the tutorial survives a reload and can be skipped", async ({ page }) => {
   await page.getByTestId("coach-skip").click();
   await expect(coach(page)).toHaveCount(0);
   await page.getByTestId("menu-button").click();
-  await expect(page.getByTestId("learn")).toContainText("A guided match");
+  await expect(page.getByTestId("learn")).toHaveText("Tutorial");
 });

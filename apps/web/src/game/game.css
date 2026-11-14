@@ -1055,46 +1055,98 @@
   font-size: 13px;
 }
 
-/* Main menu */
+/* Main menu (design: Main menu artboard) */
 .menu {
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 18px;
+  padding: 28px 40px 0;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.menu-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.menu-title {
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 7px 0 var(--ink);
+  padding: 14px 26px 16px;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 24px 16px;
+  gap: 16px;
 }
 
 .menu h1 {
-  font-family: "Lilita One", sans-serif;
-  font-weight: 400;
-  font-size: clamp(40px, 8vw, 72px);
+  font: 400 46px/1 "Lilita One", sans-serif;
+  letter-spacing: 0.01em;
   margin: 0;
-  color: var(--cream);
-  text-shadow: 0 5px 0 var(--ink), 3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 -3px 0 var(--ink);
+  color: var(--ink);
 }
 
-.tagline {
-  margin: 0 0 8px;
-  font-weight: 900;
+.menu .tagline {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #5a5270;
 }
 
-.menu-buttons {
+.menu-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 40px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 8px 20px 8px 8px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.menu-profile span {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: min(420px, 100%);
 }
 
-.menu-big {
-  font: 400 24px "Lilita One", sans-serif;
+.menu-profile b {
+  font-weight: 900;
+  font-size: 17px;
+}
+
+.menu-profile small {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5a5270;
+}
+
+.menu-callouts {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.menu-callout {
+  font: inherit;
   color: var(--ink);
   background: var(--cream);
-  border: 4px solid var(--ink);
-  border-radius: 18px;
-  box-shadow: 0 6px 0 var(--ink);
-  padding: 12px 18px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--ink);
+  padding: 8px 18px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1102,19 +1154,315 @@
   text-align: left;
 }
 
-.menu-big.primary {
+.menu-callout.gold {
   background: var(--gold);
 }
 
-.menu-big small {
-  font: 800 13px "Nunito", sans-serif;
-  color: var(--muted);
+.menu-callout b {
+  font: 400 21px "Lilita One", sans-serif;
+}
+
+.menu-callout small {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.menu-choose {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.menu-label {
+  font: 400 28px "Lilita One", sans-serif;
+  background: var(--ink);
+  color: var(--cream);
+  padding: 6px 26px;
+  border-radius: 12px;
+  margin: 0;
+}
+
+.match-boxes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 22px;
+  width: 100%;
+  max-width: 1180px;
+}
+
+.match-box {
+  font: inherit;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 20px;
+  box-shadow: 0 7px 0 var(--ink);
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.match-box:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+.match-box:disabled {
+  cursor: default;
+}
+
+.match-box-art {
+  position: relative;
+  height: 104px;
+  border-bottom: 4px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.soon-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+
+.match-box-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+}
+
+.match-box-body b {
+  font: 400 23px "Lilita One", sans-serif;
+}
+
+.match-box-about {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #4a4260;
+  flex-grow: 1;
+}
+
+.match-chip {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 900;
+  border: 2px solid var(--ink);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.menu-bar {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+}
+
+.menu-map {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 0 0 0 14px;
+}
+
+.menu-map select {
+  font: 800 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 10px 14px 10px 0;
+  cursor: pointer;
+}
+
+.menu-bar-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.menu-bar-buttons button {
+  position: relative;
+  font: 800 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.menu-bar-buttons button.gold {
+  background: var(--gold);
+}
+
+.menu-bar-buttons button.icon {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Not built yet: still drawn like the design, with quieter text. */
+.menu-bar-buttons button:disabled {
+  color: #6b6380;
+  cursor: default;
+}
+
+.menu-badge {
+  position: absolute;
+  top: -12px;
+  right: -10px;
+  background: #df4338;
+  color: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 1px 8px;
 }
 
 .lab-link {
   font-weight: 800;
   font-size: 13px;
   color: var(--ink);
+}
+
+.menu-ticker {
+  margin: 0 -40px;
+}
+
+.menu-ticker .ticker {
+  height: 44px;
+}
+
+.menu-ticker .ticker-tag {
+  font-size: 20px;
+  padding: 0 16px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Narrower screens: the boxes wrap, then on phones they become rows with the art on the left. */
+@media (max-width: 1100px) {
+  .match-boxes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .menu {
+    padding: 16px 16px 0;
+    gap: 14px;
+  }
+
+  .menu-ticker {
+    margin: 0 -16px;
+  }
+
+  .menu-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-title {
+    padding: 10px 14px 12px;
+  }
+
+  .menu-title svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .menu h1 {
+    font-size: 34px;
+  }
+
+  .menu-label {
+    font-size: 22px;
+  }
+
+  .match-boxes {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .match-box {
+    flex-direction: row;
+    box-shadow: 0 5px 0 var(--ink);
+  }
+
+  .match-box-art {
+    width: 84px;
+    height: auto;
+    border-bottom: 0;
+    border-right: 4px solid var(--ink);
+  }
+
+  .match-box-art svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .soon-tag {
+    top: auto;
+    bottom: 6px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  .match-box-body {
+    padding: 10px 12px 12px;
+  }
+
+  .match-box-body b {
+    font-size: 20px;
+  }
+
+  .menu-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menu-bar-buttons {
+    justify-content: center;
+  }
 }
 
 /* Match setup */

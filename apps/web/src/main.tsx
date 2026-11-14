@@ -3,11 +3,12 @@ import { createRoot } from "react-dom/client";
 import { initAudio } from "./game/audio";
 import { startCloud } from "./game/cloud";
 import { Game } from "./game/Game";
-import { MainMenu, SettingsPanel, SetupScreen } from "./game/Menu";
+import { SettingsPanel, SetupScreen } from "./game/Menu";
+import { MainMenu } from "./game/MainMenu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
-import { isMapId, map, selectMap } from "./game/model";
+import { isMapId, preferredMap, selectMap } from "./game/model";
 import { restartTutorial, tutorialConfig } from "./game/tutorial";
 import { useSettings } from "./game/settings";
 import type { GameStart } from "./game/useGame";
@@ -95,7 +96,7 @@ function App() {
             setScreen({ name: "game", start: { config: tutorialConfig() }, key: Date.now() });
           }}
           onNew={(mode) => {
-            selectMap(map.id); // the setup screen starts from the map's own leaders
+            selectMap(preferredMap()); // the map chosen on the menu, with its own leaders
             setScreen({ name: "setup", mode });
           }}
           onSettings={openSettings}
@@ -106,7 +107,7 @@ function App() {
         <OnlineHub
           onBack={toMenu}
           onCreate={() => {
-            selectMap(map.id);
+            selectMap(preferredMap());
             setScreen({ name: "setup", mode: "online" });
           }}
           onJoin={(code) => setScreen({ name: "lobby", link: new MatchLink(code) })}

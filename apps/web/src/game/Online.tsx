@@ -1,5 +1,6 @@
 /** Play with friends: create a private match or join one by code, and the lobby where friends gather before it starts. */
 import { useEffect, useReducer, useState } from "react";
+import { useCloud } from "./cloud";
 import { askToNotify, canNotify, notificationsOn, nudge } from "./notify";
 import { candidateName, MAPS, isMapId, selectMap } from "./model";
 import { inviteLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
@@ -192,10 +193,16 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
 
 /** The player's online matches: their move first, then the rest, then recent results. Tapping one opens it. */
 export function OngoingScreen({ onBack, onOpen }: { onBack: () => void; onOpen: (code: string) => void }) {
+  const signedIn = useCloud().state !== "off";
   const [matches, setMatches] = useState<MatchSummary[] | null>(null);
   const [error, setError] = useState("");
   const [, tick] = useReducer((n: number) => n + 1, 0);
   useEffect(() => {
+    // Nothing to list before the first online match, and no reason to make an online profile just to look.
+    if (!signedIn) {
+      setMatches([]);
+      return;
+    }
     let live = true;
     const load = () =>
       myMatches()
@@ -210,7 +217,7 @@ export function OngoingScreen({ onBack, onOpen }: { onBack: () => void; onOpen: 
       clearInterval(refresh);
       clearInterval(clock);
     };
-  }, []);
+  }, [signedIn]);
   const line = (m: MatchSummary) => {
     if (m.status === "lobby") return "In the lobby";
     if (m.status === "finished") return "Finished · see the results";
