@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 type GameHook = {
   ready: boolean;
   view: { piecePoint(id: string): { x: number; y: number }; app: { canvas: HTMLCanvasElement } };
-  game: { state: { turn: number; phase: string }; election: { result: { seats: Record<string, number> } } | null };
+  game: { stage: string; state: { turn: number; phase: string }; election: { result: { seats: Record<string, number> } } | null };
 };
 type HookWindow = { __game?: GameHook };
 
@@ -400,5 +400,43 @@ test("resigning a solo match: the computer plays your party to the end and you s
   await page.getByTestId("night-done").click();
   await expect(page.getByTestId("results")).toBeVisible();
   await expect(page.getByTestId("ranks")).toContainText("Resigned: the computer played on");
+});
+
+test("just watch: the computers play every seat, turn after turn, and auto-play can be switched off", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-solo").click();
+  await page.getByTestId("setup-watch").check();
+  await page.getByTestId("start-match").click();
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  await expect(page.getByTestId("watch-bar")).toContainText("You're watching");
+  await expect(page.getByTestId("watch-note")).toBeVisible();
+  // Auto-play moves the match on by itself.
+  await page.waitForFunction(() => (window as unknown as HookWindow).__game!.game.state.turn >= 3, null, { timeout: 60_000 });
+  await page.getByTestId("auto-play").uncheck();
+  // With auto-play off the summary waits for Continue, as for a player.
+  for (let i = 0; i < 100 && (await page.evaluate(() => (window as unknown as HookWindow).__game!.game.stage)) !== "planning"; i++) {
+    for (const id of ["breaking", "skip", "continue"]) {
+      const el = page.getByTestId(id);
+      if (await el.isVisible().catch(() => false)) await el.click({ timeout: 2000 }).catch(() => {});
+    }
+    await page.waitForTimeout(150);
+  }
+  const turn = await page.evaluate(() => (window as unknown as HookWindow).__game!.game.state.turn);
+  await page.waitForTimeout(2500);
+  expect(await page.evaluate(() => (window as unknown as HookWindow).__game!.game.state.turn)).toBe(turn);
+  // By hand: Next turn plays one.
+  await expect(page.getByTestId("submit")).toHaveText("Next turn");
+  await page.getByTestId("submit").click();
+  await page.waitForFunction((t) => (window as unknown as HookWindow).__game!.game.state.turn === t + 1, turn);
+});
+
+test("resign and watch: the computer takes your party and you watch the match go on", async ({ page }) => {
+  await page.goto("/?seed=5&ai=easy");
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  await page.getByTestId("resign-button").click();
+  await page.getByTestId("resign-watch").click();
+  await expect(page.getByTestId("watch-bar")).toBeVisible();
+  await page.waitForFunction(() => (window as unknown as HookWindow).__game!.game.state.turn >= 2, null, { timeout: 30_000 });
+  await expect(page.getByTestId("resign-button")).toHaveCount(0);
 });
 

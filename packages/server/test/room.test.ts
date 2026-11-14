@@ -1,7 +1,7 @@
 import { createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
 import { describe, expect, it } from "vitest";
 import { inviteCode } from "../src/api.js";
-import { checkSetup, join, leave, newRoom, packFor, pick, resign, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
+import { checkSetup, join, leave, newRoom, packFor, pick, resign, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
 
 const seat = (id: string, kind: "human" | "ai", leaderId: string, color: string, emblem: string) => ({
   id,
@@ -161,6 +161,22 @@ describe("resigning", () => {
     expect(() => resign(room, "host")).toThrow("isn't being played");
     start(room, "host");
     expect(() => resign(room, "stranger")).toThrow("seat");
+  });
+});
+
+describe("spectators", () => {
+  it("see the match without a seat: every seat, the board and who's watching, but nobody's plan", () => {
+    const room = lobby();
+    join(room, "friend", "Ali");
+    setReady(room, "friend", true);
+    start(room, "host");
+    submit(room, "host", 1, planFor(room, "p1"));
+    expect(seated(room, "fan")).toBe(false);
+    const seen = view(room, "fan", 5, ["Sam"]);
+    expect(seen).toMatchObject({ you: null, status: "active", submitted: ["p1"], yourPlan: null, watchers: ["Sam"] });
+    expect(seen.state).not.toBeNull();
+    expect(() => submit(room, "fan", 1, {})).toThrow("seat");
+    expect(() => resign(room, "fan")).toThrow("seat");
   });
 });
 

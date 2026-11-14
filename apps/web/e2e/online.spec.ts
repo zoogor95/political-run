@@ -168,3 +168,46 @@ test("a friend who resigns hands their party to the computer, and the host plays
   await expect(host.getByTestId("turn")).toContainText("Turn 2");
   await expect(friend.getByTestId("online-banner")).toContainText("You resigned");
 });
+
+test("a spectator watches a friends' match without a seat, and the players see who's watching", async ({ browser }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  test.setTimeout(180_000);
+  const host = await device(browser);
+  const friend = await device(browser);
+  const fan = await device(browser);
+
+  await host.goto("/");
+  await host.getByTestId("new-online").click();
+  await host.getByTestId("online-create").click();
+  await host.getByTestId("start-match").click();
+  const code = (await host.getByTestId("invite-code").textContent())!;
+  await expect(host.getByTestId("watch-link")).toContainText(`?watch=${code}`);
+  await friend.goto(`/?join=${code}`);
+  await expect(friend.getByTestId("lobby-seats")).toContainText("(you)");
+
+  // The fan types the code and presses Watch: no seat taken, and everyone sees them in the lobby.
+  await fan.goto("/");
+  await fan.getByTestId("new-online").click();
+  await fan.getByTestId("join-code").fill(code);
+  await fan.getByTestId("watch-go").click();
+  await expect(fan.getByTestId("lobby-watching")).toBeVisible();
+  await expect(fan.getByTestId("lobby-seats")).not.toContainText("(you)");
+  await expect(host.getByTestId("lobby-watchers")).toContainText("Watching:");
+  await friend.getByTestId("lobby-ready").click();
+  await expect(host.getByTestId("lobby-start")).toBeEnabled();
+  await host.getByTestId("lobby-start").click();
+  for (const page of [host, friend, fan]) await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+
+  // The fan can't plan; the players see they're being watched.
+  await expect(fan.getByTestId("submit")).toHaveText("Watching");
+  await expect(fan.getByTestId("submit")).toBeDisabled();
+  await expect(fan.getByTestId("online-banner")).toContainText("You're watching this match");
+  await expect(fan.getByTestId("resign-button")).toHaveCount(0);
+  const before = [await boards(host), await boards(friend), await boards(fan)] as const;
+  await host.getByTestId("submit").click();
+  await expect(host.getByTestId("watchers")).toContainText("Watching:");
+  await friend.getByTestId("submit").click();
+  await Promise.all([catchUp(host, before[0]), catchUp(friend, before[1]), catchUp(fan, before[2])]);
+  await expect(fan.getByTestId("turn")).toContainText("Turn 2");
+});
+

@@ -76,6 +76,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const [coaching, setCoaching] = useState(() => game.config.tutorial === true);
   // The "are you sure?" card for resigning.
   const [resigning, setResigning] = useState(false);
+  // Watching (nobody here planning): turns, summaries and election nights move on by themselves unless this is off.
+  const [autoPlay, setAutoPlay] = useState(true);
   // Election night and results show the seat map; results can switch back to the campaign board.
   // Presidential: each state goes whole to its winner, so the real map is the results map.
   const [seatView, setSeatView] = useState(() => !presidential());
@@ -218,6 +220,19 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
     if (viewRef.current) window.__game = { view: viewRef.current, game, ready: true };
   });
 
+  // Watching with auto-play: the next turn, the summary and the end of election night move on after a pause.
+  useEffect(() => {
+    if (!game.watching || !autoPlay) return;
+    let next: (() => void) | null = null;
+    let wait = 0;
+    if (game.stage === "planning" && !game.online) [next, wait] = [game.submit, 900];
+    else if (game.stage === "summary") [next, wait] = [game.backToPlanning, 2600];
+    else if (onNight && nightPhase === "done") [next, wait] = [() => game.endElection(!game.online), 2600];
+    if (!next) return;
+    const t = setTimeout(next, wait);
+    return () => clearTimeout(t);
+  }, [game, autoPlay, onNight, nightPhase]);
+
   return (
     <div className={`game${onNight ? " night" : ""}${results ? ` results-stage${presidential() ? "" : " parl"}` : ""}`} data-testid={results ? "results" : undefined}>
       {!results && <Ticker headlines={game.ticker} />}
@@ -227,7 +242,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
           called={called}
           phase={nightPhase}
           onSkip={skipNight}
-          onDone={game.endElection}
+          onDone={() => game.endElection()}
+          {...(game.online ? {} : { onWatch: () => game.endElection(true) })}
           you={game.solo ? game.humans[0]! : null}
           humans={game.humans}
           speed={nightSpeed}
@@ -246,6 +262,15 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
         </div>
       )}
       {game.online && game.stage === "planning" && <OnlineBanner game={game} />}
+      {game.watching && !game.online && game.stage !== "results" && <WatchBar auto={autoPlay} onAuto={setAutoPlay} />}
+      {game.watching && game.online && game.stage !== "results" && (
+        <div className="banner watch-bar" role="status">
+          <label className="check">
+            <input type="checkbox" checked={autoPlay} onChange={(e) => setAutoPlay(e.target.checked)} data-testid="auto-play" />
+            <span>Auto-play the recaps and election night</span>
+          </label>
+        </div>
+      )}
       <main className="game-body">
         <div className={`board-wrap${showGroupCard ? " with-card" : ""}`}>
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
@@ -360,7 +385,14 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
                   </select>
                 </label>
               )}
-              {tab === "plan" && <PlanPanel game={game} onOpen={setSelected} />}
+              {tab === "plan" &&
+                (game.watching ? (
+                  <p className="watch-note" data-testid="watch-note">
+                    You're watching: {game.online && !game.online.resigned && !game.resignedSeats.length ? "the players and computers plan" : "the computers plan"} every party. Tap any region to see how it stands.
+                  </p>
+                ) : (
+                  <PlanPanel game={game} onOpen={setSelected} />
+                ))}
               {tab === "party" && <PartyPanel game={game} />}
               {tab === "groups" && <GroupsPanel game={game} onOpen={setSelected} focus={groupFocus} onFocus={setGroupFocus} />}
               {tab === "rivals" && <RivalsPanel game={game} highlight={highlight} onHighlight={setHighlight} />}
@@ -408,11 +440,13 @@ function OnlineBanner({ game }: { game: GameApi }) {
   let text: string;
   if (!o.connected) text = "Connection lost. Reconnecting…";
   else if (o.error) text = o.error;
+  else if (o.seatless) text = `You're watching this match${o.waitingFor.length ? `: waiting for ${names(o.waitingFor)}` : ""}.`;
   else if (o.resigned) text = `You resigned: the computer plays your party now. Watching the others${o.waitingFor.length ? `: waiting for ${names(o.waitingFor)}` : ""}.`;
   else if (o.spectating) text = `You're out of the race. Watching the others${o.waitingFor.length ? `: waiting for ${names(o.waitingFor)}` : ""}.`;
   else if (o.sent) text = o.waitingFor.length ? `Plan sent. Waiting for ${names(o.waitingFor)}.` : "Plan sent. Resolving the turn…";
   else if (o.autopilot.includes(me)) text = "You missed 3 turns, so the computer has been playing for you. Send a plan to take your seat back.";
   else if (o.deadline) text = (o.missed[me] ?? 0) > 0 ? `You missed the last turn. Plan before the timer runs out.` : "Plan before the timer runs out.";
+  else if (o.watchers.length) text = "";
   else return null;
   return (
     <div className="banner online-banner" data-testid="online-banner" role="status">
@@ -423,6 +457,12 @@ function OnlineBanner({ game }: { game: GameApi }) {
       )}
       <span>{text}</span>
       {others.length > 0 && <small> The computer is playing for {names(others)} (missed turns).</small>}
+      {o.watchers.length > 0 && (
+        <small className="watchers" data-testid="watchers">
+          {" "}
+          Watching: {o.watchers.join(", ")}
+        </small>
+      )}
     </div>
   );
 }
@@ -461,13 +501,25 @@ function ResignCard({ game, onClose }: { game: GameApi; onClose: () => void }) {
         <p>
           {others
             ? `The computer (Normal) takes over ${game.solo ? "your party" : party} for the rest of the match. ${game.online ? "Everyone else plays on, and you can watch." : "The other players carry on."}`
-            : "The computer (Normal) takes over your party and plays the match to the end, then you see the result."}{" "}
+            : "The computer (Normal) takes over your party for the rest of the match. Watch it play out turn by turn, or skip straight to the result."}{" "}
           It counts as a match played, not won, and you can't take it back.
         </p>
         <div className="resign-buttons">
           <button type="button" onClick={onClose} data-testid="resign-cancel">
             Keep playing
           </button>
+          {game.lastToResign && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                game.resign(true);
+              }}
+              data-testid="resign-watch"
+            >
+              Resign and watch
+            </button>
+          )}
           <button
             type="button"
             className="danger"
@@ -477,10 +529,23 @@ function ResignCard({ game, onClose }: { game: GameApi; onClose: () => void }) {
             }}
             data-testid="resign-confirm"
           >
-            Resign
+            {game.lastToResign ? "Resign and see the result" : "Resign"}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Watching on this device: the computers plan every party; auto-play moves the match on, or Next turn does it by hand. */
+function WatchBar({ auto, onAuto }: { auto: boolean; onAuto: (on: boolean) => void }) {
+  return (
+    <div className="banner watch-bar" role="status" data-testid="watch-bar">
+      <span>You're watching: the computers plan every party.</span>
+      <label className="check">
+        <input type="checkbox" checked={auto} onChange={(e) => onAuto(e.target.checked)} data-testid="auto-play" />
+        <span>Auto-play</span>
+      </label>
     </div>
   );
 }

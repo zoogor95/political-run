@@ -239,7 +239,9 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     const headers = new Headers(req.headers);
     headers.set("x-account-id", accountId);
     headers.set("x-account-name", name);
-    return env.MATCHES.get(env.MATCHES.idFromName(code)).fetch(new Request("https://room/ws", { headers }));
+    // ?watch=1: a spectator, watching without taking a seat.
+    const watch = new URL(req.url).searchParams.get("watch") === "1" ? "?watch=1" : "";
+    return env.MATCHES.get(env.MATCHES.idFromName(code)).fetch(new Request(`https://room/ws${watch}`, { headers }));
   }
 
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
