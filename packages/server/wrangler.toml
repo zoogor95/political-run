@@ -11,5 +11,5 @@ ALLOWED_ORIGINS = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "majority-map"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "c7b41557-19d4-4ddb-9ed6-6284d9cd295f"
 migrations_dir = "migrations"
