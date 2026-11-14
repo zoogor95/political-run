@@ -6,6 +6,7 @@ import { Game } from "./game/Game";
 import { SettingsPanel, SetupScreen } from "./game/Menu";
 import { MainMenu } from "./game/MainMenu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
+import { CreatePartyScreen } from "./game/CreateParty";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
 import { isMapId, preferredMap, selectMap } from "./game/model";
@@ -22,6 +23,7 @@ import "./game/game.css";
 type Screen =
   | { name: "menu" }
   | { name: "profile" }
+  | { name: "party" }
   | { name: "online" }
   | { name: "ongoing" }
   | { name: "lobby"; link: MatchLink }
@@ -107,7 +109,8 @@ function App() {
           onSettings={openSettings}
         />
       )}
-      {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} />}
+      {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} onParty={() => setScreen({ name: "party" })} />}
+      {screen.name === "party" && <CreatePartyScreen onBack={() => setScreen({ name: "profile" })} />}
       {screen.name === "online" && (
         <OnlineHub
           onBack={toMenu}

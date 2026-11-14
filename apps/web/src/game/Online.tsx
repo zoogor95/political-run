@@ -5,6 +5,7 @@ import { askToNotify, canNotify, notificationsOn, nudge } from "./notify";
 import { candidateName, map, MAPS, isMapId, selectMap } from "./model";
 import { EmblemIcon } from "./Menu";
 import { COLORS, EMBLEMS, EMBLEM_NAME } from "./setup";
+import { useProfile } from "./profile";
 import { inviteLink, watchLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
 
 /** Re-renders whenever the link changes (a new view, the connection, an error). */
@@ -310,6 +311,16 @@ function LobbyParty({ link, view }: { link: MatchLink; view: RoomView }) {
     const n = name.trim();
     if (n && n !== mine.party.name) link.pick({ name: n });
   };
+  // Your own party (Create your party): its name, and its colour and emblem where nobody here has them yet.
+  const saved = useProfile().party;
+  const useSaved = () => {
+    if (!saved) return;
+    link.pick({
+      name: saved.name,
+      ...(takenBy((s) => s.party.color === saved.color) ? {} : { color: saved.color }),
+      ...(takenBy((s) => s.party.emblem === saved.emblem) ? {} : { emblem: saved.emblem }),
+    });
+  };
   return (
     <section className="backup lobby-party" data-testid="lobby-party" style={{ borderTopColor: mine.party.color }}>
       <div className="setup-card-head">
@@ -321,6 +332,11 @@ function LobbyParty({ link, view }: { link: MatchLink; view: RoomView }) {
         )}
       </div>
       <fieldset disabled={locked} className="lobby-party-fields">
+        {!presidential && saved && (saved.name !== mine.party.name || saved.color !== mine.party.color || saved.emblem !== mine.party.emblem) && (
+          <button type="button" className="use-my-party" onClick={useSaved} data-testid="lobby-use-party">
+            Use my party: {saved.name}
+          </button>
+        )}
         {!presidential && (
           <>
             <label className="party-name">

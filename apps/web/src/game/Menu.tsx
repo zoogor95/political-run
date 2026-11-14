@@ -8,6 +8,8 @@ import { majority } from "@majority-map/core";
 import { MAPS, map, mapDetail, setPreferredMap, type MapId } from "./model";
 import { Portrait, toAvatar } from "./Portrait";
 import { useOwns } from "./store";
+import { setProfileParty, useProfile } from "./profile";
+import { partyNameProblem } from "./CreateParty";
 import { TURN_TIMERS,
   COLORS,
   EMBLEMS,
@@ -255,6 +257,7 @@ function PartyEditor({
             </div>
           </div>
           <p className="small muted">Crossed out: another seat picked it first. Change a pick and the old one frees up.</p>
+          {seat.id === "you" && seat.kind === "human" && <SaveAsMyParty seat={seat} />}
         </>
       )}
       <div className="field">
@@ -689,6 +692,21 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           Done
         </button>
       </div>
+    </div>
+  );
+}
+
+/** Your seat's party saved to your profile, so every Parliamentary match offers it to you first. */
+function SaveAsMyParty({ seat }: { seat: Seat }) {
+  const saved = useProfile().party;
+  const same = saved && saved.name === seat.party.name.trim() && saved.color === seat.party.color && saved.emblem === seat.party.emblem;
+  const problem = partyNameProblem(seat.party.name);
+  return (
+    <div className="save-party">
+      <button type="button" disabled={Boolean(same) || Boolean(problem)} onClick={() => setProfileParty(seat.party)} data-testid="save-party">
+        {same ? "Saved as your party" : "Save as my party"}
+      </button>
+      {problem && !same && <small className="muted">{problem}</small>}
     </div>
   );
 }
