@@ -59,6 +59,18 @@ export const COLORS: { name: string; hex: string }[] = [
 
 /** Our own emblems; symbols real parties use on ballots are never offered. */
 export const EMBLEMS = ["megaphone", "owl", "lighthouse", "paper-plane", "compass", "balloon", "mountain", "acorn"];
+/** Each emblem's drawing (40×40, from the design's emblem set), filled with the party colour and outlined in ink. */
+export const EMBLEM_PATH: Record<string, string> = {
+  megaphone: "M7 16h6l16-8v24l-16-8H7z M13 24l3 9h5l-2-9",
+  owl: "M20 6c-8 0-12 6-12 13v13c0 2 2 3 4 3h16c2 0 4-1 4-3V19c0-7-4-13-12-13z M8 8l5 5 M32 8l-5 5 M15 16a4 4 0 1 0 0.1 0z M25 16a4 4 0 1 0 0.1 0z M18 24l2 3 2-3z",
+  lighthouse: "M15 35l2-22h6l2 22z M14 13h12l-2-5h-8z M17 8l3-4 3 4 M17 20h6 M16.5 27h7",
+  "paper-plane": "M4 19L36 6 27 34l-8-10z M19 24l17-18 M19 24v9l4-5",
+  compass: "M20 4a16 16 0 1 0 0.1 0z M20 9l4 11-4 11-4-11z M20 18a2 2 0 1 0 0.1 0z",
+  balloon: "M20 4c-8 0-12 6-12 12 0 7 7 12 10 14h4c3-2 10-7 10-14 0-6-4-12-12-12z M17 30l1 4h4l1-4 M16 34h8v3h-8z",
+  mountain: "M3 34l12-20 6 9 5-7 11 18z M12 19l3-5 3 5-3 1z",
+  acorn: "M10 17c0-5 4-8 10-8s10 3 10 8z M12 17c0 9 4 15 8 17 4-2 8-8 8-17z M20 9V5",
+};
+
 export const EMBLEM_NAME: Record<string, string> = {
   megaphone: "Megaphone",
   owl: "Owl",
