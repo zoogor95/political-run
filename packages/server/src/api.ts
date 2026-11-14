@@ -6,6 +6,7 @@
  */
 import { randomToken, sha256, uuidv7 } from "./crypto.js";
 import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
+import { checkSubscription, vapidKeys } from "./push.js";
 
 export interface Env {
   DB: D1Database;
@@ -13,6 +14,11 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
   /** One Durable Object per private match, named by its invite code (match.ts). */
   MATCHES?: DurableObjectNamespace;
+  /** Push notifications: the game's VAPID public key (a var) and private key (a secret). Without them, no pushes. */
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  /** The game's web address: links in notifications open it, and push services see it as the sender. */
+  SITE_URL?: string;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -176,6 +182,31 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
   const at = (method: string, path: string) => req.method === method && pathname === path;
 
   if (at("GET", "/api/health")) return json({ ok: true });
+
+  // Push notifications: the key a browser subscribes with, and its subscription stored (or removed) for this account.
+  if (at("GET", "/api/push/key")) {
+    const keys = vapidKeys(env);
+    if (!keys) throw new ApiError(404, "no_push", "Push notifications aren't set up here");
+    return json({ publicKey: keys.publicKey });
+  }
+  if (at("POST", "/api/push")) {
+    const { accountId } = await authed(req, env, now);
+    const sub = checkSubscription(await body<{ endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } }>(req));
+    if (!sub) throw new ApiError(400, "bad_subscription", "That isn't a push subscription");
+    await env.DB.prepare(
+      "INSERT INTO push_subscriptions (endpoint, account_id, p256dh, auth, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET account_id = excluded.account_id, p256dh = excluded.p256dh, auth = excluded.auth",
+    )
+      .bind(sub.endpoint, accountId, sub.p256dh, sub.auth, now)
+      .run();
+    return new Response(null, { status: 204 });
+  }
+  if (at("DELETE", "/api/push")) {
+    const { accountId } = await authed(req, env, now);
+    const b = await body<{ endpoint?: unknown }>(req);
+    if (typeof b.endpoint !== "string") throw new ApiError(400, "bad_field", "endpoint must be text");
+    await env.DB.prepare("DELETE FROM push_subscriptions WHERE endpoint = ? AND account_id = ?").bind(b.endpoint, accountId).run();
+    return new Response(null, { status: 204 });
+  }
 
   // Private matches: the host opens a lobby from a setup and gets an invite code; friends join it over a WebSocket.
   if (at("POST", "/api/matches")) {

@@ -7,6 +7,7 @@ import { SettingsPanel, SetupScreen } from "./game/Menu";
 import { MainMenu } from "./game/MainMenu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
 import { CreatePartyScreen } from "./game/CreateParty";
+import { registerServiceWorker } from "./game/push";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
 import { isMapId, preferredMap, selectMap } from "./game/model";
@@ -149,4 +150,5 @@ function App() {
 initAudio();
 const lab = new URLSearchParams(location.search).has("lab");
 if (!lab) startCloud();
+registerServiceWorker();
 createRoot(document.getElementById("root")!).render(<StrictMode>{lab ? <Lab /> : <App />}</StrictMode>);

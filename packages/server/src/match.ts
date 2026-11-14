@@ -4,6 +4,7 @@
  */
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
+import { notifyAccounts } from "./push.js";
 import { join, leave, newRoom, packFor, pick, resign, RoomError, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
 
 /** A plan is small; anything bigger than this isn't one. */
@@ -39,7 +40,22 @@ export class MatchRoom extends DurableObject<Env> {
   private async afterTurns(room: RoomData, out: SubmitOutcome) {
     for (const t of out.turns) for (const s of this.ctx.getWebSockets()) this.send(s, { type: "turn", ...t });
     this.broadcastViews(room);
-    if (out.turns.length) await this.recordTurn(room, out.finished);
+    if (out.turns.length) {
+      await this.recordTurn(room, out.finished);
+      if (out.finished) this.notify(room, room.seats.filter((s) => s.kind === "human").map((s) => s.id), "The results are in. See who won!");
+      else if (room.state) this.notify(room, waitingOn(room), `Turn ${room.state.turn} is in. Your move!`);
+    }
+  }
+
+  /**
+   * A push notification to these seats' people (their devices that asked for them), after the reply has gone: the
+   * match doesn't wait for push services. Links open the match.
+   */
+  private notify(room: RoomData, seatIds: string[], body: string) {
+    const accounts = room.seats.filter((s) => seatIds.includes(s.id) && s.accountId).map((s) => s.accountId!);
+    if (!accounts.length) return;
+    const url = `${this.env.SITE_URL ?? ""}/?join=${room.code}`;
+    this.ctx.waitUntil(notifyAccounts(this.env, accounts, { title: "Majority Map", body, url, tag: `mm-${room.code}` }).catch((e) => console.error("notify", e)));
   }
 
   /** The turn timer ran out. */
@@ -131,6 +147,7 @@ export class MatchRoom extends DurableObject<Env> {
         await this.save();
         await this.recordStart(room);
         this.broadcastViews(room);
+        this.notify(room, waitingOn(room).filter((id) => room.seats.find((s) => s.id === id)?.accountId !== accountId), "The match has started. Your move!");
       } else if (msg.type === "plan") {
         const out = submit(room, accountId, Number(msg.turn), msg.plan as never, Date.now());
         await this.save();

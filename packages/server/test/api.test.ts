@@ -203,3 +203,58 @@ describe("ongoing matches", () => {
     expect((await call("GET", "/api/matches/mine")).status).toBe(401);
   });
 });
+
+describe("push notifications", () => {
+  const sub = (n: number) => ({ endpoint: `https://push.example/send/${n}`, keys: { p256dh: "B".repeat(87), auth: "a".repeat(22) } });
+
+  it("gives out the public key only where push is set up", async () => {
+    expect((await call("GET", "/api/push/key")).status).toBe(404);
+    env.VAPID_PUBLIC_KEY = "P".repeat(87);
+    env.VAPID_PRIVATE_KEY = "d".repeat(43);
+    expect((await call("GET", "/api/push/key")).data).toEqual({ publicKey: "P".repeat(87) });
+  });
+
+  it("stores a device's subscription for its account, once, and removes it on request", async () => {
+    const { data } = await signIn();
+    expect((await call("POST", "/api/push", { body: sub(1) })).status).toBe(401);
+    expect((await call("POST", "/api/push", { token: data.token, body: { endpoint: "http://insecure.example", keys: sub(1).keys } })).status).toBe(400);
+    expect((await call("POST", "/api/push", { token: data.token, body: sub(1) })).status).toBe(204);
+    expect((await call("POST", "/api/push", { token: data.token, body: sub(1) })).status).toBe(204); // again: still one row
+    const rows = await env.DB.prepare("SELECT account_id FROM push_subscriptions").all<{ account_id: string }>();
+    expect(rows.results).toEqual([{ account_id: data.account.id }]);
+    expect((await call("DELETE", "/api/push", { token: data.token, body: { endpoint: sub(1).endpoint } })).status).toBe(204);
+    expect((await env.DB.prepare("SELECT COUNT(*) AS n FROM push_subscriptions").first<{ n: number }>())!.n).toBe(0);
+  });
+
+  it("sends to every device of the accounts, and forgets subscriptions the push service says are gone", async () => {
+    const { data } = await signIn();
+    await call("POST", "/api/push", { token: data.token, body: sub(1) });
+    await call("POST", "/api/push", { token: data.token, body: sub(2) });
+    // Real keys, so the messages can be encrypted and signed.
+    const { createECDH } = await import("node:crypto");
+    const { b64url } = await import("../src/webpush.js");
+    const browser = createECDH("prime256v1");
+    browser.generateKeys();
+    await env.DB.prepare("UPDATE push_subscriptions SET p256dh = ?, auth = ?").bind(b64url(browser.getPublicKey()), b64url(new Uint8Array(16).fill(7))).run();
+    const vapid = createECDH("prime256v1");
+    vapid.generateKeys();
+    env.VAPID_PUBLIC_KEY = b64url(vapid.getPublicKey());
+    env.VAPID_PRIVATE_KEY = b64url(vapid.getPrivateKey());
+    const seen: string[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string, init: RequestInit) => {
+      seen.push(`${url} ${(init.headers as Record<string, string>)["content-encoding"]}`);
+      return new Response(null, { status: url.endsWith("/2") ? 410 : 201 });
+    }) as typeof fetch;
+    try {
+      const { notifyAccounts } = await import("../src/push.js");
+      const sent = await notifyAccounts(env, [data.account.id], { title: "Majority Map", body: "Turn 2 is in. Your move!", url: "https://game.example/?join=ABC123", tag: "mm-ABC123" });
+      expect(sent).toBe(1);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(seen.sort()).toEqual(["https://push.example/send/1 aes128gcm", "https://push.example/send/2 aes128gcm"]);
+    const left = await env.DB.prepare("SELECT endpoint FROM push_subscriptions").all<{ endpoint: string }>();
+    expect(left.results).toEqual([{ endpoint: "https://push.example/send/1" }]);
+  });
+});

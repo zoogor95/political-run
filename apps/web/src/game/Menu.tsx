@@ -1,5 +1,5 @@
 /** Main menu, match setup (solo or pass and play) and settings. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CustomCandidate } from "@majority-map/core";
 import { CandidatePicker } from "./Candidates";
 import { CandidateCreator, UnlockCard } from "./Creator";
@@ -8,6 +8,7 @@ import { majority } from "@majority-map/core";
 import { MAPS, map, mapDetail, setPreferredMap, type MapId } from "./model";
 import { Portrait, toAvatar } from "./Portrait";
 import { useOwns } from "./store";
+import { disablePush, enablePush, pushOn, pushSupported } from "./push";
 import { setProfileParty, useProfile } from "./profile";
 import { partyNameProblem } from "./CreateParty";
 import { TURN_TIMERS,
@@ -659,6 +660,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           />
           <span>Fast turn recaps</span>
         </label>
+        <PushSetting />
         <label className="pick-row">
           <span>Text size</span>
           <select
@@ -708,5 +710,30 @@ function SaveAsMyParty({ seat }: { seat: Seat }) {
       </button>
       {problem && !same && <small className="muted">{problem}</small>}
     </div>
+  );
+}
+
+/** Settings: "your move" notifications for online matches, pushed to this device even when the game is closed. */
+function PushSetting() {
+  const [on, setOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    void pushOn().then((v) => live && setOn(v));
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (!pushSupported() || on === null) return null;
+  return (
+    <label className="check">
+      <input
+        type="checkbox"
+        checked={on}
+        disabled={Notification.permission === "denied"}
+        onChange={(e) => void (e.target.checked ? enablePush().then(setOn) : disablePush().then(() => setOn(false)))}
+        data-testid="setting-push"
+      />
+      <span>{Notification.permission === "denied" ? "Notifications are blocked for this site in your browser" : "Notify me when it's my move in online matches"}</span>
+    </label>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * Telling a player it's their move while the game is in another tab: the tab's title, and a browser notification if
- * they've allowed them. (Notifications to a closed game, through the phone stores and web push, come later.)
+ * they've allowed them. Notifications to a closed game come from the server by web push (push.ts, public/sw.js).
  */
 const BASE_TITLE = typeof document !== "undefined" ? document.title : "Majority Map";
 

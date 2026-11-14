@@ -211,3 +211,11 @@ test("a spectator watches a friends' match without a seat, and the players see w
   await expect(fan.getByTestId("turn")).toContainText("Turn 2");
 });
 
+
+test("the game's service worker is installed, ready for push notifications", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  // (Headless Chromium reports notifications as blocked whatever a test grants, so "Notify me" itself can't be pressed
+  // here; subscribing and sending are covered by the server's tests.)
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.active?.scriptURL ?? ""), { timeout: 15_000 }).toContain("/sw.js");
+});
