@@ -59,6 +59,33 @@ export const EMBLEM_NAME: Record<string, string> = {
 
 const firstFree = <T,>(options: T[], used: T[]) => options.find((o) => !used.includes(o)) ?? options[0]!;
 
+/** True on a Presidential map: players run as a real candidate under the candidate's real party. */
+export const isPresidential = () => map.pack.gameType === "presidential";
+
+/** Presidential party colours: each party's family, a different shade for each of its candidates at the table. */
+export const PARTY_SHADES: Record<string, string[]> = {
+  Republican: ["#c8102e", "#e8604c", "#8b1a1a", "#d9822b", "#5c0f12"],
+  Democratic: ["#1f4fb4", "#2f8fd6", "#24408e", "#0f8a7e", "#0b2e6b"],
+  Independent: ["#6a3fc8", "#8e2a6b", "#4b5563", "#b58ae0", "#2d3748"],
+};
+
+/**
+ * Presidential: every seat's party follows from its candidate. The name is the candidate's, the colour a shade of the
+ * candidate's party (Independent for anyone else, custom candidates included), the emblem simply the next free one.
+ */
+export function withCandidateParties(seats: Seat[], customs: CustomCandidate[] = []): Seat[] {
+  const used: Record<string, number> = {};
+  return seats.map((s, i) => {
+    const c = map.pack.candidates.find((x) => x.id === s.leaderId);
+    const name = c?.name ?? customs.find((x) => x.id === s.leaderId)?.name ?? s.leaderId;
+    const family = c && PARTY_SHADES[c.affiliation] ? c.affiliation : "Independent";
+    const k = used[family] ?? 0;
+    used[family] = k + 1;
+    const shades = PARTY_SHADES[family]!;
+    return { ...s, party: { name, color: shades[k % shades.length]!, emblem: EMBLEMS[i % EMBLEMS.length]! } };
+  });
+}
+
 /** A computer seat with the next free made-up party name, colour, emblem and leader. */
 export function aiSeat(seats: Seat[], index: number, level: AiLevel = "normal"): Seat {
   // Computer parties default to leaders from real parties not yet at the table, so rivals feel distinct.
@@ -70,7 +97,7 @@ export function aiSeat(seats: Seat[], index: number, level: AiLevel = "normal"):
     label: `Computer ${index}`,
     level,
     party: {
-      name: firstFree(map.pack.aiPartyNames, seats.map((s) => s.party.name)),
+      name: firstFree(map.pack.aiPartyNames, seats.map((s) => s.party.name)) ?? `Computer ${index}`,
       color: firstFree(COLORS.map((c) => c.hex), seats.map((s) => s.party.color)),
       emblem: firstFree(EMBLEMS, seats.map((s) => s.party.emblem)),
     },
@@ -103,7 +130,7 @@ export function defaultConfig(mode: Mode, level: AiLevel = "normal"): MatchConfi
   seats.push(humanSeat(seats, 1));
   if (mode === "hotseat") seats.push(humanSeat(seats, 2));
   while (seats.length < 3) seats.push(aiSeat(seats, seats.length, level));
-  return { mode, map: map.id, seats };
+  return { mode, map: map.id, seats: isPresidential() ? withCandidateParties(seats) : seats };
 }
 
 export interface ConfigIssue {

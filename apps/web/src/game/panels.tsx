@@ -20,7 +20,7 @@ import {
 import type { CustomCandidate } from "@majority-map/core";
 import { Portrait, toAvatar } from "./Portrait";
 import type { GameApi } from "./useGame";
-import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, trackName } from "./model";
+import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, presidential, trackName, votesWord } from "./model";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const pct = (n: number) => `${n > 0 ? "+" : ""}${Math.round(n)}%`;
@@ -62,7 +62,7 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
         <span>{state.round > 1 ? "Second round · " : ""}{map.name}</span>
       </div>
       <div className="tally-wrap" data-testid="tally">
-        <div className="tally" role="img" aria-label={`Projected seats: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>
+        <div className="tally" role="img" aria-label={`Projected ${votesWord()}: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>
           {order.map((p) => (
             <div key={p.id} style={{ width: `${(100 * (seats[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: seats[p.id] ? 8 : 0 }}>
               <span>{seats[p.id] ? seats[p.id] : ""}</span>
@@ -71,8 +71,18 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
           <em style={{ left: `${(100 * majority(pack)) / total}%` }} />
         </div>
         <div className="tally-note">
-          <span>{counted ? "Seats won" : state.luck ? "Expected seats if the election were today (luck factor on)" : "Projected seats if the election were today"}</span>
-          <span>{majority(pack)} FOR A MAJORITY</span>
+          <span>
+            {presidential()
+              ? counted
+                ? "Electoral votes won"
+                : "Electoral votes if the election were today"
+              : counted
+                ? "Seats won"
+                : state.luck
+                  ? "Expected seats if the election were today (luck factor on)"
+                  : "Projected seats if the election were today"}
+          </span>
+          <span>{majority(pack)} {presidential() ? "TO WIN" : "FOR A MAJORITY"}</span>
         </div>
       </div>
       <div className="contention" data-testid="contention">
@@ -133,7 +143,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
         </button>
       </div>
       <p className="muted">
-        {region ? `${region.seats} seats` : "National group · its own meter"}
+        {region ? `${region.seats} ${votesWord()}` : "National group · its own meter"}
         {locked ? ` · locked by ${partyName(state, state.locked[trackId]!)}` : ""}
       </p>
       <div className="meters">
@@ -245,7 +255,63 @@ export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string
   );
 }
 
+/** Presidential: your candidate, your ticket and, on turn 5, the running mate pick. */
+function TicketPanel({ game }: { game: GameApi }) {
+  const { state, plan } = game;
+  const you = playerOf(state, game.viewer);
+  const leader = candidate(you.leaderId);
+  const mateTurn = pack.rules.runningMateTurn ?? 5;
+  const mateId = you.members[0]?.candidateId ?? plan.pick;
+  const mate = mateId ? candidate(mateId) : null;
+  const share = pack.rules.memberSharePct;
+  return (
+    <section data-testid="party-panel">
+      <h3>{leader.name}</h3>
+      <p className="muted">
+        {leader.affiliation === "Independent" ? "Independent" : `${leader.affiliation} candidate`}
+        {you.eliminated !== undefined ? " · eliminated" : ""}
+      </p>
+      <h3>Running mate</h3>
+      {canPick(pack, state, game.viewer) ? (
+        <div className="pick">
+          <label htmlFor="pick">Pick your running mate (any candidate not running against you)</label>
+          <select id="pick" value={plan.pick ?? ""} onChange={(e) => game.setPick(e.target.value || null)} data-testid="pick">
+            <option value="">Choose…</option>
+            {pickPool(pack, state, game.viewer).map((id) => (
+              <option key={id} value={id}>
+                {candidateName(id)} · {candidate(id).affiliation}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : mate ? null : (
+        <p className="muted">{state.turn < mateTurn ? `You pick a running mate on turn ${mateTurn}.` : "You didn't pick a running mate."}</p>
+      )}
+      {mate && (
+        <ul className="members" data-testid="running-mate">
+          <li>
+            <div>
+              <b>{mate.name}</b> <small>{mate.affiliation}</small>
+              <div className="small">
+                {Object.entries(mate.modifiers)
+                  .map(([g, v]) => `${groupName(g)} ${pct((v * share) / 100)}`)
+                  .join(" · ")}
+              </div>
+            </div>
+          </li>
+        </ul>
+      )}
+      <p className="small">A running mate adds {share}% of their bonuses and penalties to your ticket from turn {mateTurn}.</p>
+    </section>
+  );
+}
+
 export function PartyPanel({ game }: { game: GameApi }) {
+  if (presidential()) return <TicketPanel game={game} />;
+  return <MembersPanel game={game} />;
+}
+
+function MembersPanel({ game }: { game: GameApi }) {
   const { state, plan } = game;
   const you = playerOf(state, game.viewer);
   const every = pack.rules.memberPickEvery;
@@ -390,7 +456,8 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
                 <span className="tag">{game.levelOf(p.id) ? `AI · ${LEVEL_NAME[game.levelOf(p.id)!]}` : "Human"}</span>
               </div>
               <p className="small">
-                Leader {candidateName(p.leaderId)} · {seats[p.id] ?? 0} seats projected · money at turn start {money(totalMoney(p))}
+                {presidential() ? "Candidate" : "Leader"} {candidateName(p.leaderId)}
+                {p.eliminated !== undefined ? " · eliminated" : ` · ${seats[p.id] ?? 0} ${votesWord()} projected`} · money at turn start {money(totalMoney(p))}
               </p>
               <p className="small">Groups: {groups.length ? groups.join(", ") : "none"}</p>
               {(() => {

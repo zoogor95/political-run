@@ -24,6 +24,8 @@ export interface SavedMatch {
   election: ElectionNight | null;
   result: ElectionResult | null;
   secondRound: boolean;
+  /** Presidential: the candidate eliminated at the last count, while the campaign goes on (absent in older saves). */
+  eliminated?: string | null;
   boards: GameState[];
   summaries: TurnSummary[];
   ticker: Headline[];

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { HEADLINE_KINDS, PLACEHOLDERS, fillTemplate, type NewsTemplates } from "@majority-map/core";
 import pkNews from "../news/pk.json" with { type: "json" };
 import ukNews from "../news/uk.json" with { type: "json" };
+import usNews from "../news/us.json" with { type: "json" };
 
 /** Words the humour rules keep off the ticker: no alcohol, gambling, innuendo or crude language. */
 const BANNED = /\b(beer|wine|pub|pubs|pint|pints|drunk|booze|bar|bars|vodka|whisky|gin|cocktail|bet|bets|betting|bookies|odds|casino|gamble|gambling|lottery|sexy|sex|damn|hell|crap|stupid|idiot)\b/i;
@@ -9,6 +10,7 @@ const BANNED = /\b(beer|wine|pub|pubs|pint|pints|drunk|booze|bar|bars|vodka|whis
 const PACKS: [string, NewsTemplates][] = [
   ["UK", ukNews as NewsTemplates],
   ["Pakistan", pkNews as NewsTemplates],
+  ["US", usNews as NewsTemplates],
 ];
 
 for (const [name, news] of PACKS) {
