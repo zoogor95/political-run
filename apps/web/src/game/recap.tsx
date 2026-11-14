@@ -1,7 +1,8 @@
 /** News ticker, BREAKING cards, the animated turn recap and the turn summary. */
 import { useEffect } from "react";
 import { updateSettings, useSettings } from "./settings";
-import type { GameState, Headline, PartySummary } from "@majority-map/core";
+import { groupModifier, meterOf, type GameState, type Headline, type PartySummary } from "@majority-map/core";
+import { textOn } from "./panels";
 import { candidateName, groupName, money, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import type { GameApi, TurnReport } from "./useGame";
 
@@ -113,71 +114,164 @@ export function RecapPanel({ report, regionId, controls, label }: { report: Turn
   );
 }
 
-function partyRow(s: GameState, p: PartySummary, game: GameApi) {
-  const change = p.seatsAfter - p.seatsBefore;
-  return (
-    <tr key={p.playerId} className={game.humans.includes(p.playerId) ? "you" : ""}>
-      <td>
-        <i className="chip" style={{ background: color(s, p.playerId) }} />
-        {playerOf(s, p.playerId).party.name}
-        {game.solo && p.playerId === game.humans[0] ? " (you)" : ""}
-      </td>
-      <td>
-        <b>{p.seatsAfter}</b> <small className={change > 0 ? "up" : change < 0 ? "down" : ""}>{change > 0 ? `+${change}` : change < 0 ? `${change}` : "±0"}</small>
-      </td>
-      <td>{money(p.spent)}</td>
-      <td className="small">
-        {p.conflicts.length === 0 ? "—" : p.conflicts.map((c) => `${trackName(c.regionId)}: lost ${money(c.amount)} (with ${c.rivals.map((r) => playerOf(s, r).party.name).join(", ")})`).join("; ")}
-      </td>
-      <td className="small">
-        {[...p.groupsGained.map((g) => `+ ${groupName(g)}`), ...p.groupsLost.map((g) => `− ${groupName(g)}`)].join(", ") || "—"}
-      </td>
-    </tr>
-  );
-}
 
+/**
+ * The turn summary (design: Turn summary): "End of turn N", regions in contention, the turn's headline as a BREAKING
+ * bar, then a card per party, you first: seats and their change, money spent, money lost in clashes, groups won,
+ * lost and paying, and next turn's income.
+ */
 export function SummaryView({ game }: { game: GameApi }) {
   const report = game.report!;
   const s = report.after;
-  const incomes = report.summary.parties.filter((p) => game.humans.includes(p.playerId) && p.income);
-  const top = report.headlines[0];
+  const [top, ...rest] = report.headlines;
+  const contended = pack.regions.filter((r) => s.players.some((p) => meterOf(s, r.id, p.id).steps >= pack.rules.contentionAt)).length;
+  const parties = [...report.summary.parties].sort((a, b) =>
+    game.humans.includes(a.playerId) ? -1 : game.humans.includes(b.playerId) ? 1 : b.seatsAfter - a.seatsAfter,
+  );
   return (
-    <div className="overlay" data-testid="summary">
-      <div className="summary">
-        <h2>Turn {report.summary.turn} summary</h2>
+    <div className="overlay summary-screen" data-testid="summary">
+      <div className="summary-v2">
+        <header className="summary-head">
+          <h2>End of turn {report.summary.turn}</h2>
+          <div className="summary-head-right">
+            <span className="summary-contention">
+              In contention {contended} / {pack.regions.length}
+              {report.summary.newlyContended.length > 0 && <small> (+{report.summary.newlyContended.length} this turn)</small>}
+            </span>
+            <button type="button" className="primary" onClick={game.backToPlanning} data-testid="continue">
+              {game.result ? "See the results" : game.state.phase === "final" ? "Play the final turn" : `Plan turn ${game.state.turn}`}
+            </button>
+          </div>
+        </header>
         {top && (
-          <p className="headline-of-turn">
-            <span className="breaking-tag">HEADLINE OF THE TURN</span> {top.text}
-          </p>
-        )}
-        <table className="list summary-table">
-          <thead>
-            <tr>
-              <th>Party</th>
-              <th>{presidential() ? "EV" : "Seats"}</th>
-              <th>Spent</th>
-              <th>Conflicts</th>
-              <th>Groups</th>
-            </tr>
-          </thead>
-          <tbody>{report.summary.parties.map((p) => partyRow(s, p, game))}</tbody>
-        </table>
-        {incomes.map((p) => (
-          <div className="income" data-testid="income" key={p.playerId}>
-            <b>
-              {game.solo ? "Your" : `${playerOf(s, p.playerId).party.name}:`} income next turn: {money(p.income!.base + Object.values(p.income!.groups).reduce((a, b) => a + b, 0))}
-            </b>
-            <span className="small">
-              Base {money(p.income!.base)}
-              {Object.entries(p.income!.groups).map(([g, v]) => ` · ${groupName(g)} ${money(v)}`)}
+          <div className="summary-news">
+            <span className="summary-news-tag">
+              <b>{top.breaking ? "BREAKING" : "MMN"}</b>
+              <small>HEADLINE OF THE TURN</small>
+            </span>
+            <span className="summary-news-text">
+              <b>{top.text}</b>
+              {rest.length > 0 && <small>Also: {rest.slice(0, 2).map((h) => h.text).join(" · ")}</small>}
             </span>
           </div>
-        ))}
+        )}
         {report.summary.finalTurnNext && <p className="final-note">Every region is now in contention: next turn is the FINAL TURN.</p>}
-        <button type="button" className="primary" onClick={game.backToPlanning} data-testid="continue">
-          {game.result ? "See the results" : game.state.phase === "final" ? "Play the final turn" : `Plan turn ${game.state.turn}`}
-        </button>
+        <div className="summary-cards">{parties.map((p) => partyCard(s, p, game))}</div>
       </div>
     </div>
+  );
+}
+
+function partyCard(s: GameState, p: PartySummary, game: GameApi) {
+  const player = playerOf(s, p.playerId);
+  const you = game.humans.includes(p.playerId);
+  const change = p.seatsAfter - p.seatsBefore;
+  const lost = p.conflicts.reduce((a, c) => a + c.amount, 0);
+  const band = player.party.color;
+  const ink = textOn(band);
+  const leader = candidateName(player.leaderId);
+  const income = p.income ? p.income.base + Object.values(p.income.groups).reduce((a, b) => a + b, 0) : null;
+  return (
+    <section key={p.playerId} className={`summary-card${you ? " you" : ""}`}>
+      <div className="summary-card-head" style={{ background: band, color: ink }}>
+        <span className="summary-face" style={{ background: `color-mix(in srgb, ${band} 22%, #fff)` }} aria-hidden="true">
+          {leader
+            .split(/\s+/)
+            .filter((w) => /^[A-Z]/.test(w))
+            .map((w) => w[0])
+            .slice(0, 2)
+            .join("")}
+        </span>
+        <span className="summary-who">
+          <small>
+            {player.party.name}
+            {game.solo && you ? " (you)" : ""}
+            {presidential() ? "" : ` · ${leader}`}
+          </small>
+          <b>
+            {p.seatsAfter} <em>{votesWord()}</em>
+          </b>
+        </span>
+        <span className={`summary-delta${change > 0 ? " up" : change < 0 ? " down" : ""}`}>{change > 0 ? `+${change}` : change < 0 ? `−${-change}` : "±0"}</span>
+      </div>
+      <div className="summary-card-body">
+        <div className="summary-row">
+          <span>Spent this turn</span>
+          <b>{money(p.spent)}</b>
+        </div>
+        {p.conflicts.length > 0 ? (
+          <div className="summary-clash">
+            <div className="summary-row">
+              <span>Lost in clashes</span>
+              <b>−{money(lost)}</b>
+            </div>
+            {p.conflicts.slice(0, 3).map((c) => (
+              <small key={c.regionId + c.step}>
+                vs {c.rivals.map((r) => playerOf(s, r).party.name).join(", ")} · {trackName(c.regionId)} · both moved to step {c.step}
+              </small>
+            ))}
+            {p.conflicts.length > 3 && (
+              <small>
+                + {p.conflicts.length - 3} more: {p.conflicts.slice(3).map((c) => trackName(c.regionId)).join(", ")}
+              </small>
+            )}
+          </div>
+        ) : (
+          <div className="summary-clash none">
+            <div className="summary-row">
+              <span>Clashes</span>
+              <b>None</b>
+            </div>
+          </div>
+        )}
+        {(p.groupsGained.length > 0 || p.groupsLost.length > 0 || (p.income && Object.keys(p.income.groups).length > 0)) && (
+          <div className="summary-groups">
+            <small className="summary-label">GROUPS</small>
+            {p.groupsGained.map((g) => (
+              <div key={`+${g}`} className="summary-row">
+                <span>
+                  <b className="gain">+ Gained</b> {groupName(g)}
+                </span>
+              </div>
+            ))}
+            {p.groupsLost.map((g) => (
+              <div key={`-${g}`} className="summary-row">
+                <span>
+                  <b className="loss">− Lost</b> {groupName(g)}
+                </span>
+              </div>
+            ))}
+            {p.income &&
+              Object.entries(p.income.groups).map(([g, v]) => {
+                const mod = Math.round(groupModifier(pack, player, g));
+                return (
+                  <div key={g} className="summary-row">
+                    <span>
+                      {groupName(g)} {mod !== 0 && <small className={mod > 0 ? "gain" : "loss"}>({mod > 0 ? "+" : ""}{mod}%)</small>}
+                    </span>
+                    <span>{money(v)}</span>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+        {p.locked.length > 0 && <small className="summary-note">Locked {p.locked.map(trackName).join(", ")} for good</small>}
+        {p.picked && <small className="summary-note">Signed up {candidateName(p.picked)}</small>}
+        {income !== null && (
+          <div className="summary-income" {...(you ? { "data-testid": "income" } : {})}>
+            <div className="summary-row">
+              <span>Next turn's income</span>
+              <b>{money(income)}</b>
+            </div>
+            {you && (
+              <small>
+                Base {money(p.income!.base)}
+                {Object.entries(p.income!.groups).map(([g, v]) => ` · ${groupName(g)} ${money(v)}`)}
+              </small>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

@@ -13,6 +13,7 @@ import { restartTutorial, tutorialConfig } from "./game/tutorial";
 import { useSettings } from "./game/settings";
 import type { GameStart } from "./game/useGame";
 import { Lab } from "./Lab";
+import { RotateNotice } from "./game/Rotate";
 import { LobbyScreen, OngoingScreen, OnlineHub } from "./game/Online";
 import { MatchLink, normalizeInvite, openLobby, type RoomView } from "./game/online";
 import "./styles.css";
@@ -132,6 +133,7 @@ function App() {
       {screen.name === "game" && <Game key={screen.key} start={screen.start} onMenu={toMenu} onSettings={openSettings} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
       <AchievementToast />
+      <RotateNotice />
     </>
   );
 }
