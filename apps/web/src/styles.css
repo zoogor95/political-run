@@ -83,7 +83,14 @@ body {
   background: var(--gold);
 }
 
+/* A fixed width: the label flips between "idle" and "N fps" as the board stops and starts drawing, and if its width
+   followed the text the wrapping bar could gain or lose a row, moving and resizing the board, which redraws it, which
+   flips the label back: on a narrow phone the board jumped every couple of seconds, and taps landed off target. */
 .fps {
+  display: inline-block;
+  width: 4em;
+  text-align: right;
+  white-space: nowrap;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }

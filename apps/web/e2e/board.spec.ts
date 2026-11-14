@@ -6,6 +6,7 @@ type Hook = {
   ready: boolean;
   view: {
     selection: string | null;
+    onTap(handler: (id: string) => void): void;
     piecePoint(id: string): { x: number; y: number };
     screenPoint(id: string): { x: number; y: number };
     app: { canvas: HTMLCanvasElement };
@@ -71,9 +72,8 @@ test("tapping a piece lifts it and opens its region card; tapping again drops it
   await tapAt(page, await pointOf(page, "nw", "piece"));
   await expect(page.getByTestId("region-card").locator("h2")).toHaveText("North West");
   expect(await page.evaluate(() => (window as unknown as HookWindow).__board!.view.selection)).toBe("nw");
-  // Opening the card shrinks the board on a phone, which lays the seat badges out again; a neighbour's badge can then
-  // sit over North West's piece. Badges are always on top, so the second tap goes to North West's own badge, once the
-  // board has stopped moving.
+  // Opening the card can resize the board on a phone; the second tap goes to North West's own badge (always on top),
+  // once the board has stopped moving.
   let last = await pointOf(page, "nw", "badge");
   let steady = 0;
   await expect
@@ -87,8 +87,45 @@ test("tapping a piece lifts it and opens its region card; tapping again drops it
       { intervals: [100] },
     )
     .toBeGreaterThanOrEqual(3);
+  // For the failure message: the taps the board reports, and where the badge is when the tap lands.
+  await page.evaluate(() => {
+    const w = window as unknown as HookWindow & { __taps: string[] };
+    w.__taps = [];
+    w.__board!.view.onTap((id) => w.__taps.push(id));
+  });
   await tapAt(page, last);
-  await expect(page.getByTestId("region-card")).toHaveCount(0);
+  const atTap = await pointOf(page, "nw", "badge");
+  try {
+    await expect(page.getByTestId("region-card")).toHaveCount(0);
+  } catch (e) {
+    const state = await page.evaluate(() => {
+      const w = window as unknown as HookWindow & { __taps: string[] };
+      const r = w.__board!.view.app.canvas.getBoundingClientRect();
+      return { taps: w.__taps, selection: w.__board!.view.selection, card: document.querySelector("[data-testid=region-card] h2")?.textContent ?? null, canvas: [r.left, r.top, r.width, r.height] };
+    });
+    console.log(`second tap at ${JSON.stringify(last)}; badge then at ${JSON.stringify(atTap)}, now at ${JSON.stringify(await pointOf(page, "nw", "badge"))}; ${JSON.stringify(state)}`);
+    throw e;
+  }
+});
+
+// The lab's fps label flips between "idle" and "N fps"; it used to re-wrap the top bar on a narrow phone, moving the
+// board, which redrew it and flipped the label back, so the board jumped every couple of seconds and taps missed.
+test("the idle board holds still on a narrow phone", async ({ page }) => {
+  await page.setViewportSize({ width: 412, height: 839 });
+  await open(page, "uk");
+  const moves = await page.evaluate(
+    () =>
+      new Promise<string[]>((resolve) => {
+        const el = document.querySelector("[data-testid=board]")!;
+        const at = () => { const r = el.getBoundingClientRect(); return `${r.top},${r.height}`; };
+        const first = at();
+        const seen: string[] = [];
+        const timer = setInterval(() => { const now = at(); if (now !== first && !seen.includes(now)) seen.push(now); }, 20);
+        // The label is refreshed every 500 ms and the board goes idle a second after its last frame: 3 s spans a flip.
+        setTimeout(() => { clearInterval(timer); resolve(seen); }, 3000);
+      }),
+  );
+  expect(moves).toEqual([]);
 });
 
 test("tapping a seat badge selects its region", async ({ page }) => {
