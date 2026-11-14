@@ -543,7 +543,7 @@ export function SetupScreen({
             onClick={add}
             data-testid="add-seat"
           >
-            + Add a {mode === "hotseat" ? "player" : "computer party"}
+            + Add a {mode === "hotseat" ? "player" : isPresidential() ? "computer candidate" : "computer party"}
           </button>
         )}
       </div>

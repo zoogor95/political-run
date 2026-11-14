@@ -90,3 +90,13 @@ test("a whole US match: a running mate on turn 5, states called on election nigh
   expect(night.calls[0]!.regionId).toBe("ga"); // polls close first in the East
   expect(sawCall || night.calls.length === 51).toBe(true);
 });
+
+test("the US setup lines up: the create button sits level with the candidate box", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-solo").click();
+  await page.getByTestId("map-us").click();
+  await expect(page.getByTestId("add-seat")).toContainText("Add a computer candidate");
+  const select = await page.getByLabel("Player 1 leader").boundingBox();
+  const button = await page.getByTestId("create-candidate-you").boundingBox();
+  expect(Math.abs(select!.y + select!.height - (button!.y + button!.height))).toBeLessThanOrEqual(2);
+});
