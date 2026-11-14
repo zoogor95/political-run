@@ -2,7 +2,9 @@ import {
   canPick,
   controllers,
   eligibleWallets,
+  groupCampaignCost,
   groupModifier,
+  incomeMultiplier,
   luckWeights,
   majority,
   meterOf,
@@ -10,6 +12,7 @@ import {
   personality,
   pickPool,
   projectedSeats,
+  regionLeader,
   regionSeats,
   stepCost,
   STRATEGIES,
@@ -672,6 +675,11 @@ function MembersPanel({ game }: { game: GameApi }) {
   );
 }
 
+/**
+ * Groups (design: State groups): one row per group, edged in the colour of whoever controls it, with your group money
+ * (green) or the controller's name. A region group lights up on the board with its detail card; a national group opens
+ * its own meter.
+ */
 export function GroupsPanel({
   game,
   onOpen,
@@ -692,42 +700,142 @@ export function GroupsPanel({
     const owner = ctrl[id];
     const national = g.kind === "national";
     const on = focus === id;
-    // A region group lights up its regions on the board; a national group opens its own meter.
+    const wallet = you.wallets[id] ?? 0;
     const open = () => (national ? onOpen(id) : onFocus(on ? null : id));
     return (
-      <tr key={id} onClick={open} className={`link${on ? " on" : ""}`} aria-selected={on} data-testid={`group-row-${id}`}>
-        <td>
-          {owner ? <Chip color={partyColor(state, owner)} /> : <Chip color="#ffffff" />}
-          {g.name}
-          {!national && <small className="muted"> · {g.regions.length} {g.regions.length === 1 ? "region" : "regions"}</small>}
-        </td>
-        <td>{money(g.income)}</td>
-        <td>{pct(groupModifier(pack, you, id))}</td>
-        <td>{money(you.wallets[id] ?? 0)}</td>
-      </tr>
+      <li key={id}>
+        <button
+          type="button"
+          className={`group-row${on ? " on" : ""}`}
+          style={{ borderLeftColor: owner ? partyColor(state, owner) : "#c8c2d3" }}
+          aria-pressed={on}
+          onClick={open}
+          data-testid={`group-row-${id}`}
+        >
+          <span className="group-row-name">
+            {g.name}
+            <small>
+              {national ? "National" : `${g.regions.length} ${presidential() ? (g.regions.length === 1 ? "state" : "states") : g.regions.length === 1 ? "region" : "regions"}`} · {money(g.income)} a turn
+            </small>
+          </span>
+          {wallet > 0 ? (
+            <span className="group-badge money" title="Group money you can spend">
+              {money(wallet)}
+            </span>
+          ) : owner ? (
+            <span className="group-badge owner" style={{ color: inkOn(partyColor(state, owner)) }}>
+              {owner === game.viewer ? (game.solo ? "You" : you.party.name) : groupLabel(playerOf(state, owner).party.name)}
+            </span>
+          ) : (
+            <span className="group-badge open">Open</span>
+          )}
+        </button>
+      </li>
     );
   };
   return (
-    <section data-testid="groups-panel">
-      <h3>Groups</h3>
-      <table className="list groups">
-        <thead>
-          <tr>
-            <th>Region groups · tap to see them on the map</th>
-            <th>Income</th>
-            <th>You</th>
-            <th>Wallet</th>
-          </tr>
-        </thead>
-        <tbody>{pack.groups.filter((g) => g.kind === "state").map((g) => row(g.id))}</tbody>
-        <thead>
-          <tr>
-            <th colSpan={4}>National groups · tap to open their meter</th>
-          </tr>
-        </thead>
-        <tbody>{pack.groups.filter((g) => g.kind === "national").map((g) => row(g.id))}</tbody>
-      </table>
-      <p className="small">A region group goes to whoever leads regions worth more than half its campaign cost; a national group to whoever leads its meter with 3+ steps. Group money is spent first, smallest wallet first.</p>
+    <section className="groups-panel" data-testid="groups-panel">
+      <h3>{presidential() ? "State groups" : "Region groups"}</h3>
+      <ul className="group-rows">{pack.groups.filter((g) => g.kind === "state").map((g) => row(g.id))}</ul>
+      <h3>National groups</h3>
+      <ul className="group-rows">{pack.groups.filter((g) => g.kind === "national").map((g) => row(g.id))}</ul>
+      <p className="small groups-key">
+        Green badges show group money you can spend. The coloured edge shows who controls each group. A region group goes to whoever leads {presidential() ? "states" : "regions"} worth more
+        than half its campaign cost; a national group to whoever leads its meter with 3+ steps.
+      </p>
+    </section>
+  );
+}
+
+/** A party colour dark enough to read as text on white. */
+const inkOn = (color: string) => `color-mix(in srgb, ${color} 65%, #2b2440)`;
+const groupLabel = (name: string) => name.trim().split(/\s+/).slice(0, presidential() ? 2 : 1).join(" ");
+
+/**
+ * The picked region group, over the board (design: State groups): its income, what your bonus or penalty makes of it,
+ * each party's share of the group's campaign cost against the half needed, what it takes to win it, and who holds it.
+ */
+export function GroupDetail({ game, groupId, onClose }: { game: GameApi; groupId: string; onClose: () => void }) {
+  const { state } = game;
+  const g = pack.groups.find((x) => x.id === groupId)!;
+  const you = playerOf(state, game.viewer);
+  const total = groupCampaignCost(pack, g);
+  const led: Record<string, number> = {};
+  const open: string[] = [];
+  for (const r of pack.regions) {
+    if (!g.regions.includes(r.id)) continue;
+    const leader = regionLeader(state, r.id);
+    if (leader === null) open.push(r.name);
+    else led[leader] = (led[leader] ?? 0) + r.baseCost;
+  }
+  const owner = controllers(pack, state)[groupId] ?? null;
+  const order = Object.entries(led).sort((a, b) => b[1] - a[1]);
+  const nobody = total - order.reduce((a, [, n]) => a + n, 0);
+  const mod = groupModifier(pack, you, groupId);
+  const yours = Math.round(g.income * incomeMultiplier(pack, you, groupId));
+  const mine = led[game.viewer] ?? 0;
+  const need = Math.max(0, Math.floor(total / 2) + 1 - mine);
+  const share = (n: number) => (total ? (100 * n) / total : 0);
+  const label = (id: string) => (id === game.viewer ? (game.solo ? "You" : groupLabel(you.party.name)) : groupLabel(playerOf(state, id).party.name));
+  const where = presidential() ? "states" : "regions";
+  return (
+    <section className="group-detail" data-testid="group-detail" aria-label={`${g.name} group`}>
+      <div className="group-detail-head">
+        <h3>{g.name}</h3>
+        <span>
+          {g.regions.length} {g.regions.length === 1 ? where.slice(0, -1) : where} · {money(g.income)} a turn to the controller
+        </span>
+        {mod !== 0 && (
+          <span className={mod > 0 ? "good" : "bad"}>
+            Your {mod > 0 ? "bonus" : "penalty"} {pct(mod)}: you'd get {money(yours)}
+          </span>
+        )}
+      </div>
+      <div className="group-detail-bar">
+        <div className="group-detail-labels">
+          <span>SHARE OF THE GROUP'S CAMPAIGN COST</span>
+          <span>MORE THAN 50% CONTROLS IT</span>
+        </div>
+        <div className="group-share" role="img" aria-label={`Share of ${g.name}'s campaign cost: ${order.map(([id, n]) => `${label(id)} ${Math.round(share(n))}%`).join(", ") || "nobody leads anywhere"}`}>
+          {order.map(([id, n]) => {
+            const c = partyColor(state, id);
+            return (
+              <div key={id} style={{ width: `${share(n)}%`, background: c, color: textOn(c) }}>
+                {share(n) >= 14 ? `${label(id)} ${Math.round(share(n))}%` : share(n) >= 6 ? `${Math.round(share(n))}%` : ""}
+              </div>
+            );
+          })}
+          {nobody > 0 && <div className="nobody">{share(nobody) >= 18 ? `Nobody leads ${Math.round(share(nobody))}%` : ""}</div>}
+          <em />
+        </div>
+        <span className="group-detail-hint">
+          {owner === game.viewer
+            ? `You control it: ${money(yours)} a turn goes into your ${g.name} money.`
+            : `To take control: lead in ${where} worth ${money(need)} more of the group's cost.`}
+          {open.length > 0 && ` ${open.slice(0, 2).join(" and ")}${open.length > 2 ? ` and ${open.length - 2} more` : ""} ${open.length === 1 ? "is" : "are"} still open.`}
+        </span>
+      </div>
+      <div className="group-detail-owner">
+        {owner ? (
+          <span className="leader-initials" style={{ background: `color-mix(in srgb, ${partyColor(state, owner)} 22%, #fff)`, borderColor: partyColor(state, owner) }} aria-hidden="true">
+            {candidateName(playerOf(state, owner).leaderId)
+              .split(/\s+/)
+              .filter((w) => /^[A-Z]/.test(w))
+              .map((w) => w[0])
+              .slice(0, 2)
+              .join("")}
+          </span>
+        ) : (
+          <span className="leader-initials open" aria-hidden="true">
+            ?
+          </span>
+        )}
+        <small>{owner ? label(owner).toUpperCase() : "NOBODY YET"}</small>
+        <small className="muted">CONTROLLER</small>
+      </div>
+      <button type="button" className="group-detail-close" onClick={onClose} aria-label={`Close ${g.name}`}>
+        ✕
+      </button>
     </section>
   );
 }
