@@ -6213,3 +6213,53 @@
   background: #df4338;
   color: #fff;
 }
+
+/* Watching: the bar under the top bar, with auto-play. */
+.banner.watch-bar {
+  background: #2b2440;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.watch-bar .check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: 900;
+}
+
+.watch-bar input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+}
+
+.watch-note {
+  margin: 0;
+  font-weight: 800;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.online-banner .watchers {
+  font-weight: 800;
+  opacity: 0.9;
+}
+
+.night-end [data-testid="night-watch"] {
+  align-self: flex-end;
+  font: 900 15px "Nunito", sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--ink);
+  padding: 8px 16px;
+  cursor: pointer;
+}

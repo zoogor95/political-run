@@ -314,6 +314,8 @@ export function SetupScreen({
   // The creator opens over the setup screen, so the table being set up stays as it is.
   const [creating, setCreating] = useState<{ seatId: string; edit?: CustomCandidate | undefined } | null>(null);
   const [unlocking, setUnlocking] = useState<string | null>(null);
+  // Solo: watch the computers play every seat, yours included.
+  const [watchOnly, setWatchOnly] = useState(false);
   // The seat whose candidate (or leader) is being chosen on the Choose your candidate screen.
   const [choosing, setChoosing] = useState<string | null>(null);
   const issues = checkConfig(config);
@@ -389,7 +391,9 @@ export function SetupScreen({
   const title = `${mode === "solo" ? "Solo campaign" : mode === "online" ? "Play with friends" : "Pass and play"} · ${presidential ? "Presidential" : "Parliamentary"}`;
   const start = () => {
     setStartError("");
-    const out = onStart({ ...config, customs: customs.filter((c) => config.seats.some((s) => s.leaderId === c.id)) });
+    // Just watch: your seat is played by the computer (Normal) too, and you watch the whole match.
+    const seats = watchOnly ? config.seats.map((s) => (s.kind === "human" ? { ...s, kind: "ai" as const, level: "normal" as const } : s)) : config.seats;
+    const out = onStart({ ...config, seats, customs: customs.filter((c) => config.seats.some((s) => s.leaderId === c.id)) });
     if (out) {
       setStarting(true);
       out.catch((e: unknown) => setStartError(e instanceof Error ? e.message : "Couldn't open the lobby.")).finally(() => setStarting(false));
@@ -516,6 +520,15 @@ export function SetupScreen({
                   ))}
                 </select>
                 <small className="muted">Run out of time and you sit the turn out; after 3 missed turns in a row the computer plays for you until you're back.</small>
+              </label>
+            )}
+            {mode === "solo" && (
+              <label className="check luck-option">
+                <input type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} data-testid="setup-watch" />
+                <span>
+                  <b>Just watch</b>
+                  <small className="muted"> The computer plays your seat too, and you watch the whole match play out.</small>
+                </span>
               </label>
             )}
             {!presidential && (

@@ -150,7 +150,7 @@ export function TopBar({ game, onMenu, onSettings, onResign }: { game: GameApi; 
           data-testid="submit"
           title={game.online?.waitingFor.length ? `Waiting for ${game.online.waitingFor.map(game.label).join(", ")}` : undefined}
         >
-          {!game.online ? "Submit turn" : game.online.spectating ? "Watching" : !game.online.connected ? "Reconnecting…" : game.online.sent ? "Waiting…" : "Submit turn"}
+          {game.watching && !game.online ? "Next turn" : !game.online ? "Submit turn" : game.online.spectating ? "Watching" : !game.online.connected ? "Reconnecting…" : game.online.sent ? "Waiting…" : "Submit turn"}
         </button>
       )}
     </header>
@@ -908,7 +908,7 @@ export function LeadersCard({ game, highlight, onHighlight }: { game: GameApi; h
           const c = candidate(p.leaderId);
           const custom = c && "custom" in c ? (c as CustomCandidate) : null;
           const level = game.levelOf(p.id);
-          const mine = p.id === game.viewer;
+          const mine = p.id === game.viewer && !game.watching;
           const who = mine ? `${game.solo ? "YOU" : "PLAYING"} · ${p.party.name}` : `${p.party.name} · ${level ? `AI ${LEVEL_NAME[level]}` : "PERSON"}`;
           return (
             <li key={p.id} className={`${mine ? "you" : ""}${highlight === p.id ? " on" : ""}${p.eliminated !== undefined ? " out" : ""}`}>
@@ -939,7 +939,7 @@ export function LeadersCard({ game, highlight, onHighlight }: { game: GameApi; h
           );
         })}
       </ul>
-      {you && (
+      {you && !game.watching && (
         <div className="leaders-money">
           <span>Your money</span>
           <b>{money(totalMoney(you))}</b>

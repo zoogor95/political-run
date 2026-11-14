@@ -5,7 +5,7 @@ import { askToNotify, canNotify, notificationsOn, nudge } from "./notify";
 import { candidateName, map, MAPS, isMapId, selectMap } from "./model";
 import { EmblemIcon } from "./Menu";
 import { COLORS, EMBLEMS, EMBLEM_NAME } from "./setup";
-import { inviteLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
+import { inviteLink, watchLink, myMatches, normalizeInvite, type MatchLink, type MatchSummary, type RoomView } from "./online";
 
 /** Re-renders whenever the link changes (a new view, the connection, an error). */
 export function useLink(link: MatchLink | null): MatchLink | null {
@@ -14,13 +14,13 @@ export function useLink(link: MatchLink | null): MatchLink | null {
   return link;
 }
 
-export function OnlineHub({ onBack, onCreate, onJoin }: { onBack: () => void; onCreate: () => void; onJoin: (code: string) => void }) {
+export function OnlineHub({ onBack, onCreate, onJoin, onWatch }: { onBack: () => void; onCreate: () => void; onJoin: (code: string) => void; onWatch: (code: string) => void }) {
   const [typed, setTyped] = useState("");
   const [error, setError] = useState("");
-  const join = () => {
+  const join = (watch = false) => {
     const code = normalizeInvite(typed);
     if (!code) return setError("Invite codes are 6 letters and numbers, like K7Q2MX.");
-    onJoin(code);
+    (watch ? onWatch : onJoin)(code);
   };
   return (
     <main className="setup online" data-testid="online-hub">
@@ -41,7 +41,7 @@ export function OnlineHub({ onBack, onCreate, onJoin }: { onBack: () => void; on
         </div>
       </section>
       <section className="backup">
-        <h2>Join a friend</h2>
+        <h2>Join or watch a friend's match</h2>
         <form
           className="backup-restore"
           onSubmit={(e) => {
@@ -56,6 +56,9 @@ export function OnlineHub({ onBack, onCreate, onJoin }: { onBack: () => void; on
           <div className="backup-actions">
             <button type="submit" className="primary" disabled={!typed.trim()} data-testid="join-go">
               Join
+            </button>
+            <button type="button" disabled={!typed.trim()} onClick={() => join(true)} data-testid="watch-go">
+              Watch
             </button>
           </div>
         </form>
@@ -109,8 +112,8 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (view) selectMap(view.setup.map, view.setup.customs ?? []);
-    if (view && view.status !== "lobby" && view.you) {
-      if (view.status === "active") nudge("The match has started. Your move!");
+    if (view && view.status !== "lobby" && (view.you || link.watching)) {
+      if (view.status === "active" && view.you) nudge("The match has started. Your move!");
       onPlay(view);
     }
   }, [view, onPlay]);
@@ -156,6 +159,10 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
           <a href={inviteLink(link.code)} data-testid="invite-link">
             {inviteLink(link.code)}
           </a>
+          . Anyone can watch without a seat with the Watch button, or this link:{" "}
+          <a href={watchLink(link.code)} data-testid="watch-link">
+            {watchLink(link.code)}
+          </a>
         </p>
         <div className="backup-actions">
           <button type="button" onClick={() => void copy()}>
@@ -187,6 +194,16 @@ export function LobbyScreen({ link: raw, onBack, onPlay }: { link: MatchLink; on
               </li>
             ))}
           </ul>
+          {(view.watchers ?? []).length > 0 && (
+            <p className="small lobby-watchers" data-testid="lobby-watchers">
+              Watching: {view.watchers!.join(", ")}
+            </p>
+          )}
+          {link.watching && !view.you && (
+            <p className="small" data-testid="lobby-watching">
+              You're watching this match. You'll see every turn as it happens once the host starts, but you can't plan.
+            </p>
+          )}
           {view.you && <LobbyParty link={link} view={view} />}
           {view.youHost ? (
             <button type="button" className="primary start" disabled={open > 0 || notReady > 0 || link.status !== "open"} onClick={() => (link.clearError(), link.start())} data-testid="lobby-start">

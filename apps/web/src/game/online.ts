@@ -29,6 +29,8 @@ export interface RoomView {
   autopilot: string[];
   /** Seats whose person resigned (the computer plays them to the end). Absent from older servers. */
   resigned?: string[];
+  /** Names of the people watching without a seat. Absent from older servers. */
+  watchers?: string[];
   /** The server's clock when it sent this. */
   now: number;
 }
@@ -133,7 +135,11 @@ export class MatchLink {
   /** Turns that arrived with nobody listening yet (between the lobby and the play screen). */
   private pending: TurnLog[] = [];
 
-  constructor(readonly code: string) {
+  /** `watch`: connect as a spectator, seeing the match without taking a seat. */
+  constructor(
+    readonly code: string,
+    readonly watching = false,
+  ) {
     void this.connect();
   }
 
@@ -145,7 +151,7 @@ export class MatchLink {
       this.fail(e instanceof Error ? e.message : "Couldn't sign in.");
       return;
     }
-    const url = `${API_URL.replace(/^http/, "ws")}/api/matches/${this.code}/ws`;
+    const url = `${API_URL.replace(/^http/, "ws")}/api/matches/${this.code}/ws${this.watching ? "?watch=1" : ""}`;
     const ws = new WebSocket(url, ["mm.v1", `auth.${sessionToken()}`]);
     this.ws = ws;
     ws.onopen = () => {
@@ -239,4 +245,12 @@ export class MatchLink {
     this.ws?.close(1000, "bye");
     this.set({ status: "closed" });
   }
+}
+
+/** A link for watching a match without a seat (?watch=CODE). */
+export function watchLink(code: string): string {
+  const url = new URL(location.href);
+  url.search = `?watch=${code}`;
+  url.hash = "";
+  return url.toString();
 }

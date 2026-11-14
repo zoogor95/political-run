@@ -4,13 +4,16 @@
  */
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
-import { join, leave, newRoom, packFor, pick, resign, RoomError, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
+import { join, leave, newRoom, packFor, pick, resign, RoomError, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
 
 /** A plan is small; anything bigger than this isn't one. */
 const MAX_MESSAGE = 32_000;
 
 interface Attachment {
   accountId: string;
+  /** Connected to watch (a spectator): never takes a seat. */
+  watch?: boolean;
+  name?: string;
 }
 
 export class MatchRoom extends DurableObject<Env> {
@@ -58,7 +61,19 @@ export class MatchRoom extends DurableObject<Env> {
 
   /** Each device's own view of the room. */
   private broadcastViews(room: RoomData) {
-    for (const ws of this.ctx.getWebSockets()) this.send(ws, view(room, (ws.deserializeAttachment() as Attachment).accountId));
+    const watching = this.watchers(room);
+    for (const ws of this.ctx.getWebSockets()) this.send(ws, view(room, (ws.deserializeAttachment() as Attachment).accountId, Date.now(), watching));
+  }
+
+  /** The names of the spectators connected now: watching sockets whose account has no seat, each person once. */
+  private watchers(room: RoomData, leaving?: WebSocket): string[] {
+    const names = new Map<string, string>();
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws === leaving) continue;
+      const a = ws.deserializeAttachment() as Attachment;
+      if (a.watch && !seated(room, a.accountId)) names.set(a.accountId, a.name ?? "Someone");
+    }
+    return [...names.values()];
   }
 
   override async fetch(req: Request): Promise<Response> {
@@ -73,17 +88,21 @@ export class MatchRoom extends DurableObject<Env> {
       const room = await this.load();
       const accountId = req.headers.get("x-account-id")!;
       const name = req.headers.get("x-account-name") ?? "Player";
+      const watch = url.searchParams.get("watch") === "1";
       const pair = new WebSocketPair();
       const [client, server] = [pair[0], pair[1]];
       this.ctx.acceptWebSocket(server, [accountId]);
-      server.serializeAttachment({ accountId } satisfies Attachment);
+      server.serializeAttachment({ accountId, ...(watch ? { watch: true, name } : {}) } satisfies Attachment);
       if (!room) {
         this.send(server, { type: "error", message: "No match has that invite code." });
         server.close(4404, "no match");
       } else {
         try {
-          join(room, accountId, name);
-          await this.save();
+          // A spectator watches without a seat (someone already seated keeps theirs and plays as usual).
+          if (!watch || seated(room, accountId)) {
+            join(room, accountId, name);
+            await this.save();
+          }
           this.broadcastViews(room);
         } catch (e) {
           this.send(server, { type: "error", message: e instanceof RoomError ? e.message : "Couldn't join the match." });
@@ -136,7 +155,7 @@ export class MatchRoom extends DurableObject<Env> {
         this.broadcastViews(room);
         ws.close(1000, "left");
       } else if (msg.type === "sync") {
-        this.send(ws, view(room, accountId));
+        this.send(ws, view(room, accountId, Date.now(), this.watchers(room)));
       }
     } catch (e) {
       if (!(e instanceof RoomError)) console.error(e);
@@ -149,6 +168,14 @@ export class MatchRoom extends DurableObject<Env> {
       ws.close(code === 1005 ? 1000 : code, "closed");
     } catch {
       // Already closed.
+    }
+    // A spectator leaving: everyone's list of who's watching updates.
+    if ((ws.deserializeAttachment() as Attachment).watch) {
+      const room = await this.load();
+      if (room) {
+        const watching = this.watchers(room, ws);
+        for (const s of this.ctx.getWebSockets()) if (s !== ws) this.send(s, view(room, (s.deserializeAttachment() as Attachment).accountId, Date.now(), watching));
+      }
     }
   }
 

@@ -93,6 +93,10 @@ export interface OnlineInfo {
   deadline: number | null;
   /** Seats the computer is playing for after missed turns. */
   autopilot: string[];
+  /** Names of the people watching without a seat. */
+  watchers: string[];
+  /** This device is a spectator, with no seat at the table. */
+  seatless: boolean;
   /** Turns missed in a row, by seat. */
   missed: Record<string, number>;
 }
@@ -133,7 +137,8 @@ export interface GameApi {
   /** Pass and play: the next player has the device and is ready to plan. */
   ready(): void;
   endRecap(): void;
-  endElection(): void;
+  /** `watch`: every person here is out of the race, and they'd like to watch the computers play on turn by turn. */
+  endElection(watch?: boolean): void;
   backToPlanning(): void;
   showSummary(): void;
   restart(level?: AiLevel): void;
@@ -141,8 +146,13 @@ export interface GameApi {
   canResign: boolean;
   /** Seats whose person resigned. */
   resignedSeats: string[];
-  /** The player on screen resigns: the computer (Normal) plays their party for the rest of the match. */
-  resign(): void;
+  /** The player on screen resigns: the computer (Normal) plays their party for the rest of the match. With `watch`, when
+   * nobody else is left planning, the match goes on turn by turn to watch instead of jumping to the result. */
+  resign(watch?: boolean): void;
+  /** Nobody on this device is planning: a spectator online, or everyone here resigned, is out, or it's computers only. */
+  watching: boolean;
+  /** Whether resigning now leaves nobody planning on this device (so it could be watched to the end). */
+  lastToResign: boolean;
 }
 
 function startState(start: GameStart, config: MatchConfig): GameState {
@@ -163,10 +173,16 @@ export function useGame(start: GameStart): GameApi {
   const [config, setConfig] = useState<MatchConfig>(() => (online ? configOf(online.view) : (save?.config ?? start.config ?? defaultConfig("solo"))));
   const [state, setState] = useState<GameState>(() => online?.view.state ?? save?.state ?? startState(start, config));
   // Online, this device plays one seat; the other people are like computer parties whose plans come from the server.
-  const humans = useMemo(() => (online ? [online.view.you!] : config.seats.filter((s) => s.kind === "human").map((s) => s.id)), [config, online]);
+  const humanSeats = useMemo(() => (online ? (online.view.you ? [online.view.you] : []) : config.seats.filter((s) => s.kind === "human").map((s) => s.id)), [config, online]);
+  // Nobody of this device's own at the table (a spectator online, or computers only): the screen follows the first party.
+  const nobody = humanSeats.length === 0;
+  const humans = useMemo(
+    () => (humanSeats.length ? humanSeats : [(online ? online.view.seats.find((s) => s.kind === "human")?.id : undefined) ?? config.seats[0]!.id]),
+    [humanSeats, online, config],
+  );
   const onlineHumans = useMemo(() => config.seats.filter((s) => s.kind === "human").map((s) => s.id), [config]);
   // The people still planning on this device: everyone at the table but those who resigned.
-  const playing = useMemo(() => (online ? humans : humans.filter((h) => !config.seats.find((s) => s.id === h)?.resigned)), [online, humans, config]);
+  const playing = useMemo(() => (online || nobody ? humanSeats : humans.filter((h) => !config.seats.find((s) => s.id === h)?.resigned)), [online, nobody, humanSeats, humans, config]);
   const [plans, setPlans] = useState<Record<string, Plan>>(() => (online?.view.yourPlan ? { [online.view.you!]: online.view.yourPlan } : (save?.plans ?? {})));
   const [submitted, setSubmitted] = useState<string[]>(() => (online?.view.yourPlan ? [online.view.you!] : (save?.submitted ?? [])));
   const [current, setCurrent] = useState<string>(() => save?.current ?? humans[0]!);
@@ -197,7 +213,7 @@ export function useGame(start: GameStart): GameApi {
 
   const plan = plans[current] ?? {};
   const issues = useMemo(() => validatePlan(pack, state, current, plan), [state, current, plan]);
-  const solo = humans.length === 1;
+  const solo = !nobody && humans.length === 1;
   const seatOf = useCallback((id: string) => config.seats.find((s) => s.id === id), [config]);
   const label = useCallback((id: string) => (solo && id === humans[0] ? "You" : playerOf(state, id).party.name), [solo, humans, state]);
   const levelOf = useCallback((id: string) => {
@@ -213,7 +229,16 @@ export function useGame(start: GameStart): GameApi {
     saveMatch({ config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng });
   }, [start.scenario, online, config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng]);
 
-  const updatePlan = useCallback((fn: (p: Plan) => Plan) => setPlans((all) => ({ ...all, [current]: fn(all[current] ?? {}) })), [current]);
+  // Watching (nobody left planning on this device): the computers plan every party, so nothing here changes a plan.
+  const watchingLocal = !online && playing.filter((h) => playerOf(state, h).eliminated === undefined).length === 0 && state.phase !== "finished";
+  const watchingOnline = Boolean(online && (!online.view.you || online.link.view?.resigned?.includes(online.view.you)));
+  const updatePlan = useCallback(
+    (fn: (p: Plan) => Plan) => {
+      if (watchingLocal || watchingOnline) return;
+      setPlans((all) => ({ ...all, [current]: fn(all[current] ?? {}) }));
+    },
+    [current, watchingLocal, watchingOnline],
+  );
 
   const setTarget = useCallback((trackId: string, target: number | null) => {
     updatePlan((p) => {
@@ -290,8 +315,9 @@ export function useGame(start: GameStart): GameApi {
         finalResult = done.result;
       }
     }
-    // Stats and achievements, for real matches only (the scripted scenarios don't count).
-    if (!start.scenario) {
+    // Stats and achievements, for real matches only (the scripted scenarios don't count), and only for matches someone
+    // here played: spectators and computers-only matches don't count.
+    if (!start.scenario && (online ? Boolean(online.view.you) : cfg.seats.some((s) => s.kind === "human"))) {
       const table: Table = {
         pack,
         // Someone who resigned doesn't win with the computer's play.
@@ -347,7 +373,7 @@ export function useGame(start: GameStart): GameApi {
   }, [online]);
   const me = online?.view.you ?? null;
   const resignedOnline = Boolean(me && online?.link.view?.resigned?.includes(me));
-  const spectating = Boolean(me && (playerOf(state, me).eliminated !== undefined || resignedOnline) && state.phase !== "finished");
+  const spectating = Boolean(online && (!me || playerOf(state, me).eliminated !== undefined || resignedOnline) && state.phase !== "finished");
   useEffect(() => {
     if (!online || queue.length === 0 || stage !== "planning") return;
     const t = queue[0]!;
@@ -408,7 +434,7 @@ export function useGame(start: GameStart): GameApi {
   // After the summary of the final turn, election night comes before planning (or the results).
   const backToPlanning = useCallback(() => setStage(election ? "election" : playing.length > 1 ? "handoff" : "planning"), [election, playing]);
   const showSummary = useCallback(() => setStage((s) => (s === "planning" ? "summary" : s)), []);
-  const endElection = useCallback(() => {
+  const endElection = useCallback((watch = false) => {
     if (!election) return;
     if (election.tie) {
       setSecondRound(true);
@@ -424,10 +450,11 @@ export function useGame(start: GameStart): GameApi {
     const out = election.result.eliminated;
     // Online, anyone still in the race keeps the campaign going (this device watches if its candidate is out).
     const left = (online ? onlineHumans : playing).filter((h) => playerOf(state, h).eliminated === undefined);
-    if (left.length > 0) {
+    // Every person here is out: watch the computers play on turn by turn, or (below) skip to the deciding count.
+    if (left.length > 0 || (watch && !online)) {
       setEliminated(out);
       setElection(null);
-      setCurrent(online ? me! : left[0]!);
+      setCurrent(online ? (me ?? humans[0]!) : (left[0] ?? humans[0]!));
       setStage(left.length > 1 ? "handoff" : "planning");
       return;
     }
@@ -479,7 +506,7 @@ export function useGame(start: GameStart): GameApi {
 
   const canResign =
     stage === "planning" && state.phase !== "finished" && !start.scenario && playerOf(state, current).eliminated === undefined && (online ? !spectating && !submitted.includes(current) : playing.includes(current));
-  const resign = useCallback(() => {
+  const resign = useCallback((watch = false) => {
     if (!canResign) return;
     if (online) {
       online.link.resign();
@@ -499,6 +526,13 @@ export function useGame(start: GameStart): GameApi {
         setCurrent(waiting[0]!);
         setStage("handoff");
       } else resolve(rest, undefined, cfg);
+      return;
+    }
+    if (watch) {
+      // Nobody is left to plan, and they'd like to watch: the computers play this turn now, and every turn after it.
+      setPlans({});
+      setSubmitted([]);
+      resolve({}, undefined, cfg);
       return;
     }
     // Nobody is left to plan: the computers play the match to the end, and the deciding count is shown.
@@ -551,6 +585,8 @@ export function useGame(start: GameStart): GameApi {
           error: online.link.error,
           deadline: online.link.deadline(),
           autopilot: online.link.view?.autopilot ?? [],
+          watchers: online.link.view?.watchers ?? [],
+          seatless: !online.view.you,
           missed: online.link.view?.missed ?? {},
         }
       : null,
@@ -566,6 +602,8 @@ export function useGame(start: GameStart): GameApi {
     restart,
     canResign,
     resign,
+    watching: watchingLocal || watchingOnline,
+    lastToResign: !online && playing.filter((h) => h !== current && playerOf(state, h).eliminated === undefined).length === 0,
     resignedSeats: online ? (online.link.view?.resigned ?? []) : config.seats.filter((s) => s.resigned).map((s) => s.id),
   };
 }

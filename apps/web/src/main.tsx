@@ -28,10 +28,12 @@ type Screen =
   | { name: "setup"; mode: Mode }
   | { name: "game"; start: GameStart; key: number };
 
-/** A shared invite link (?join=CODE) opens the lobby straight away. */
-function joinCode(): string | null {
-  const code = new URLSearchParams(location.search).get("join");
-  return code ? normalizeInvite(code) : null;
+/** A shared invite link (?join=CODE) opens the lobby straight away; a watch link (?watch=CODE) opens it to spectate. */
+function joinCode(): { code: string; watch: boolean } | null {
+  const params = new URLSearchParams(location.search);
+  const watch = params.get("watch");
+  const code = normalizeInvite(watch ?? params.get("join") ?? "");
+  return code ? { code, watch: watch !== null } : null;
 }
 
 /** Links with ?seed=, ?ai=, ?map= or ?scenario= go straight into a solo match (used by tests and shared links); &luck turns on the luck factor. */
@@ -57,20 +59,22 @@ function App() {
   const direct = directStart();
   const [screen, setScreen] = useState<Screen>(() => {
     if (direct) return { name: "game", start: direct, key: 0 };
-    const code = joinCode();
-    return code ? { name: "lobby", link: new MatchLink(code) } : { name: "menu" };
+    const link = joinCode();
+    return link ? { name: "lobby", link: new MatchLink(link.code, link.watch) } : { name: "menu" };
   });
   const toMenu = () => {
     if (screen.name === "game" && screen.start.online) screen.start.online.link.close();
-    // Drop ?join= so a reload goes to the menu, not back into the lobby.
-    if (location.search.includes("join=")) history.replaceState(null, "", location.pathname);
+    // Drop ?join= (or ?watch=) so a reload goes to the menu, not back into the lobby.
+    if (/(join|watch)=/.test(location.search)) history.replaceState(null, "", location.pathname);
     setScreen({ name: "menu" });
   };
   // While in an online match the address carries its code, so a reload rejoins it.
-  const code = screen.name === "lobby" ? screen.link.code : screen.name === "game" ? screen.start.online?.link.code : undefined;
+  const link = screen.name === "lobby" ? screen.link : screen.name === "game" ? screen.start.online?.link : undefined;
+  const code = link?.code;
+  const param = link?.watching ? "watch" : "join";
   useEffect(() => {
-    if (code && !location.search.includes(`join=${code}`)) history.replaceState(null, "", `?join=${code}`);
-  }, [code]);
+    if (code && !location.search.includes(`${param}=${code}`)) history.replaceState(null, "", `?${param}=${code}`);
+  }, [code, param]);
   const play = useCallback((link: MatchLink, view: RoomView) => {
     selectMap(view.setup.map, view.setup.customs ?? []);
     setScreen({ name: "game", start: { online: { link, view } }, key: Date.now() });
@@ -112,6 +116,7 @@ function App() {
             setScreen({ name: "setup", mode: "online" });
           }}
           onJoin={(code) => setScreen({ name: "lobby", link: new MatchLink(code) })}
+          onWatch={(code) => setScreen({ name: "lobby", link: new MatchLink(code, true) })}
         />
       )}
       {screen.name === "ongoing" && <OngoingScreen onBack={toMenu} onOpen={(code) => setScreen({ name: "lobby", link: new MatchLink(code) })} />}

@@ -129,6 +129,8 @@ export interface RoomView {
   missed: Record<string, number>;
   autopilot: string[];
   resigned: string[];
+  /** Names of the people watching without a seat (spectators), as connected right now. */
+  watchers: string[];
   /** The server's clock when this view was made, so a device can show the time left whatever its own clock says. */
   now: number;
 }
@@ -185,7 +187,7 @@ export function newRoom(code: string, matchId: string, setup: MatchSetup, host: 
 
 export const seatOf = (room: RoomData, accountId: string) => room.seats.find((s) => s.accountId === accountId) ?? null;
 
-export function view(room: RoomData, accountId: string, now = Date.now()): RoomView {
+export function view(room: RoomData, accountId: string, now = Date.now(), watchers: string[] = []): RoomView {
   const mine = seatOf(room, accountId);
   return {
     type: "room",
@@ -204,9 +206,13 @@ export function view(room: RoomData, accountId: string, now = Date.now()): RoomV
     missed: room.missed,
     autopilot: room.autopilot,
     resigned: room.resigned ?? [],
+    watchers,
     now,
   };
 }
+
+/** Whether this account has a seat at the table (spectators don't). */
+export const seated = (room: RoomData, accountId: string): boolean => Boolean(seatOf(room, accountId));
 
 /** Takes the first free person's seat; someone already seated keeps theirs (a reload or a second tab). */
 export function join(room: RoomData, accountId: string, name: string): RoomSeat {
