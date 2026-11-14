@@ -35,6 +35,17 @@ function write(p: Profile) {
   listeners.forEach((l) => l());
 }
 
+/** Replaces the whole profile, as a restore or sync does; no unlock toasts. */
+export function replaceProfile(p: Profile) {
+  write(p);
+}
+
+/** Calls back after every change to the profile. */
+export function onProfileChange(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+
 export function setProfileName(name: string) {
   write({ ...loadProfile(), name: name.slice(0, 28) });
 }

@@ -1,6 +1,7 @@
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { initAudio } from "./game/audio";
+import { startCloud } from "./game/cloud";
 import { Game } from "./game/Game";
 import { MainMenu, SettingsPanel, SetupScreen } from "./game/Menu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
@@ -85,4 +86,5 @@ function App() {
 
 initAudio();
 const lab = new URLSearchParams(location.search).has("lab");
+if (!lab) startCloud();
 createRoot(document.getElementById("root")!).render(<StrictMode>{lab ? <Lab /> : <App />}</StrictMode>);

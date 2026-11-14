@@ -5,8 +5,9 @@ compatibility_date = "2026-10-01"
 workers_dev = true
 
 [vars]
-# The game's web sites allowed to call the API; localhost is always allowed for development.
-ALLOWED_ORIGINS = ""
+# The game's web sites allowed to call the API, comma separated; localhost is always allowed for development. "*" for
+# now, while the game is played from preview pages whose address isn't fixed; list the real hosts at the public beta.
+ALLOWED_ORIGINS = "*"
 
 [[d1_databases]]
 binding = "DB"

@@ -36,7 +36,9 @@ function corsHeaders(req: Request, env: Env): Record<string, string> {
   if (!origin) return {};
   const allowed = (env.ALLOWED_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const local = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-  if (!local && !allowed.includes(origin)) return {};
+  // "*" lets any site call the API. Safe enough because sign-in is a bearer token the page holds, never a cookie a
+  // browser would attach on its own; list the game's own hosts instead once they're fixed.
+  if (!local && !allowed.includes("*") && !allowed.includes(origin)) return {};
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -165,7 +167,7 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
   // how a recovery code restores a profile after a reinstall).
   if (at("POST", "/api/accounts/device")) {
-    const b = await body<{ key?: unknown; displayName?: unknown; deviceLabel?: unknown }>(req);
+    const b = await body<{ key?: unknown; displayName?: unknown; deviceLabel?: unknown; create?: unknown }>(req);
     if (typeof b.key !== "string" || !/^[A-Za-z0-9_-]{43,128}$/.test(b.key)) throw new ApiError(400, "bad_key", "The device key must be at least 32 random bytes, base64url");
     const keyHash = await sha256(`device:${b.key}`);
     const label = optionalText(b.deviceLabel, "deviceLabel", 64);
@@ -175,6 +177,8 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       .bind(keyHash)
       .first<{ id: string }>();
     let accountId = found?.id;
+    // Restoring with a recovery code passes create: false, so a mistyped code is an error rather than a new account.
+    if (!accountId && b.create === false) throw new ApiError(404, "no_account", "No profile has that recovery code");
     const created = !accountId;
     if (!accountId) {
       accountId = uuidv7(now);

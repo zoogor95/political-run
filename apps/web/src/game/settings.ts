@@ -49,6 +49,12 @@ export function updateSettings(patch: Partial<Settings>): void {
   listeners.forEach((l) => l(current));
 }
 
+/** Calls back after every change to the settings. */
+export function onSettingsChange(l: (s: Settings) => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+
 /** Current settings, re-rendering when they change; also applies text size and motion to the page. */
 export function useSettings(): Settings {
   const [s, setS] = useState(current);
