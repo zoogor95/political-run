@@ -576,9 +576,9 @@
       "notes": {
         "rust-belt": "Carried Michigan, Wisconsin and Pennsylvania in 2016 and 2024",
         "sun-belt": "Florida resident; carried every Sun Belt swing state in 2024",
-        "old-south": "Carried every Old South state in all three of his elections",
+        "old-south": "Carried every Old South state in 2016 and 2024",
         "pacific": "Lost every Pacific Coast state except Alaska in all three elections",
-        "new-england": "Lost New England by wide margins outside Maine's 2nd district"
+        "new-england": "Lost every New England state in all three elections"
       }
     },
     {
@@ -608,7 +608,7 @@
       "notes": {
         "sun-belt": "Governor of Florida, re-elected by 19 points in 2022",
         "seniors": "Florida has one of the oldest electorates",
-        "new-england": "Finished far behind in New England primaries in 2024"
+        "new-england": "Polled in single digits in New Hampshire before leaving the 2024 race"
       }
     },
     {
@@ -669,7 +669,7 @@
         "business": -5
       },
       "notes": {
-        "mountain-west": "Dakota rancher; won western states for the Progressives in 1912",
+        "mountain-west": "Dakota rancher; a champion of Western conservation",
         "farm-belt": "Championed conservation and farmers",
         "mid-atlantic": "Governor of New York",
         "business": "The trust-buster"
@@ -704,7 +704,7 @@
         "mid-atlantic": "Senator from Delaware for 36 years",
         "rust-belt": "Born in Scranton; won Michigan, Wisconsin and Pennsylvania in 2020",
         "unions": "Union-backed throughout his career",
-        "youth": "Weaker with young voters than recent Democratic nominees"
+        "youth": "The oldest person elected president"
       }
     },
     {
@@ -721,7 +721,7 @@
         "farm-belt": "Governor of Minnesota; represented a rural farm district",
         "unions": "Former teacher and union member",
         "veterans": "24 years in the Army National Guard",
-        "sun-belt": "Little profile in the Sun Belt"
+        "sun-belt": "The 2024 ticket lost every Sun Belt swing state"
       }
     },
     {
@@ -826,7 +826,7 @@
       },
       "notes": {
         "business": "Texas businessman; founded EDS",
-        "sun-belt": "Texan; his best results outside New England came in the West and Sun Belt"
+        "sun-belt": "Texan; won 22% of his home state in 1992"
       }
     }
   ],
