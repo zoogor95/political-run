@@ -147,6 +147,12 @@ export function validatePack(pack: MapPack): PackIssue[] {
     if (t?.seatBias !== undefined && !(t.seatBias >= -2 && t.seatBias <= 2)) add(`aiTuning.${level}.seatBias`, "must be between -2 and 2");
   }
 
+  for (const [g, price] of Object.entries(pack.customPrices ?? {})) {
+    if (!groupIds.has(g)) add(`customPrices.${g}`, `unknown group "${g}"`);
+    if (!Number.isInteger(price) || price < 1) add(`customPrices.${g}`, "must be a whole number of at least 1");
+  }
+  if (pack.customRefundShare !== undefined && !(pack.customRefundShare >= 0 && pack.customRefundShare <= 0.5)) add("customRefundShare", "must be between 0 and 0.5");
+
   if (pack.customBudget !== undefined && (!Number.isInteger(pack.customBudget) || pack.customBudget < 1)) add("customBudget", "must be a whole number of at least 1");
 
   // Parliamentary computer players lead made-up parties; Presidential ones run under their candidate's real party.

@@ -13,7 +13,7 @@
 - **State groups (9):** our own sets of states from regional, economic and demographic data: New England, Mid-Atlantic, Rust Belt, Old South, Sun Belt, Farm Belt, Mountain West, Pacific Coast and Energy Belt. Every state is in at least one; some (Pennsylvania, Georgia, Arizona, Nevada, Texas, Louisiana, North Dakota, Wyoming, Alaska, New Mexico) are in two. Income: $20K + $400 per electoral vote in the group.
 - **National groups (6):** Labor unions, Small business, Seniors, Young voters, Veterans and Faith voters. Each has its own 10-step meter at $70K a step (above most states) and pays $40K to $50K.
 - **Computer players:** on this map they value group control more (`aiTuning`: group value 2.5x, so taking the lead in a state counts for its groups too); Hard expects fewer rivals to climb than on the UK and plays with more randomness (noise 0.9), which makes it clearly harder than Normal.
-- **Custom candidates:** a budget of 6 points (8 on the UK).
+- **Custom candidates:** a budget of 5 points (8 on the UK). The price formula undercharges three groups here, so the pack sets them: Mountain West 2, Energy Belt 3, Old South 3 points per 5%. A 5% penalty gives back a quarter of the group's price (half elsewhere): on a winner-takes-all map, a penalty in states you never contest costs you almost nothing, so it shouldn't buy much.
 - **Candidates:** 17 real politicians, living and historical: Republican, Democratic and Independent. Modifiers come from public record (home states, offices held, past results and exit polls), never opinion; the `notes` field gives the reason shown on the candidate card. Living candidates need the same legal review as the Pakistan pack before release.
 - **Running mate:** picked on turn 5 from every candidate except yourself and your opponents' candidates; adds 20% of their bonuses and penalties.
 - **Election night call order:** east to west by poll-closing time (Eastern time): 7pm GA, IN, KY, SC, VT, VA; 7:30 NC, OH, WV; 8pm AL, CT, DE, DC, FL, IL, ME, MD, MA, MS, MO, NH, NJ, OK, PA, RI, TN; 8:30 AR; 9pm AZ, CO, KS, LA, MI, MN, NE, NM, NY, ND, SD, TX, WI, WY; 10pm IA, MT, NV, UT; 11pm CA, ID, OR, WA; midnight HI; 1am AK.
@@ -32,5 +32,4 @@
 Still failing:
 
 - **Balanced wins 69% of its duels** (the limit is 60%). It is level with Groups and income (51%) and wins mostly against Rush and Hoard, which are weak ways to play this map. The computer players' own all-round play comes out best rather than one narrow trick, but the gate is the gate.
-- **Three custom builds win more than 1.25x:** +10% Sun Belt, +15% Energy Belt, and a build that buys +15% Sun Belt with penalties. Point prices round each group's share of the electoral votes, which leaves some big groups (Energy Belt holds Texas) cheap.
 - **Big regions wins 2.7x its share in free-for-alls** (not a gate: the limit is on duels), while it loses most duels.

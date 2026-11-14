@@ -60,29 +60,27 @@ No leader is outside the band.
 
 ## Custom candidates
 
-The strongest custom candidates a player can build within the 6-point budget, each leading a party against two or three of the map's own leaders. None should win more than 1.25×, the top of the leader band.
+The strongest custom candidates a player can build within the 5-point budget, each leading a party against two or three of the map's own leaders. None should win more than 1.25×, the top of the leader band.
 
-**Fail:** custom-max-sun-belt, custom-max-energy, custom-penalties-2 win more than 1.25×.
+**Pass:** no custom build wins more than the top of the leader band.
 
 | Build | Bonuses and penalties | Points | Matches | Wins vs even share |
 | --- | --- | ---: | ---: | ---: |
-| max-new-england | +15% New England, +5% Mid-Atlantic | 6 | 160 | 1.14× |
-| max-mid-atlantic | +10% Mid-Atlantic | 6 | 160 | 0.98× |
-| max-rust-belt | +10% Rust Belt | 6 | 160 | 0.95× |
-| max-old-south | +15% Old South | 6 | 160 | 1.24× |
-| max-sun-belt | +10% Sun Belt | 6 | 160 | 1.43× |
-| max-farm-belt | +15% Farm Belt, +5% Mid-Atlantic | 6 | 160 | 0.98× |
-| max-mountain-west | +15% Mountain West, +5% Mid-Atlantic | 6 | 160 | 1.23× |
-| max-pacific | +15% Pacific Coast | 6 | 160 | 0.71× |
-| max-energy | +15% Energy Belt | 6 | 160 | 1.61× |
-| max-unions | +10% Labor unions | 6 | 160 | 0.67× |
-| max-business | +10% Small business | 6 | 160 | 0.76× |
-| max-seniors | +10% Seniors | 6 | 160 | 0.95× |
-| max-youth | +15% Young voters | 6 | 160 | 0.71× |
-| max-veterans | +15% Veterans | 6 | 160 | 0.92× |
-| max-faith | +10% Faith voters | 6 | 160 | 0.81× |
-| penalties-1 | −15% Mid-Atlantic, +15% Rust Belt | 6 | 160 | 0.88× |
-| penalties-2 | −15% Mid-Atlantic, −15% Rust Belt, +15% Sun Belt, +5% Labor unions | 6 | 160 | 1.80× |
+| max-new-england | +15% New England, +5% Mountain West | 5 | 160 | 1.14× |
+| max-mid-atlantic | +5% Mid-Atlantic, +5% Mountain West | 5 | 160 | 0.86× |
+| max-rust-belt | +5% Rust Belt, +5% Mountain West | 5 | 160 | 0.98× |
+| max-old-south | +5% Old South, +5% Mountain West | 5 | 160 | 1.21× |
+| max-sun-belt | +5% Sun Belt, +5% Mountain West | 5 | 160 | 1.19× |
+| max-farm-belt | +15% Farm Belt, +5% Mountain West | 5 | 160 | 0.90× |
+| max-mountain-west | +10% Mountain West, +5% New England | 5 | 160 | 1.11× |
+| max-pacific | +10% Pacific Coast, +5% New England | 5 | 160 | 0.85× |
+| max-energy | +5% Energy Belt, +5% Mountain West | 5 | 160 | 1.05× |
+| max-unions | +5% Labor unions, +5% Mountain West | 5 | 160 | 0.88× |
+| max-business | +5% Small business, +5% Mountain West | 5 | 160 | 0.93× |
+| max-seniors | +5% Seniors, +5% Mountain West | 5 | 160 | 0.95× |
+| max-youth | +10% Young voters, +5% New England | 5 | 160 | 0.76× |
+| max-veterans | +10% Veterans, +5% New England | 5 | 160 | 0.93× |
+| max-faith | +5% Faith voters, +5% Mountain West | 5 | 160 | 0.74× |
 
 ## Difficulty levels
 
