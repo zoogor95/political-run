@@ -92,8 +92,15 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
         </b>
       </div>
       {game.stage !== "results" && (
-        <button type="button" className="submit" disabled={issues.length > 0 || state.phase === "finished" || game.stage !== "planning"} onClick={game.submit} data-testid="submit">
-          Submit turn
+        <button
+          type="button"
+          className="submit"
+          disabled={issues.length > 0 || state.phase === "finished" || game.stage !== "planning" || Boolean(game.online && (game.online.sent || game.online.spectating || !game.online.connected))}
+          onClick={game.submit}
+          data-testid="submit"
+          title={game.online?.waitingFor.length ? `Waiting for ${game.online.waitingFor.map(game.label).join(", ")}` : undefined}
+        >
+          {!game.online ? "Submit turn" : game.online.spectating ? "Watching" : !game.online.connected ? "Reconnecting…" : game.online.sent ? "Waiting…" : "Submit turn"}
         </button>
       )}
     </header>

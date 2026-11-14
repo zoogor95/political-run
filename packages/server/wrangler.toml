@@ -14,3 +14,12 @@ binding = "DB"
 database_name = "majority-map"
 database_id = "c7b41557-19d4-4ddb-9ed6-6284d9cd295f"
 migrations_dir = "migrations"
+
+# One Durable Object per private match (src/match.ts), stored in SQLite as the free plan requires.
+[[durable_objects.bindings]]
+name = "MATCHES"
+class_name = "MatchRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MatchRoom"]

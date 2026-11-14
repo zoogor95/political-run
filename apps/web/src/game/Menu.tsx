@@ -31,12 +31,14 @@ export function MainMenu({
   onTutorial,
   onSettings,
   onProfile,
+  onOnline,
 }: {
   onContinue: () => void;
   onNew: (mode: Mode) => void;
   onTutorial: () => void;
   onSettings: () => void;
   onProfile: () => void;
+  onOnline: () => void;
 }) {
   const save = loadMatch();
   // New players see Learn to play first; once it's done or skipped, it moves down the list.
@@ -106,6 +108,15 @@ export function MainMenu({
           Pass and play
           <small>2 to 5 players on one device</small>
         </button>
+        <button
+          type="button"
+          className="menu-big"
+          onClick={onOnline}
+          data-testid="new-online"
+        >
+          Play with friends
+          <small>A private match online, by invite code</small>
+        </button>
         {!newcomer && learn}
         <button
           type="button"
@@ -160,7 +171,8 @@ function SeatCard({
   const takenLeader = new Set(others.map((s) => s.leaderId));
   const set = (patch: Partial<Seat["party"]>) =>
     onChange({ ...seat, party: { ...seat.party, ...patch } });
-  const canToggle = mode === "hotseat";
+  // Pass and play and online seats can be people or computers; online, the host's own seat stays a person.
+  const canToggle = mode === "hotseat" || (mode === "online" && seat.id !== "you");
   const presidential = isPresidential();
   const affiliation =
     map.pack.candidates.find((c) => c.id === seat.leaderId)?.affiliation ??
@@ -192,7 +204,7 @@ function SeatCard({
                 aria-pressed={seat.kind === k}
                 onClick={() => onChange({ ...seat, kind: k })}
               >
-                {k === "human" ? "Human" : "Computer"}
+                {k === "human" ? (mode === "online" ? "Friend" : "Human") : "Computer"}
               </button>
             ))}
           </div>
@@ -360,8 +372,11 @@ export function SetupScreen({
 }: {
   mode: Mode;
   onBack: () => void;
-  onStart: (config: MatchConfig) => void;
+  /** Online, starting opens a lobby on the server: a rejection's message is shown here. */
+  onStart: (config: MatchConfig) => void | Promise<void>;
 }) {
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState("");
   const [config, setRawConfig] = useState<MatchConfig>(() =>
     defaultConfig(mode),
   );
@@ -418,7 +433,7 @@ export function SetupScreen({
         const base =
           s.kind === "ai"
             ? aiSeat(seats, i + 1, s.level)
-            : humanSeat(seats, i + 1);
+            : humanSeat(seats, i + 1, mode === "online");
         seats.push({
           ...base,
           id: s.id,
@@ -444,7 +459,7 @@ export function SetupScreen({
           party: { ...s.party, name: fresh.party.name },
         });
       } else {
-        seats.push({ ...s, leaderId: humanSeat(seats, i + 1).leaderId });
+        seats.push({ ...s, leaderId: humanSeat(seats, i + 1, mode === "online").leaderId });
       }
     });
     setConfig({ ...config, map: id, seats });
@@ -459,7 +474,7 @@ export function SetupScreen({
       next =
         seat.kind === "ai"
           ? { ...aiSeat(rest, index), id: old.id }
-          : { ...humanSeat(rest, index), id: old.id, label: `Player ${index}` };
+          : { ...humanSeat(rest, index, mode === "online"), id: old.id };
     }
     setConfig({
       ...config,
@@ -469,8 +484,8 @@ export function SetupScreen({
   const add = () => {
     const n = config.seats.length + 1;
     const seat =
-      mode === "hotseat"
-        ? { ...humanSeat(config.seats, n), id: `p${n}` }
+      mode === "hotseat" || mode === "online"
+        ? { ...humanSeat(config.seats, n, mode === "online"), id: `p${n}` }
         : aiSeat(config.seats, n);
     setConfig({ ...config, seats: [...config.seats, seat] });
   };
@@ -480,7 +495,7 @@ export function SetupScreen({
         <button type="button" onClick={onBack}>
           Back
         </button>
-        <h1>{mode === "solo" ? "Solo match" : "Pass and play"}</h1>
+        <h1>{mode === "solo" ? "Solo match" : mode === "online" ? "Play with friends" : "Pass and play"}</h1>
         <span className="muted">
           {map.name} · {mapDetail(map)}
         </span>
@@ -513,7 +528,9 @@ export function SetupScreen({
         has one, nobody else can pick it.{" "}
         {mode === "hotseat"
           ? "Players take turns on this device; each plan stays secret."
-          : ""}
+          : mode === "online"
+            ? "Set up every seat, then share the invite code: friends take the Friend seats on their own devices."
+            : ""}
       </p>
       <div className="seats">
         {config.seats.map((s, i) => (
@@ -526,7 +543,7 @@ export function SetupScreen({
             customs={customs}
             onCreate={(edit) => openCreator(s.id, edit)}
             onRemove={
-              config.seats.length > 2 && (mode === "hotseat" || i > 0)
+              config.seats.length > 2 && (mode !== "solo" ? s.id !== "you" || mode === "hotseat" : i > 0)
                 ? () =>
                     setConfig({
                       ...config,
@@ -543,7 +560,7 @@ export function SetupScreen({
             onClick={add}
             data-testid="add-seat"
           >
-            + Add a {mode === "hotseat" ? "player" : isPresidential() ? "computer candidate" : "computer party"}
+            + Add a {mode === "hotseat" ? "player" : mode === "online" ? "seat" : isPresidential() ? "computer candidate" : "computer party"}
           </button>
         )}
       </div>
@@ -573,21 +590,31 @@ export function SetupScreen({
           ))}
         </ul>
       )}
+      {startError && (
+        <p className="backup-error" role="alert">
+          {startError}
+        </p>
+      )}
       <button
         type="button"
         className="primary start"
-        disabled={issues.length > 0}
-        onClick={() =>
-          onStart({
+        disabled={issues.length > 0 || starting}
+        onClick={() => {
+          setStartError("");
+          const out = onStart({
             ...config,
             customs: customs.filter((c) =>
               config.seats.some((s) => s.leaderId === c.id),
             ),
-          })
-        }
+          });
+          if (out) {
+            setStarting(true);
+            out.catch((e: unknown) => setStartError(e instanceof Error ? e.message : "Couldn't open the lobby.")).finally(() => setStarting(false));
+          }
+        }}
         data-testid="start-match"
       >
-        Start the campaign
+        {mode === "online" ? (starting ? "Opening the lobby…" : "Open the lobby") : "Start the campaign"}
       </button>
       {unlocking && (
         <UnlockCard
