@@ -92,6 +92,7 @@ export function ElectionNightView({
   phase,
   onSkip,
   onDone,
+  onWatch,
   you,
   humans,
   speed,
@@ -102,6 +103,8 @@ export function ElectionNightView({
   phase: NightPhase;
   onSkip: () => void;
   onDone: () => void;
+  /** Every person here is out of the race: watch the computers play on, turn by turn, instead of skipping ahead. */
+  onWatch?: () => void;
   you: string | null;
   humans: string[];
   speed: 1 | 2;
@@ -220,6 +223,11 @@ export function ElectionNightView({
                 ))}
               </tbody>
             </table>
+            {youOut && onWatch && (
+              <button type="button" onClick={onWatch} data-testid="night-watch">
+                Watch it play out
+              </button>
+            )}
             <button type="button" className="primary" onClick={onDone} data-testid="night-done">
               {night.tie ? "Start the second round" : night.continues ? (youOut ? "See how the race ends" : "Continue the campaign") : "See the results"}
             </button>
