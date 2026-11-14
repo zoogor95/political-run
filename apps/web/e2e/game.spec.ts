@@ -204,7 +204,7 @@ test("after a turn: BREAKING card, region-by-region recap, then the turn summary
   await page.getByTestId("skip").click();
 
   const summary = page.getByTestId("summary");
-  await expect(summary).toContainText("Turn 1 summary");
+  await expect(summary).toContainText("End of turn 1");
   await expect(summary).toContainText("HEADLINE OF THE TURN");
   await expect(summary).toContainText("Zoogor Party (you)");
   await expect(page.getByTestId("income")).toContainText("Base");
