@@ -185,9 +185,18 @@ test("after a turn: BREAKING card, region-by-region recap, then the turn summary
     let armed = false;
     const el = document.querySelector('[data-testid="recap"]')!;
     const replay = [...el.querySelectorAll("button")].find((b) => b.textContent === "Replay")!;
-    replay.addEventListener("click", () => (armed = true), { capture: true });
+    // Pressed while the recap is already on its first region, nothing on screen changes: record the step it shows.
+    const current = () => el.textContent?.match(/(\d+) \/ \d+/)?.[1] ?? "";
+    replay.addEventListener(
+      "click",
+      () => {
+        armed = true;
+        setTimeout(() => w.__recapSteps.length === 0 && w.__recapSteps.push(current()), 0);
+      },
+      { capture: true },
+    );
     new MutationObserver(() => {
-      if (armed) w.__recapSteps.push(el.textContent?.match(/(\d+) \/ \d+/)?.[1] ?? "");
+      if (armed) w.__recapSteps.push(current());
     }).observe(el, { subtree: true, childList: true, characterData: true });
   });
   await page.getByRole("button", { name: "Replay" }).click();
