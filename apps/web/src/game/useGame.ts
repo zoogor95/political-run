@@ -3,14 +3,14 @@
  * submitting against the computer parties, the recap, the summary, election night and the results.
  * The whole match is autosaved after every change.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   createMatch,
   electionCalls,
-  finishElection,
   headlinesForTurn,
-  planAi,
-  resolveTurn,
+  planComputers,
+  playOut as playOutMatch,
+  playTurn,
   summarizeTurn,
   validatePlan,
   type AiLevel,
@@ -27,6 +27,7 @@ import { saveMatch, type SavedMatch } from "./saves";
 import { defaultConfig, playersOf, type MatchConfig } from "./setup";
 import { afterMatch, afterTurn, type Table } from "./achievements";
 import { loadProfile, record } from "./profile";
+import { configOf, type MatchLink, type RoomView, type TurnLog } from "./online";
 
 
 /** Everything about the turn just played, for the recap, the summary and the ticker. */
@@ -70,6 +71,20 @@ export interface GameStart {
   scenario?: Scenario;
   /** Resume a saved match instead of starting one. */
   save?: SavedMatch;
+  /** A private online match: the live link and the server's view when the play screen opened. */
+  online?: { link: MatchLink; view: RoomView };
+}
+
+/** Online: where this device stands in the turn. */
+export interface OnlineInfo {
+  /** This turn's plan has gone to the server. */
+  sent: boolean;
+  /** People still to send a plan this turn. */
+  waitingFor: string[];
+  /** This device's candidate is out of the race (Presidential): watching the rest. */
+  spectating: boolean;
+  connected: boolean;
+  error: string | null;
 }
 
 export interface GameApi {
@@ -99,6 +114,8 @@ export interface GameApi {
   eliminated: string | null;
   /** Difficulty of the computer parties, for the rematch picker (the first computer seat's level). */
   level: AiLevel;
+  /** Online matches only. */
+  online: OnlineInfo | null;
   setTarget(trackId: string, target: number | null): void;
   setPick(candidateId: string | null): void;
   setAssign(candidateId: string, regionId: string | null): void;
@@ -117,50 +134,29 @@ function startState(start: GameStart, config: MatchConfig): GameState {
   return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config), ...(config.luck ? { luck: true } : {}) });
 }
 
-/**
- * Presidential, once every human is out of the race: the computer candidates play on to a winner. Returns the end
- * state, the deciding result and the board at that count.
- */
-function playOut(from: GameState, levelOf: (id: string) => AiLevel | null): { state: GameState; result: ElectionResult; atCount: GameState } {
-  let s = from;
-  let rng = s.rng;
-  for (let guard = 0; guard < 400; guard++) {
-    if (s.phase === "election") {
-      const done = finishElection(pack, s);
-      if (done.state.phase === "finished") return { state: done.state, result: done.result, atCount: s };
-      s = done.state;
-      continue;
-    }
-    const plans: Record<string, Plan> = {};
-    for (const p of s.players) {
-      const r = planAi(pack, { ...s, rng }, p.id, levelOf(p.id) ?? "normal", rng);
-      rng = r.rng;
-      plans[p.id] = r.plan;
-    }
-    s = resolveTurn(pack, { ...s, rng }, plans).state;
-  }
-  const result = finishElection(pack, { ...s, phase: "election" });
-  return { state: result.state, result: result.result, atCount: s };
-}
+const levelsOf = (config: MatchConfig) => Object.fromEntries(config.seats.filter((s) => s.kind === "ai").map((s) => [s.id, s.level])) as Record<string, AiLevel>;
 
 export function useGame(start: GameStart): GameApi {
   const save = start.save;
-  const [config, setConfig] = useState<MatchConfig>(() => save?.config ?? start.config ?? defaultConfig("solo"));
-  const [state, setState] = useState<GameState>(() => save?.state ?? startState(start, config));
-  const humans = useMemo(() => config.seats.filter((s) => s.kind === "human").map((s) => s.id), [config]);
-  const [plans, setPlans] = useState<Record<string, Plan>>(() => save?.plans ?? {});
-  const [submitted, setSubmitted] = useState<string[]>(() => save?.submitted ?? []);
+  const online = start.online;
+  const [config, setConfig] = useState<MatchConfig>(() => (online ? configOf(online.view) : (save?.config ?? start.config ?? defaultConfig("solo"))));
+  const [state, setState] = useState<GameState>(() => online?.view.state ?? save?.state ?? startState(start, config));
+  // Online, this device plays one seat; the other people are like computer parties whose plans come from the server.
+  const humans = useMemo(() => (online ? [online.view.you!] : config.seats.filter((s) => s.kind === "human").map((s) => s.id)), [config, online]);
+  const onlineHumans = useMemo(() => config.seats.filter((s) => s.kind === "human").map((s) => s.id), [config]);
+  const [plans, setPlans] = useState<Record<string, Plan>>(() => (online?.view.yourPlan ? { [online.view.you!]: online.view.yourPlan } : (save?.plans ?? {})));
+  const [submitted, setSubmitted] = useState<string[]>(() => (online?.view.yourPlan ? [online.view.you!] : (save?.submitted ?? [])));
   const [current, setCurrent] = useState<string>(() => save?.current ?? humans[0]!);
   // Test scenarios start on the final turn with a prepared board; the computer parties sit that one turn out.
   const [idleAi, setIdleAi] = useState(Boolean(start.scenario));
   const [lastEvents, setLastEvents] = useState<TurnEvent[]>([]);
-  const [result, setResult] = useState<ElectionResult | null>(() => save?.result ?? null);
+  const [result, setResult] = useState<ElectionResult | null>(() => online?.view.result ?? save?.result ?? null);
   const [secondRound, setSecondRound] = useState(() => save?.secondRound ?? false);
   // Presidential: the candidate eliminated at the last count, shown while the campaign goes on.
   const [eliminated, setEliminated] = useState<string | null>(() => save?.eliminated ?? null);
   const [report, setReport] = useState<TurnReport | null>(() => save?.report ?? null);
   // Pass and play opens on the hand-off screen, so even the first player's plan starts private.
-  const [stage, setStage] = useState<Stage>(() => save?.stage ?? (config.seats.filter((x) => x.kind === "human").length > 1 ? "handoff" : "planning"));
+  const [stage, setStage] = useState<Stage>(() => (online ? "planning" : (save?.stage ?? (config.seats.filter((x) => x.kind === "human").length > 1 ? "handoff" : "planning"))));
   const [ticker, setTicker] = useState<Headline[]>(() => save?.ticker ?? openingHeadlines(state, humans[0]!));
   const [matchHeadline, setMatchHeadline] = useState<Headline | null>(() => save?.matchHeadline ?? null);
   const [election, setElection] = useState<ElectionNight | null>(() => save?.election ?? null);
@@ -180,11 +176,11 @@ export function useGame(start: GameStart): GameApi {
   }, [seatOf]);
   const level = config.seats.find((s) => s.kind === "ai")?.level ?? "normal";
 
-  // Autosave after every change. Scenarios are test boards and are never saved.
+  // Autosave after every change. Scenarios are test boards and are never saved; online matches live on the server.
   useEffect(() => {
-    if (start.scenario) return;
+    if (start.scenario || online) return;
     saveMatch({ config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng });
-  }, [start.scenario, config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng]);
+  }, [start.scenario, online, config, state, plans, submitted, current, stage, report, election, result, secondRound, eliminated, boards, summaries, ticker, matchHeadline, newsRng]);
 
   const updatePlan = useCallback((fn: (p: Plan) => Plan) => setPlans((all) => ({ ...all, [current]: fn(all[current] ?? {}) })), [current]);
 
@@ -221,33 +217,38 @@ export function useGame(start: GameStart): GameApi {
     });
   }, [updatePlan]);
 
-  const resolve = useCallback((humanPlans: Record<string, Plan>) => {
-    let rng = state.rng;
-    const all: Record<string, Plan> = { ...humanPlans };
-    for (const p of state.players) {
-      if (humans.includes(p.id)) continue;
-      if (idleAi) {
-        all[p.id] = {};
-        continue;
-      }
-      const r = planAi(pack, state, p.id, levelOf(p.id) ?? "normal", rng);
-      rng = r.rng;
-      all[p.id] = r.plan;
+  /**
+   * Plays a turn from the people's plans. On this device the computers plan here; online, `given` carries every plan
+   * and the random stream from the server, so the turn plays exactly as it did there.
+   */
+  const resolve = useCallback((humanPlans: Record<string, Plan>, given?: { plans: Record<string, Plan>; rng: number }) => {
+    let all: Record<string, Plan>;
+    let rng: number;
+    if (given) {
+      all = given.plans;
+      rng = given.rng;
+    } else if (idleAi) {
+      all = { ...Object.fromEntries(state.players.filter((p) => !humans.includes(p.id)).map((p) => [p.id, {}])), ...humanPlans };
+      rng = state.rng;
+    } else {
+      const ai = planComputers(pack, state, levelsOf(config));
+      all = { ...ai.plans, ...humanPlans };
+      rng = ai.rng;
     }
-    const resolved = resolveTurn(pack, { ...state, rng }, all);
+    const played = playTurn(pack, state, all, rng);
+    const resolved = { state: played.resolved, events: played.events };
     const events = resolved.events;
     const summary = summarizeTurn(pack, state, resolved.state, events);
-    let next = resolved.state;
+    const next = played.next;
     let tie = false;
     let finalResult: ElectionResult | null = null;
     setSecondRound(false);
     setEliminated(null);
-    if (next.phase === "election") {
-      const calls = electionCalls(pack, next);
-      const done = finishElection(pack, next);
-      const continues = !done.result.secondRound && done.state.phase !== "finished";
-      setElection({ state: next, calls, result: done.result, tie: done.result.secondRound, continues, turn: state.turn });
-      next = done.state;
+    if (played.election) {
+      const done = played.election;
+      const calls = electionCalls(pack, done.atCount);
+      const continues = !done.result.secondRound && next.phase !== "finished";
+      setElection({ state: done.atCount, calls, result: done.result, tie: done.result.secondRound, continues, turn: state.turn });
       tie = done.result.secondRound || continues;
       if (!tie) {
         setResult(done.result);
@@ -289,10 +290,64 @@ export function useGame(start: GameStart): GameApi {
     setSubmitted([]);
     setCurrent(humans.find((h) => playerOf(next, h).eliminated === undefined) ?? humans[0]!);
     setLastEvents(events);
-  }, [state, humans, idleAi, levelOf, newsRng, start.scenario, config, summaries]);
+  }, [state, humans, idleAi, newsRng, start.scenario, config, summaries]);
+
+  // Online: the turns the server has resolved, applied one at a time when this device is ready for them.
+  const [queue, setQueue] = useState<TurnLog[]>([]);
+  const applied = useRef(online?.view.turnsPlayed ?? 0);
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!online) return;
+    const offTurn = online.link.onTurn((t) => setQueue((q) => [...q, t]));
+    const offView = online.link.subscribe(bump);
+    return () => {
+      offTurn();
+      offView();
+    };
+  }, [online]);
+  const me = online?.view.you ?? null;
+  const spectating = Boolean(me && playerOf(state, me).eliminated !== undefined && state.phase !== "finished");
+  useEffect(() => {
+    if (!online || queue.length === 0 || stage !== "planning") return;
+    const t = queue[0]!;
+    setQueue((q) => q.slice(1));
+    if (t.index < applied.current) return; // already on the board (sent again after a reconnect)
+    if (t.index > applied.current) {
+      // A turn went missing (this device was away): jump to the server's board.
+      const v = online.link.view;
+      if (v?.state) {
+        applied.current = v.turnsPlayed;
+        setState(v.state);
+        setBoards((b) => [...b, v.state!]);
+        setPlans({});
+        setSubmitted([]);
+        if (v.result) setResult(v.result);
+      }
+      return;
+    }
+    applied.current = t.index + 1;
+    resolve(me ? { [me]: t.plans[me] ?? {} } : {}, { plans: t.plans, rng: t.rng });
+  }, [online, queue, stage, resolve, me]);
+  // Back from a dropped connection with turns missed and none on the way: catch up with the server's board.
+  const view = online?.link.view;
+  useEffect(() => {
+    if (!online || !view?.state || stage !== "planning" || queue.length > 0) return;
+    if (view.turnsPlayed > applied.current) {
+      applied.current = view.turnsPlayed;
+      setState(view.state);
+      setBoards((b) => [...b, view.state!]);
+      setPlans({});
+      setSubmitted([]);
+      if (view.result) setResult(view.result);
+    }
+  }, [online, view, stage, queue.length]);
 
   const submit = useCallback(() => {
     if (validatePlan(pack, state, current, plan).length > 0) return;
+    if (online) {
+      if (online.link.submit(state.turn, plan)) setSubmitted([current]);
+      return;
+    }
     const done = [...submitted, current];
     // Eliminated candidates (Presidential) don't plan any more.
     const waiting = humans.filter((h) => !done.includes(h) && playerOf(state, h).eliminated === undefined);
@@ -307,7 +362,8 @@ export function useGame(start: GameStart): GameApi {
   }, [state, current, plan, submitted, humans, plans, resolve]);
 
   const ready = useCallback(() => setStage("planning"), []);
-  const endRecap = useCallback(() => setStage("summary"), []);
+  // Only from the recap: a recap timer firing after the player already skipped ahead must not reopen the summary.
+  const endRecap = useCallback(() => setStage((s) => (s === "recap" ? "summary" : s)), []);
   // After the summary of the final turn, election night comes before planning (or the results).
   const backToPlanning = useCallback(() => setStage(election ? "election" : humans.length > 1 ? "handoff" : "planning"), [election, humans]);
   const showSummary = useCallback(() => setStage((s) => (s === "planning" ? "summary" : s)), []);
@@ -325,16 +381,17 @@ export function useGame(start: GameStart): GameApi {
     }
     // Presidential, no majority: the campaign goes on without the eliminated candidate.
     const out = election.result.eliminated;
-    const left = humans.filter((h) => playerOf(state, h).eliminated === undefined);
+    // Online, anyone still in the race keeps the campaign going (this device watches if its candidate is out).
+    const left = (online ? onlineHumans : humans).filter((h) => playerOf(state, h).eliminated === undefined);
     if (left.length > 0) {
       setEliminated(out);
       setElection(null);
-      setCurrent(left[0]!);
+      setCurrent(online ? me! : left[0]!);
       setStage(left.length > 1 ? "handoff" : "planning");
       return;
     }
     // Every human is out of the race: the computer candidates play it to the end, and the deciding count is shown.
-    const played = playOut(state, levelOf);
+    const played = playOutMatch(pack, state, levelOf);
     if (!start.scenario) {
       const table: Table = {
         pack,
@@ -352,9 +409,10 @@ export function useGame(start: GameStart): GameApi {
     setElection({ state: played.atCount, calls: electionCalls(pack, played.atCount), result: played.result, tie: false, continues: false, turn: played.atCount.turn - 1 });
     setBoards((b) => [...b, played.atCount]);
     setStage("election");
-  }, [election, humans, state, levelOf, start.scenario, config, summaries]);
+  }, [election, humans, onlineHumans, online, me, state, levelOf, start.scenario, config, summaries]);
 
   const restart = useCallback((next?: AiLevel) => {
+    if (online) return; // a rematch online is a new lobby
     const nextConfig: MatchConfig = next ? { ...config, seats: config.seats.map((s) => (s.kind === "ai" ? { ...s, level: next } : s)) } : config;
     const fresh = createMatch(pack, { seed: Date.now() % 1_000_000, players: playersOf(nextConfig), ...(nextConfig.luck ? { luck: true } : {}) });
     setConfig(nextConfig);
@@ -374,7 +432,7 @@ export function useGame(start: GameStart): GameApi {
     setBoards([fresh]);
     setSummaries([]);
     setIdleAi(false);
-  }, [config, humans]);
+  }, [config, humans, online]);
 
   const viewer = stage === "planning" || stage === "handoff" ? current : humans[0]!;
 
@@ -400,6 +458,16 @@ export function useGame(start: GameStart): GameApi {
     secondRound,
     eliminated,
     level,
+    online: online
+      ? {
+          // The server's word counts too: a plan it holds for this turn has been sent, whatever this screen remembers.
+          sent: submitted.includes(current) || Boolean(online.link.view?.yourPlan && online.link.view.turnsPlayed === applied.current && online.link.view.state?.turn === state.turn),
+          waitingFor: online.link.view ? onlineHumans.filter((h) => playerOf(state, h).eliminated === undefined && !online.link.view!.submitted.includes(h) && h !== me) : [],
+          spectating,
+          connected: online.link.status === "open",
+          error: online.link.error,
+        }
+      : null,
     setTarget,
     setPick,
     setAssign,

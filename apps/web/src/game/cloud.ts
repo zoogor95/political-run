@@ -9,7 +9,25 @@ import { loadProfile, onProfileChange, replaceProfile } from "./profile";
 import { keyForCode, mergeProfile, newRecoveryCode, normalizeCode, type Remote } from "./recovery";
 import { getSettings, onSettingsChange, updateSettings, type Settings } from "./settings";
 
-export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? "https://majority-map-api.muhammademadk.workers.dev";
+/** Tests point the game at a local server by setting mm.apiUrl to a localhost address. */
+function localOverride(): string | null {
+  try {
+    const v = localStorage.getItem("mm.apiUrl");
+    return v && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export const API_URL: string = localOverride() ?? (import.meta.env.VITE_API_URL as string | undefined) ?? "https://majority-map-api.muhammademadk.workers.dev";
+
+/** The session token while backup is on (online play signs in with the same profile). */
+export const sessionToken = (): string | null => saved?.token ?? null;
+
+/** The online profile online play needs: backup is turned on first if it's off. */
+export async function ensureAccount(): Promise<void> {
+  if (!saved) await backUp();
+}
 
 const KEY = "mm.cloud.v1";
 /** How long after a change the backup is sent, so a burst of changes goes up once. */

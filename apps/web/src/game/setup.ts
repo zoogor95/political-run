@@ -3,7 +3,8 @@ import type { AiLevel, PlayerSetup } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
 import { map, type MapId } from "./model";
 
-export type Mode = "solo" | "hotseat";
+/** "online" is a private match with friends on their own devices. */
+export type Mode = "solo" | "hotseat" | "online";
 
 export interface Seat {
   id: string;
@@ -105,15 +106,15 @@ export function aiSeat(seats: Seat[], index: number, level: AiLevel = "normal"):
   };
 }
 
-export function humanSeat(seats: Seat[], index: number): Seat {
+export function humanSeat(seats: Seat[], index: number, online = false): Seat {
   const first = index === 1;
   return {
     id: first ? "you" : `p${index}`,
     kind: "human",
-    label: `Player ${index}`,
+    label: first && online ? "You" : online ? `Friend ${index - 1}` : `Player ${index}`,
     level: "normal",
     party: {
-      name: first ? "Zoogor Party" : `Player ${index} Party`,
+      name: first ? "Zoogor Party" : online ? `Friend ${index - 1} Party` : `Player ${index} Party`,
       color: firstFree(COLORS.map((c) => c.hex), seats.map((s) => s.party.color)),
       emblem: firstFree(EMBLEMS, seats.map((s) => s.party.emblem)),
     },
@@ -122,13 +123,13 @@ export function humanSeat(seats: Seat[], index: number): Seat {
 }
 
 /**
- * The default table on the selected map: solo is you against two Normal computer parties; pass and play starts with
- * two people and one computer.
+ * The default table on the selected map: solo is you against two Normal computer parties; pass and play and online
+ * start with two people and one computer.
  */
 export function defaultConfig(mode: Mode, level: AiLevel = "normal"): MatchConfig {
   const seats: Seat[] = [];
-  seats.push(humanSeat(seats, 1));
-  if (mode === "hotseat") seats.push(humanSeat(seats, 2));
+  seats.push(humanSeat(seats, 1, mode === "online"));
+  if (mode !== "solo") seats.push(humanSeat(seats, 2, mode === "online"));
   while (seats.length < 3) seats.push(aiSeat(seats, seats.length, level));
   return { mode, map: map.id, seats: isPresidential() ? withCandidateParties(seats) : seats };
 }
@@ -145,6 +146,7 @@ export function checkConfig(config: MatchConfig): ConfigIssue[] {
   if (config.seats.length < 2 || config.seats.length > 5) issues.push({ message: "A match needs 2 to 5 seats." });
   if (config.mode === "solo" && humans !== 1) issues.push({ message: "A solo match has exactly one human player." });
   if (config.mode === "hotseat" && humans < 2) issues.push({ message: "Pass and play needs at least two human players." });
+  if (config.mode === "online" && humans < 2) issues.push({ message: "Leave at least one seat for a friend." });
   const dupe = (key: (s: Seat) => string, what: string) => {
     const seen = new Map<string, string>();
     for (const s of config.seats) {

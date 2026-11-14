@@ -5,11 +5,14 @@
  * are stored (design document, Database tab).
  */
 import { randomToken, sha256, uuidv7 } from "./crypto.js";
+import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
 
 export interface Env {
   DB: D1Database;
   /** Comma-separated web origins allowed to call the API (the game's sites). Localhost is always allowed. */
   ALLOWED_ORIGINS?: string;
+  /** One Durable Object per private match, named by its invite code (match.ts). */
+  MATCHES?: DurableObjectNamespace;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -109,7 +112,8 @@ async function newSession(env: Env, accountId: string, deviceLabel: string | nul
 
 /** The signed-in account for a request, or a 401. Keeps the session alive and records when the player was last seen. */
 async function authed(req: Request, env: Env, now: number): Promise<{ accountId: string; sessionId: string }> {
-  const m = /^Bearer\s+(\S+)$/.exec(req.headers.get("authorization") ?? "");
+  // Browsers can't set headers on a WebSocket, so a match socket carries the token as a subprotocol: "mm.v1, auth.<token>".
+  const m = /^Bearer\s+(\S+)$/.exec(req.headers.get("authorization") ?? "") ?? /(?:^|,)\s*auth\.([A-Za-z0-9_-]+)/.exec(req.headers.get("sec-websocket-protocol") ?? "");
   if (!m) throw new ApiError(401, "signed_out", "Sign in first");
   const row = await env.DB.prepare(
     "SELECT s.id, s.account_id, s.expires_at FROM sessions s JOIN accounts a ON a.id = s.account_id WHERE s.token_hash = ? AND s.revoked_at IS NULL AND a.status = 'active'",
@@ -143,12 +147,21 @@ async function profile(env: Env, accountId: string) {
   };
 }
 
+/** Six characters from Crockford's base 32 (no I, L, O or U): easy to read out to a friend. */
+const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+export function inviteCode(): string {
+  const b = new Uint8Array(6);
+  crypto.getRandomValues(b);
+  return Array.from(b, (x) => CODE_ALPHABET[x & 31]).join("");
+}
+
 /** Routes one request. `now` is passed in so tests can control time. */
 export async function handle(req: Request, env: Env, now = Date.now()): Promise<Response> {
   const cors = corsHeaders(req, env);
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   try {
     const res = await route(req, env, now);
+    if (res.status === 101) return res; // a match socket: CORS doesn't apply
     for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
     return res;
   } catch (e) {
@@ -163,6 +176,53 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
   const at = (method: string, path: string) => req.method === method && pathname === path;
 
   if (at("GET", "/api/health")) return json({ ok: true });
+
+  // Private matches: the host opens a lobby from a setup and gets an invite code; friends join it over a WebSocket.
+  if (at("POST", "/api/matches")) {
+    const { accountId } = await authed(req, env, now);
+    if (!env.MATCHES) throw new ApiError(503, "no_matches", "Online matches aren't available here");
+    const b = await body<{ setup?: MatchSetup }>(req);
+    try {
+      checkSetup(b.setup!);
+    } catch (e) {
+      throw new ApiError(400, "bad_setup", e instanceof RoomError ? e.message : "That setup can't start");
+    }
+    const setup = b.setup!;
+    const name = (await env.DB.prepare("SELECT display_name FROM accounts WHERE id = ?").bind(accountId).first<string>("display_name")) ?? "Player";
+    const seed = Math.floor(Math.random() * 1_000_000);
+    const matchId = uuidv7(now);
+    let code = "";
+    for (let tries = 0; tries < 5 && !code; tries++) {
+      const candidate = inviteCode();
+      try {
+        await env.DB.prepare(
+          "INSERT INTO matches (id, mode, game_type, map_pack_id, content_version, engine_version, seed, status, invite_code, created_by, created_at) VALUES (?, 'private', ?, ?, ?, ?, ?, 'lobby', ?, ?, ?)",
+        )
+          .bind(matchId, PACKS[setup.map]!.gameType, setup.map, "1", "1", seed, candidate, accountId, now)
+          .run();
+        code = candidate;
+      } catch (e) {
+        if (!String(e).includes("UNIQUE")) throw e;
+      }
+    }
+    if (!code) throw new ApiError(503, "busy", "Couldn't make an invite code; try again");
+    const stub = env.MATCHES.get(env.MATCHES.idFromName(code));
+    await stub.fetch("https://room/create", { method: "POST", body: JSON.stringify({ code, matchId, setup, host: { accountId, name }, seed }) });
+    return json({ code }, 201);
+  }
+
+  const ws = /^\/api\/matches\/([0-9A-Za-z]{6})\/ws$/.exec(pathname);
+  if (ws && req.method === "GET") {
+    if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") throw new ApiError(426, "upgrade", "This is a WebSocket");
+    const { accountId } = await authed(req, env, now);
+    if (!env.MATCHES) throw new ApiError(503, "no_matches", "Online matches aren't available here");
+    const code = ws[1]!.toUpperCase();
+    const name = (await env.DB.prepare("SELECT display_name FROM accounts WHERE id = ?").bind(accountId).first<string>("display_name")) ?? "Player";
+    const headers = new Headers(req.headers);
+    headers.set("x-account-id", accountId);
+    headers.set("x-account-name", name);
+    return env.MATCHES.get(env.MATCHES.idFromName(code)).fetch(new Request("https://room/ws", { headers }));
+  }
 
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
   // how a recovery code restores a profile after a reinstall).

@@ -368,7 +368,7 @@ export function ResultsPanel({
         <input id="replay" type="range" min={0} max={lastBoard} value={replay} onChange={(e) => onReplay(Number(e.target.value))} data-testid="replay" />
       </div>
 
-      <div className="again">
+      {!game.online && <div className="again">
         <label htmlFor="level">Rematch</label>
         <select id="level" defaultValue={game.level} data-testid="level">
           {(["easy", "normal", "hard"] as const).map((l) => (
@@ -384,7 +384,7 @@ export function ResultsPanel({
         >
           Play again
         </button>
-      </div>
+      </div>}
     </section>
   );
 }

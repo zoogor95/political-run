@@ -135,6 +135,13 @@ importers:
         version: 1.0.5
 
   packages/server:
+    dependencies:
+      '@majority-map/content':
+        specifier: workspace:*
+        version: link:../content
+      '@majority-map/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 5.20261029.1

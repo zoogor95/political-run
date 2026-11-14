@@ -1859,6 +1859,50 @@
   color: #a3221d;
 }
 
+.lobby-code code {
+  font: 400 clamp(34px, 9vw, 52px) "Lilita One", sans-serif;
+  letter-spacing: 0.12em;
+}
+
+.lobby-code a {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.lobby-seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.lobby-seats li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 12px;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-left-width: 12px;
+  border-radius: 14px;
+  padding: 8px 12px;
+}
+
+.lobby-seats small {
+  grid-column: 1;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.lobby-seats span {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-weight: 800;
+  text-align: right;
+}
+
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(190px, 40%), 1fr));

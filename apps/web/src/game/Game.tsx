@@ -220,6 +220,19 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
           campaign goes on.
         </div>
       )}
+      {game.online && game.stage === "planning" && (game.online.sent || game.online.spectating || !game.online.connected || game.online.error) && (
+        <div className="banner" data-testid="online-banner" role="status">
+          {!game.online.connected
+            ? "Connection lost. Reconnecting…"
+            : game.online.error
+              ? game.online.error
+              : game.online.spectating
+                ? `You're out of the race. Watching the others${game.online.waitingFor.length ? `: waiting for ${game.online.waitingFor.map(game.label).join(", ")}` : ""}.`
+                : game.online.waitingFor.length
+                  ? `Plan sent. Waiting for ${game.online.waitingFor.map(game.label).join(", ")}.`
+                  : "Plan sent. Resolving the turn…"}
+        </div>
+      )}
       <main className="game-body">
         <div className="board-wrap">
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
