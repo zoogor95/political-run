@@ -1,0 +1,10 @@
+{
+  "name": "Majority Map",
+  "short_name": "Majority Map",
+  "description": "A cartoon election strategy game.",
+  "start_url": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#79c9da",
+  "theme_color": "#2b2440"
+}
