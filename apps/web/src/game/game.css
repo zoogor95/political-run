@@ -63,6 +63,7 @@
   align-items: center;
   padding-left: 8px;
   overflow: hidden;
+  white-space: nowrap;
   color: #fff;
   font-family: "Lilita One", sans-serif;
   font-size: 16px;
@@ -141,8 +142,227 @@
   padding: 4px 16px 16px;
 }
 
+.game-side {
+  display: flex;
+  gap: 12px;
+  min-height: 0;
+  align-items: flex-start;
+}
+
 .game-panel {
   width: 380px;
+}
+
+/* Contention: the count and a bar filling as regions come into play. */
+.contention {
+  min-width: 150px;
+  gap: 3px;
+}
+
+.contention-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.contention-bar {
+  display: block;
+  height: 9px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.contention-bar i {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+
+/* Leaders (design: the board's right-hand column): shown beside the panel when the screen is wide enough. */
+.leaders-card {
+  display: none;
+  width: 300px;
+  flex: none;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--ink);
+  overflow: hidden;
+  zoom: var(--text-scale, 1);
+}
+
+.leaders-head {
+  margin: 0;
+  padding: 8px 14px;
+  font: 900 13px "Nunito", sans-serif;
+  letter-spacing: 0.05em;
+  border-bottom: 3px solid var(--ink);
+  background: #f4ecd2;
+}
+
+.leaders-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.leaders-card li {
+  border-bottom: 2px solid #e6dcc0;
+}
+
+.leaders-card li.you {
+  background: #ece4fb;
+}
+
+.leaders-card li.on {
+  background: #fff3c4;
+}
+
+.leaders-card li.out {
+  opacity: 0.6;
+}
+
+.leaders-card li button {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.leaders-card li button:focus-visible {
+  outline: 3px solid #2f6fdf;
+  outline-offset: -3px;
+}
+
+.leader-initials {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 400 18px "Lilita One", sans-serif;
+  color: var(--ink);
+}
+
+.leader-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.leader-text small {
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leader-text b {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.leader-text em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b6380;
+}
+
+.leader-seats {
+  font: 400 24px "Lilita One", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaders-money {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 14px;
+  background: var(--gold);
+  border-top: 3px solid var(--ink);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.leaders-money b {
+  font: 400 20px "Lilita One", sans-serif;
+}
+
+@media (min-width: 1180px) {
+  .leaders-card {
+    display: block;
+  }
+
+  .game-panel {
+    width: 340px;
+  }
+}
+
+/* The board's round buttons (design: State groups on the US board). */
+.group-buttons {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 3;
+}
+
+.group-buttons .round {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 4px solid var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+  font: 900 12.5px/1.15 "Nunito", sans-serif;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.group-buttons .round.on {
+  background: var(--gold);
+}
+
+.round-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border-radius: 13px;
+  background: #2fae5a;
+  color: #fff;
+  border: 3px solid var(--ink);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+@media (max-width: 760px) {
+  .group-buttons .round {
+    width: 64px;
+    height: 64px;
+    font-size: 10.5px;
+  }
 }
 
 .game-panel h3 {
@@ -508,9 +728,14 @@
     padding: 4px 8px 8px;
   }
 
-  .game-panel {
+  .game-side {
     width: 100%;
     max-height: 45%;
+  }
+
+  .game-panel {
+    width: 100%;
+    max-height: 100%;
   }
 }
 

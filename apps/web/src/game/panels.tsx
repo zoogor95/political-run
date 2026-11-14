@@ -31,6 +31,19 @@ function Chip({ color }: { color: string }) {
   return <i className="chip" style={{ background: color }} />;
 }
 
+/** Ink or white, whichever reads better on a colour (WCAG relative luminance). */
+export function textOn(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const lum = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  return 1.05 / (lum + 0.05) >= (lum + 0.05) / 0.071 ? "#fff" : "#2b2440";
+}
+
+/** A party's name as a short label for the tally: its first word, in capitals. */
+const shortName = (name: string) => (name.trim().split(/\s+/)[0] ?? "").toUpperCase().slice(0, 9);
+
 export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: () => void; onSettings?: () => void }) {
   // During the recap the bar shows the board as it was before the turn, so the reveal isn't given away.
   const state = game.stage === "recap" && game.report ? game.report.before : game.state;
@@ -59,15 +72,24 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
       )}
       <div className={`turn${final ? " final" : ""}`} data-testid="turn">
         <b>{game.stage === "results" ? "Result" : final ? "FINAL TURN" : `Turn ${state.turn}`}</b>
-        <span>{state.round > 1 ? "Second round · " : ""}{map.name}</span>
+        <span>
+          {state.round > 1 ? "Second round · " : ""}
+          {map.name} · {total} {votesWord()}
+        </span>
       </div>
       <div className="tally-wrap" data-testid="tally">
         <div className="tally" role="img" aria-label={`Projected ${votesWord()}: ${order.map((p) => `${p.party.name} ${seats[p.id] ?? 0}`).join(", ")}`}>
-          {order.map((p) => (
-            <div key={p.id} style={{ width: `${(100 * (seats[p.id] ?? 0)) / total}%`, background: p.party.color, paddingLeft: seats[p.id] ? 8 : 0 }}>
-              <span>{seats[p.id] ? seats[p.id] : ""}</span>
-            </div>
-          ))}
+          {order.map((p) => {
+            const n = seats[p.id] ?? 0;
+            const share = (100 * n) / total;
+            // Wide enough segments carry the party's short name too, as on the design's board.
+            const text = share >= 9 ? `${shortName(p.party.name)} ${n}` : share >= 2.5 ? String(n) : "";
+            return (
+              <div key={p.id} style={{ width: `${share}%`, background: p.party.color, color: textOn(p.party.color), paddingLeft: n ? 8 : 0 }}>
+                <span>{text}</span>
+              </div>
+            );
+          })}
           <em style={{ left: `${(100 * majority(pack)) / total}%` }} />
         </div>
         <div className="tally-note">
@@ -82,14 +104,28 @@ export function TopBar({ game, onMenu, onSettings }: { game: GameApi; onMenu?: (
                   ? "Expected seats if the election were today (luck factor on)"
                   : "Projected seats if the election were today"}
           </span>
-          <span>{majority(pack)} {presidential() ? "TO WIN" : "FOR A MAJORITY"}</span>
+          <span>
+            {majority(pack)} {presidential() ? "TO WIN" : "FOR A MAJORITY"}
+            {(() => {
+              const me = state.players.find((p) => p.id === game.viewer);
+              if (!me || counted) return null;
+              const short = shortName(me.party.name);
+              const need = majority(pack) - (seats[me.id] ?? 0);
+              return need > 0 ? ` · ${short} needs ${need} more` : ` · ${short} would win`;
+            })()}
+          </span>
         </div>
       </div>
       <div className="contention" data-testid="contention">
-        <span>IN CONTENTION</span>
-        <b>
-          {contention} / {pack.regions.length}
-        </b>
+        <span className="contention-row">
+          <span>IN CONTENTION</span>
+          <b>
+            {contention} / {pack.regions.length}
+          </b>
+        </span>
+        <span className="contention-bar" aria-hidden="true">
+          <i style={{ width: `${(100 * contention) / pack.regions.length}%` }} />
+        </span>
       </div>
       {game.stage !== "results" && (
         <button
@@ -539,6 +575,64 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
             </div>
           );
         })}
+    </section>
+  );
+}
+
+/**
+ * Every party at a glance, as on the design's board: you first, then the rest by projected seats, each with leader,
+ * who plays it and the seats; your money underneath. Tap a party to see what it leads on the map.
+ */
+export function LeadersCard({ game, highlight, onHighlight }: { game: GameApi; highlight: string | null; onHighlight: (id: string | null) => void }) {
+  const state = game.stage === "recap" && game.report ? game.report.before : game.state;
+  const seats = projectedSeats(pack, state);
+  const order = [...state.players].sort((a, b) => (a.id === game.viewer ? -1 : b.id === game.viewer ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
+  const you = state.players.find((p) => p.id === game.viewer);
+  return (
+    <section className="leaders-card" data-testid="leaders-card" aria-label="Leaders">
+      <h3 className="leaders-head">{presidential() ? "CANDIDATES" : "LEADERS"}</h3>
+      <ul>
+        {order.map((p) => {
+          const c = candidate(p.leaderId);
+          const custom = c && "custom" in c ? (c as CustomCandidate) : null;
+          const level = game.levelOf(p.id);
+          const mine = p.id === game.viewer;
+          const who = mine ? `${game.solo ? "YOU" : "PLAYING"} · ${p.party.name}` : `${p.party.name} · ${level ? `AI ${LEVEL_NAME[level]}` : "PERSON"}`;
+          return (
+            <li key={p.id} className={`${mine ? "you" : ""}${highlight === p.id ? " on" : ""}${p.eliminated !== undefined ? " out" : ""}`}>
+              <button type="button" onClick={() => onHighlight(highlight === p.id ? null : p.id)} aria-pressed={highlight === p.id} aria-label={`${p.party.name}: show what they lead on the map`}>
+                {custom ? (
+                  <Portrait avatar={toAvatar(custom.avatar)} size={44} label={`Portrait of ${custom.name}`} />
+                ) : (
+                  <span className="leader-initials" style={{ background: `color-mix(in srgb, ${p.party.color} 22%, #fff)`, borderColor: p.party.color }} aria-hidden="true">
+                    {candidateName(p.leaderId)
+                      .split(/\s+/)
+                      .filter((w) => /^[A-Z]/.test(w))
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")}
+                  </span>
+                )}
+                <span className="leader-text">
+                  <small>
+                    <i className="chip" style={{ background: p.party.color }} /> {who.toUpperCase()}
+                  </small>
+                  <b>
+                    {candidateName(p.leaderId)} <em>{custom ? "Your candidate" : (c?.affiliation ?? "")}</em>
+                  </b>
+                </span>
+                <span className="leader-seats">{p.eliminated !== undefined ? "out" : (seats[p.id] ?? 0)}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {you && (
+        <div className="leaders-money">
+          <span>Your money</span>
+          <b>{money(totalMoney(you))}</b>
+        </div>
+      )}
     </section>
   );
 }
