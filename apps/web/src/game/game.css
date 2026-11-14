@@ -142,11 +142,11 @@
   padding: 4px 16px 16px;
 }
 
+/* The panel fills the height and scrolls inside it; the Leaders column keeps its own height. */
 .game-side {
   display: flex;
   gap: 12px;
   min-height: 0;
-  align-items: flex-start;
 }
 
 .game-panel {
@@ -197,6 +197,7 @@
 /* Leaders (design: the board's right-hand column): shown beside the panel when the screen is wide enough. */
 .leaders-card {
   display: none;
+  align-self: flex-start;
   width: 300px;
   flex: none;
   background: var(--cream);
