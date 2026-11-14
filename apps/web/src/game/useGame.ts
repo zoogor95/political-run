@@ -97,6 +97,8 @@ export interface OnlineInfo {
   watchers: string[];
   /** This device is a spectator, with no seat at the table. */
   seatless: boolean;
+  /** A ranked quick match: the result moves the players' ratings. */
+  ranked: boolean;
   /** Turns missed in a row, by seat. */
   missed: Record<string, number>;
 }
@@ -587,6 +589,7 @@ export function useGame(start: GameStart): GameApi {
           autopilot: online.link.view?.autopilot ?? [],
           watchers: online.link.view?.watchers ?? [],
           seatless: !online.view.you,
+          ranked: online.view.setup.mode === "ranked",
           missed: online.link.view?.missed ?? {},
         }
       : null,

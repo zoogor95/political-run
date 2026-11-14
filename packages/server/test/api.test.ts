@@ -258,3 +258,34 @@ describe("push notifications", () => {
     expect(left.results).toEqual([{ endpoint: "https://push.example/send/1" }]);
   });
 });
+
+describe("ranked results", () => {
+  it("moves both players' ratings for the map and season, and scores their leaders", async () => {
+    const { newQuickRoom, quickSetup } = await import("../src/room.js");
+    const { recordRanked } = await import("../src/quick.js");
+    const a = (await signIn("a".repeat(43))).data;
+    const b = (await signIn("b".repeat(43))).data;
+    const people = [
+      { accountId: a.account.id, name: "Ali" },
+      { accountId: b.account.id, name: "Sam" },
+    ];
+    const setup = quickSetup("uk", people, true, 3);
+    const room = newQuickRoom("RANK01", "m-r", setup, people, 3, T0);
+    const result = { ranking: ["p2", "p1"] } as unknown as import("@majority-map/core").ElectionResult;
+    const changes = await recordRanked(env, room, result, Date.UTC(2026, 10, 14));
+    expect(changes).toEqual({ p2: 16, p1: -16 });
+    const rows = await env.DB.prepare("SELECT account_id, season_id, map_pack_id, rating, games, wins FROM ratings ORDER BY rating DESC").all();
+    expect(rows.results).toEqual([
+      { account_id: b.account.id, season_id: "2026-Q4", map_pack_id: "uk", rating: 1016, games: 1, wins: 1 },
+      { account_id: a.account.id, season_id: "2026-Q4", map_pack_id: "uk", rating: 984, games: 1, wins: 0 },
+    ]);
+    // A second ranked match builds on those ratings.
+    await recordRanked(env, room, { ranking: ["p1", "p2"] } as unknown as import("@majority-map/core").ElectionResult, Date.UTC(2026, 10, 15));
+    const again = await env.DB.prepare("SELECT rating, games FROM ratings WHERE account_id = ?").bind(a.account.id).first();
+    expect(again).toEqual({ rating: 1001, games: 2 });
+    const leader = await env.DB.prepare("SELECT candidate_ref, games, wins, score FROM candidate_stats WHERE account_id = ?").bind(b.account.id).first();
+    expect(leader).toMatchObject({ candidate_ref: setup.seats[1]!.leaderId, games: 2, wins: 1, score: 1 });
+    const me = await call("GET", "/api/ratings/me", { token: a.token, now: Date.UTC(2026, 10, 16) });
+    expect(me.data.ratings).toEqual([{ map: "uk", rating: 1001, games: 2, wins: 1 }]);
+  });
+});

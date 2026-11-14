@@ -9,6 +9,7 @@ import { ACHIEVEMENTS } from "./achievements";
 import { textOn } from "./panels";
 import { candidateName, money, pack, playerOf, presidential, trackName } from "./model";
 import { useProfile } from "./profile";
+import { myRatings } from "./quick";
 import type { GameApi } from "./useGame";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
@@ -59,12 +60,38 @@ function resultLines(game: GameApi): { title: string; sub: string; color: string
 
 export function ResultsBanner({ game }: { game: GameApi }) {
   const { title, sub, color } = resultLines(game);
+  const rating = useRankedRating(game);
   return (
     <header className="results-banner" style={{ background: color, color: textOn(color) }}>
       <h2>{title}</h2>
       <span>{sub}</span>
+      {game.online?.ranked && (
+        <span className="results-rating" data-testid="results-rating">
+          Ranked{rating !== null ? ` · your rating on this map: ${rating}` : ""}
+        </span>
+      )}
     </header>
   );
+}
+
+/** After a ranked match: the player's new rating on this map (the server records it as the results come in). */
+function useRankedRating(game: GameApi): number | null {
+  const [rating, setRating] = useState<number | null>(null);
+  const ranked = Boolean(game.online?.ranked && !game.online.seatless);
+  useEffect(() => {
+    if (!ranked) return;
+    let live = true;
+    const t = setTimeout(() => {
+      myRatings()
+        .then((r) => live && setRating(r.ratings.find((x) => x.map === pack.id)?.rating ?? null))
+        .catch(() => undefined);
+    }, 2000);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [ranked]);
+  return rating;
 }
 
 /** The ranking as portrait cards: place, face, leader and party, a line about them, and their seats or electoral votes. */

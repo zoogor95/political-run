@@ -15,7 +15,7 @@ export interface RoomView {
   status: "lobby" | "active" | "finished";
   youHost: boolean;
   you: string | null;
-  setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean; turnSeconds?: number | null };
+  setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean; turnSeconds?: number | null; mode?: "quick" | "ranked" };
   seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: Seat["party"]; leaderId: string; playerName: string | null; ready: boolean }[];
   state: GameState | null;
   turnsPlayed: number;

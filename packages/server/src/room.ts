@@ -11,11 +11,13 @@ import {
   activePlayers,
   candidateParties,
   createMatch,
+  nextRandom,
   PARTY_COLORS,
   PARTY_EMBLEMS,
   planComputers,
   playOut,
   playTurn,
+  seedRng,
   validateCustom,
   validatePlan,
   withCustomCandidates,
@@ -49,6 +51,8 @@ export interface MatchSetup {
   luck?: boolean;
   /** Time each person has to send a plan; none means the match waits for everyone. */
   turnSeconds?: number | null;
+  /** A quick match found by matchmaking; "ranked" ones move the players' ratings. Absent: a private match. */
+  mode?: "quick" | "ranked";
 }
 
 /** Turn timers on offer: a minute for a quick game up to a day for a slow one. */
@@ -425,4 +429,64 @@ function resolve(room: RoomData, now: number): SubmitOutcome {
   }
   room.deadline = nextDeadline(room, now);
   return { turns: [log], finished: room.status === "finished" };
+}
+
+/** Quick matches give everyone five minutes a turn. */
+export const QUICK_TURN_SECONDS = 300;
+
+/** Someone matchmaking found: their account, name and saved party (Create your party), if they have one. */
+export interface QuickPlayer {
+  accountId: string;
+  name: string;
+  party?: { name: string; color: string; emblem: string } | null;
+}
+
+/**
+ * The table for a quick match: one seat per person, in the order they were found. Leaders are drawn at random from the
+ * map's roster, from different real parties where there are enough. On a Parliamentary map each person brings their
+ * saved party when its colour and emblem are still free (else their name's party in the next free colour); on the
+ * Presidential map parties follow the candidates, as always.
+ */
+export function quickSetup(map: string, players: QuickPlayer[], ranked: boolean, seed: number): MatchSetup {
+  const pack = PACKS[map];
+  if (!pack) throw new RoomError("Unknown map");
+  // A seeded shuffle of the roster, then one leader from each real party before any party gets a second.
+  let r = seedRng(seed);
+  const roster = [...pack.candidates];
+  for (let i = roster.length - 1; i > 0; i--) {
+    const [v, next] = nextRandom(r);
+    r = next;
+    const j = Math.floor(v * (i + 1));
+    [roster[i], roster[j]] = [roster[j]!, roster[i]!];
+  }
+  const firsts = roster.filter((c, i) => roster.findIndex((x) => x.affiliation === c.affiliation) === i);
+  const leaders = [...firsts, ...roster.filter((c) => !firsts.includes(c))];
+  const colors: string[] = [];
+  const emblems: string[] = [];
+  const names: string[] = [];
+  const seats: SeatSetup[] = players.map((p, i) => {
+    const saved = p.party && !colors.includes(p.party.color.toLowerCase()) && !emblems.includes(p.party.emblem) ? p.party : null;
+    const color = saved?.color.toLowerCase() ?? PARTY_COLORS.map((c) => c.hex.toLowerCase()).find((c) => !colors.includes(c))!;
+    const emblem = saved?.emblem ?? PARTY_EMBLEMS.find((e) => !emblems.includes(e))!;
+    let name = (saved?.name ?? `${p.name} Party`).trim().slice(0, 28);
+    if (names.includes(name.toLowerCase())) name = `${name.slice(0, 24)} ${i + 1}`;
+    colors.push(color);
+    emblems.push(emblem);
+    names.push(name.toLowerCase());
+    return { id: `p${i + 1}`, kind: "human", label: p.name.slice(0, 28), level: "normal", party: { name, color, emblem }, leaderId: leaders[i % leaders.length]!.id };
+  });
+  return { map, seats: pack.gameType === "presidential" ? candidateParties(pack, seats) : seats, turnSeconds: QUICK_TURN_SECONDS, mode: ranked ? "ranked" : "quick" };
+}
+
+/** A quick match, started: everyone found is seated and ready, and the first turn's clock is running. */
+export function newQuickRoom(code: string, matchId: string, setup: MatchSetup, players: QuickPlayer[], seed: number, now: number): RoomData {
+  const room = newRoom(code, matchId, setup, { accountId: players[0]!.accountId, name: players[0]!.name }, seed, now);
+  for (const p of players.slice(1)) {
+    const seat = join(room, p.accountId, p.name);
+    seat.ready = true;
+  }
+  // Their own parties keep their names (join renames only placeholder names).
+  room.seats.forEach((s, i) => (s.party = setup.seats[i]!.party));
+  start(room, players[0]!.accountId, now);
+  return room;
 }

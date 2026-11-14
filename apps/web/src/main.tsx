@@ -7,6 +7,7 @@ import { SettingsPanel, SetupScreen } from "./game/Menu";
 import { MainMenu } from "./game/MainMenu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
 import { CreatePartyScreen } from "./game/CreateParty";
+import { QuickMatchScreen } from "./game/Quick";
 import { registerServiceWorker } from "./game/push";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
@@ -25,6 +26,7 @@ type Screen =
   | { name: "menu" }
   | { name: "profile" }
   | { name: "party" }
+  | { name: "quick" }
   | { name: "online" }
   | { name: "ongoing" }
   | { name: "lobby"; link: MatchLink }
@@ -82,6 +84,8 @@ function App() {
     selectMap(view.setup.map, view.setup.customs ?? []);
     setScreen({ name: "game", start: { online: { link, view } }, key: Date.now() });
   }, []);
+  // A quick match found: open it like a friend's lobby (it has already started, so it goes straight to the game).
+  const quickMatched = useCallback((code: string) => setScreen({ name: "lobby", link: new MatchLink(code) }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const openSettings = () => setSettingsOpen(true);
   return (
@@ -95,6 +99,7 @@ function App() {
             setScreen({ name: "game", start: { save }, key: Date.now() });
           }}
           onProfile={() => setScreen({ name: "profile" })}
+          onQuick={() => setScreen({ name: "quick" })}
           onOnline={() => setScreen({ name: "online" })}
           onOngoing={() => setScreen({ name: "ongoing" })}
           onTutorial={() => {
@@ -112,6 +117,7 @@ function App() {
       )}
       {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} onParty={() => setScreen({ name: "party" })} />}
       {screen.name === "party" && <CreatePartyScreen onBack={() => setScreen({ name: "profile" })} />}
+      {screen.name === "quick" && <QuickMatchScreen onBack={toMenu} onMatched={quickMatched} />}
       {screen.name === "online" && (
         <OnlineHub
           onBack={toMenu}

@@ -7,6 +7,7 @@
 import { randomToken, sha256, uuidv7 } from "./crypto.js";
 import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
 import { checkSubscription, vapidKeys } from "./push.js";
+import { seasonOf } from "./ratings.js";
 
 export interface Env {
   DB: D1Database;
@@ -14,6 +15,8 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
   /** One Durable Object per private match, named by its invite code (match.ts). */
   MATCHES?: DurableObjectNamespace;
+  /** Matchmaking for quick matches: one Durable Object holding everyone searching (matchmaker.ts). */
+  MATCHMAKER?: DurableObjectNamespace;
   /** Push notifications: the game's VAPID public key (a var) and private key (a secret). Without them, no pushes. */
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
@@ -273,6 +276,29 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     // ?watch=1: a spectator, watching without taking a seat.
     const watch = new URL(req.url).searchParams.get("watch") === "1" ? "?watch=1" : "";
     return env.MATCHES.get(env.MATCHES.idFromName(code)).fetch(new Request(`https://room/ws${watch}`, { headers }));
+  }
+
+  // Quick match: a WebSocket to the matchmaker, searching on one map, casual or ranked (?map=uk&ranked=1).
+  if (at("GET", "/api/quick/ws")) {
+    if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") throw new ApiError(426, "upgrade", "This is a WebSocket");
+    const { accountId } = await authed(req, env, now);
+    if (!env.MATCHMAKER || !env.MATCHES) throw new ApiError(503, "no_matches", "Online matches aren't available here");
+    const q = new URL(req.url).searchParams;
+    const map = q.get("map") ?? "";
+    if (!PACKS[map]) throw new ApiError(400, "bad_map", "Unknown map");
+    const name = (await env.DB.prepare("SELECT display_name FROM accounts WHERE id = ?").bind(accountId).first<string>("display_name")) ?? "Player";
+    const headers = new Headers(req.headers);
+    headers.set("x-account-id", accountId);
+    headers.set("x-account-name", name);
+    return env.MATCHMAKER.get(env.MATCHMAKER.idFromName("global")).fetch(new Request(`https://matchmaker/ws?map=${map}&ranked=${q.get("ranked") === "1" ? 1 : 0}`, { headers }));
+  }
+
+  // This season's ratings for the signed-in player, by map.
+  if (at("GET", "/api/ratings/me")) {
+    const { accountId } = await authed(req, env, now);
+    const season = seasonOf(now);
+    const rows = await env.DB.prepare("SELECT map_pack_id AS map, rating, games, wins FROM ratings WHERE account_id = ? AND season_id = ?").bind(accountId, season.id).all();
+    return json({ season, ratings: rows.results });
   }
 
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
