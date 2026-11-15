@@ -151,12 +151,12 @@ export function packFor(setup: MatchSetup): MapPack {
 
 const LEVELS: AiLevel[] = ["easy", "normal", "hard"];
 
-/** Checks a setup before a lobby opens: the map, 2 to 5 seats with at least two people, fair custom candidates. */
+/** Checks a setup before a lobby opens: the map, 2 to 8 seats with at least two people, fair custom candidates. */
 export function checkSetup(setup: MatchSetup): void {
   if (!setup || typeof setup !== "object" || !Array.isArray(setup.seats)) throw new RoomError("Missing setup");
   const base = PACKS[setup.map];
   if (!base) throw new RoomError("Unknown map");
-  if (setup.seats.length < 2 || setup.seats.length > 5) throw new RoomError("A match needs 2 to 5 seats");
+  if (setup.seats.length < 2 || setup.seats.length > 8) throw new RoomError("A match needs 2 to 8 seats");
   if (setup.seats.filter((s) => s.kind === "human").length < 2) throw new RoomError("Leave at least one seat for a friend");
   if (setup.turnSeconds != null && !TURN_TIMERS.includes(setup.turnSeconds)) throw new RoomError("Unknown turn timer");
   for (const s of setup.seats) {

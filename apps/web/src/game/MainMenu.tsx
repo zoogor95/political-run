@@ -87,7 +87,7 @@ const BOXES: { id: string; title: string; about: string; chip: string; color: st
   {
     id: "new-hotseat",
     title: "Pass and Play",
-    about: "Up to 5 players on one device. Plans stay secret.",
+    about: "Up to 8 players on one device. Plans stay secret.",
     chip: "ONE DEVICE",
     color: "#f0a020",
     chipBg: "#fde9c4",

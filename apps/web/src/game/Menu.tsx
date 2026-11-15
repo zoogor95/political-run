@@ -21,6 +21,7 @@ import { TURN_TIMERS,
   defaultConfig,
   humanSeat,
   isPresidential,
+  MAX_SEATS,
   withCandidateParties,
   type MatchConfig,
   type Mode,
@@ -434,7 +435,7 @@ export function SetupScreen({
         <section className="setup-card setup-seats">
           <div className="setup-card-head">
             <h2>{presidential ? "Candidates" : "Parties in this match"}</h2>
-            <span className="muted">2 to 5 seats · tap a seat to change it</span>
+            <span className="muted">2 to 8 seats · tap a seat to change it</span>
           </div>
           <div className="seat-grid">
             {config.seats.map((s, i) => (
@@ -450,7 +451,7 @@ export function SetupScreen({
                 onRemove={config.seats.length > 2 && (mode === "hotseat" || s.id !== "you") && (mode !== "solo" || i > 0) ? () => remove(s.id) : undefined}
               />
             ))}
-            {config.seats.length < 5 && (
+            {config.seats.length < MAX_SEATS && (
               <button type="button" className="add-seat" onClick={add} data-testid="add-seat">
                 <svg width="48" height="48" viewBox="0 0 52 52" aria-hidden="true">
                   <circle cx="26" cy="26" r="23" fill="#fff7e2" stroke="#2b2440" strokeWidth="3" />

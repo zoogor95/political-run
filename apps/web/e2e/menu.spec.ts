@@ -202,3 +202,14 @@ test("pass and play: a player who resigns becomes a computer party and the other
   await expect(page.getByTestId("rivals-panel")).toContainText("AI · Normal");
 });
 
+
+test("pass and play seats up to eight players, and says so at the cap", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-hotseat").click();
+  await expect(page.getByTestId("setup")).toContainText("2 to 8 seats");
+  for (let i = 0; i < 5; i++) await page.getByTestId("add-seat").click();
+  await expect(page.locator("[data-testid^=seat-]:not([data-testid^=seat-party])")).toHaveCount(8);
+  await expect(page.getByTestId("add-seat")).toHaveCount(0);
+  await page.getByTestId("start-match").click();
+  await expect(page.getByTestId("handoff")).toContainText("Pass the device to Player 1");
+});
