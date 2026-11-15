@@ -274,7 +274,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
         </div>
       )}
       <main className="game-body">
-        <div className={`board-wrap${showGroupCard ? " with-card" : ""}`}>
+        <div className={`board-wrap${showGroupCard ? " with-card" : ""}${results && replaying ? " replaying" : ""}`}>
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
           {!showSeats && (
             <div className="zoom-controls" role="group" aria-label="Zoom the board">

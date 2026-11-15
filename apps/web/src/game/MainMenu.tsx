@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Headline } from "@majority-map/core";
 import { useCloud } from "./cloud";
-import { MAPS, isMapId, mapDetail, preferredMap, setPreferredMap, type MapId } from "./model";
+import { MAPS, isMapId, preferredMap, type MapId } from "./model";
 import { myMatches } from "./online";
 import { useProfile } from "./profile";
 import { Ticker } from "./recap";
@@ -21,7 +21,7 @@ const BOXES: { id: string; title: string; about: string; chip: string; color: st
   {
     id: "new-solo",
     title: "Solo campaign",
-    about: "You against 1 to 4 AI candidates. Easy, Normal and Hard.",
+    about: "You against 1 to 7 AI candidates. Easy, Normal and Hard.",
     chip: "OFFLINE OK",
     color: "#2f6fdf",
     chipBg: "#dce8fd",
@@ -139,8 +139,8 @@ export function MainMenu({
   const save = loadMatch();
   const profile = useProfile();
   const signedIn = useCloud().state !== "off";
-  const [mapId, setMapId] = useState<MapId>(preferredMap);
-  const headlines = useMemo(() => menuHeadlines(mapId), [mapId]);
+  // The ticker carries the headlines of the map played last (the setup screen remembers it).
+  const headlines = useMemo(() => menuHeadlines(preferredMap()), []);
   // New players see Learn to play up front; once it's done or skipped it lives in the bar as Tutorial.
   const newcomer = !tutorialDone() && !save;
   // Online matches waiting on this player, for the badge on Ongoing games.
@@ -241,28 +241,6 @@ export function MainMenu({
       </section>
 
       <div className="menu-bar">
-        <label className="menu-map">
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke={ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" />
-            <path d="M9 3v15M15 6v15" />
-          </svg>
-          <span className="sr-only">Map</span>
-          <select
-            value={mapId}
-            onChange={(e) => {
-              const id = e.target.value as MapId;
-              setPreferredMap(id);
-              setMapId(id);
-            }}
-            data-testid="menu-map"
-          >
-            {Object.values(MAPS).map((m) => (
-              <option key={m.id} value={m.id}>
-                Map: {m.name} · {mapDetail(m).split(" · ")[0]}
-              </option>
-            ))}
-          </select>
-        </label>
         <div className="menu-bar-buttons">
           <button type="button" className="gold" onClick={onOngoing} data-testid="open-ongoing">
             Ongoing games

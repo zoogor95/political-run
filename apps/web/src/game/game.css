@@ -709,8 +709,17 @@
   z-index: 2;
   background: var(--cream);
   border-top: 3px solid var(--ink);
-  margin: 0;
+  /* Pinned to the foot of the card at a fixed height, so notes appearing above it (or its own "not enough money"
+     line) never move the + button: someone pressing it quickly keeps hitting the same spot. */
+  margin: auto 0 0;
+  min-height: 124px;
+  box-sizing: border-box;
   padding: 10px 14px 14px;
+}
+
+/* The card fills the panel, so the planner sits at the panel's foot whatever the card's content. */
+.region-card {
+  flex-grow: 1;
 }
 
 .region-member {
@@ -747,6 +756,8 @@
 @media (max-width: 760px) {
   .region-card .planner {
     position: static;
+    min-height: 0;
+    margin: 0;
     border-top: 0;
     padding: 0 14px 14px;
   }
@@ -2075,26 +2086,6 @@
   gap: 12px;
   flex-wrap: wrap;
   padding-bottom: 18px;
-}
-
-.menu-map {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--cream);
-  border: 3px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: 0 4px 0 var(--ink);
-  padding: 0 0 0 14px;
-}
-
-.menu-map select {
-  font: 800 15px "Nunito", sans-serif;
-  color: var(--ink);
-  background: transparent;
-  border: 0;
-  padding: 10px 14px 10px 0;
-  cursor: pointer;
 }
 
 .menu-bar-buttons {
@@ -4156,6 +4147,8 @@
 
   .region-card .planner {
     position: static;
+    min-height: 0;
+    margin: 0;
     border-top: 0;
     padding: 0 14px 10px;
   }
@@ -4269,8 +4262,7 @@
     gap: 8px;
   }
 
-  .menu-bar-buttons button,
-  .menu-map select {
+  .menu-bar-buttons button {
     font-size: 12.5px;
     padding: 6px 10px;
   }
@@ -5875,6 +5867,29 @@
   cursor: pointer;
 }
 
+/* Each party's share of the group as a bar along the row's foot (the left edge says who controls it). */
+.groups-panel .group-row {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 12px;
+}
+
+.group-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  display: flex;
+  background: #e6dcc0;
+}
+
+.group-bar i {
+  display: block;
+  height: 100%;
+  border-right: 1px solid #fff;
+}
+
 .groups-panel .group-row.on {
   background: var(--ink);
   color: var(--cream);
@@ -6728,3 +6743,107 @@
   font: 24px/1 "Lilita One", sans-serif; box-shadow: 0 3px 0 #2b2440; cursor: pointer; padding: 0;
 }
 .zoom-controls button:active { transform: translateY(2px); box-shadow: 0 1px 0 #2b2440; }
+/* Region names on the hex map, over the hexes, readable on any party colour. */
+.seat-label {
+  font-family: "Lilita One", sans-serif;
+  fill: var(--ink);
+  stroke: #fffaf0;
+  stroke-width: 0.35em;
+  paint-order: stroke;
+  stroke-linejoin: round;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.seat-region.dim ~ .seat-label {
+  opacity: 0.35;
+}
+
+/* Parliamentary results on a normal screen: the hex map takes the full height, with the ranking beside it. */
+@media (min-width: 761px) and (min-height: 561px) {
+  .game.results-stage.parl .game-body {
+    grid-template-columns: minmax(0, 1fr) 290px 500px;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 12px 18px;
+  }
+
+  .game.results-stage.parl .board-wrap {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .game.results-stage.parl .rank-cards {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    max-height: 100%;
+    overflow: auto;
+    padding: 0 6px 8px 2px;
+  }
+
+  .game.results-stage.parl .game-side {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .game.results-stage.parl .rank-cards {
+    gap: 8px;
+  }
+
+  .game.results-stage.parl .rank-cards .rank-card {
+    gap: 6px;
+    padding: 5px 8px 5px 5px;
+    border-width: 3px;
+    box-shadow: 0 3px 0 var(--ink);
+  }
+
+  .game.results-stage.parl .rank-cards .rank-card.you {
+    box-shadow: 0 0 0 3px var(--gold), 0 3px 0 3px var(--ink);
+  }
+
+  .game.results-stage.parl .rank-cards .rank-place {
+    width: 16px;
+    font-size: 17px;
+  }
+
+  .game.results-stage.parl .rank-cards .rank-face {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .game.results-stage.parl .rank-cards .rank-text b {
+    font-size: 14px;
+  }
+
+  .game.results-stage.parl .rank-cards .rank-text b small {
+    display: block;
+    font-size: 10.5px;
+    white-space: normal;
+  }
+
+  .game.results-stage.parl .rank-cards .rank-text > span {
+    font-size: 10.5px;
+    line-height: 1.25;
+  }
+
+  .game.results-stage.parl .rank-cards .rank-seats {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) and (min-height: 561px) {
+  .game.results-stage.parl .game-body {
+    grid-template-columns: minmax(0, 1fr) 250px 400px;
+  }
+}
+.zoom-controls button:active { transform: translateY(2px); box-shadow: 0 1px 0 #2b2440; }
+
+/* Replaying a result: the strip sits under the map, not over it, and is slimmer. */
+.board-wrap.replaying { flex-direction: column; gap: 6px; }
+.board-wrap.replaying > .board { flex: 1; min-height: 0; }
+.board-wrap.replaying .replay-strip {
+  position: static; transform: none; flex: none; align-self: center; z-index: 6;
+  border-width: 3px; border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 3px 8px; gap: 8px; font-size: 13px;
+}
+.board-wrap.replaying .replay-strip button { width: 28px; height: 28px; font-size: 12px; border-width: 2px; border-radius: 8px; }
