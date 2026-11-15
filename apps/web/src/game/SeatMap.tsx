@@ -32,6 +32,29 @@ export function cellColors(layout: SeatMapLayout, state: GameState, seats: Recor
   return out;
 }
 
+/** A shorter name for a region's label on the map. */
+const shortRegion = (name: string) =>
+  name
+    .replace("Yorkshire and the Humber", "Yorkshire")
+    .replace("Northern Ireland", "N. Ireland")
+    .replace("East of England", "East")
+    .replace(/^(North|South|East|West) (East|West|Midlands)$/, (_m, a: string, b: string) => `${a[0]}. ${b}`)
+    .replace("Scotland, Wales and ", "");
+
+/** Where each region's label goes: the middle of its hexes, sized from the hexes themselves. */
+export function regionLabels(layout: SeatMapLayout): { id: string; x: number; y: number; size: number }[] {
+  if (layout.kind !== "hex" || layout.cells.length === 0) return [];
+  const first = layout.cells[0]!;
+  const m = /^M([-\d.]+) ([-\d.]+)/.exec(first.d);
+  const hex = m ? Math.hypot(Number(m[1]) - first.x, Number(m[2]) - first.y) : 6;
+  const by = new Map<string, { x: number; y: number; n: number }>();
+  for (const c of layout.cells) {
+    const a = by.get(c.region) ?? { x: 0, y: 0, n: 0 };
+    by.set(c.region, { x: a.x + c.x, y: a.y + c.y, n: a.n + 1 });
+  }
+  return [...by].map(([id, a]) => ({ id, x: a.x / a.n, y: a.y / a.n, size: hex * 2.1 }));
+}
+
 interface Props {
   state: GameState;
   /** Seats by region for the regions declared so far. */
@@ -48,6 +71,7 @@ interface Props {
 export const SeatMap = memo(function SeatMap({ state, seats, highlight, reserved, onRegion, night }: Props) {
   const layout = useMemo(() => seatMapLayout(board), []);
   const colors = useMemo(() => cellColors(layout, state, seats), [layout, state, seats]);
+  const labels = useMemo(() => (night ? [] : regionLabels(layout)), [layout, night]);
   const lit = new Set(highlight);
   const declared = Object.keys(seats).length;
   const [x, y, w, h] = layout.viewBox;
@@ -74,6 +98,11 @@ export const SeatMap = memo(function SeatMap({ state, seats, highlight, reserved
         ))}
         {board.regions.map((r) => (
           <path key={r.id} d={layout.borders[r.id]} className={`seat-border${lit.has(r.id) ? " lit" : ""}`} />
+        ))}
+        {labels.map((l) => (
+          <text key={l.id} x={l.x} y={l.y} fontSize={l.size} className="seat-label" textAnchor="middle" dominantBaseline="central" data-testid={`seat-label-${l.id}`}>
+            {shortRegion(board.regions.find((r) => r.id === l.id)?.name ?? l.id)}
+          </text>
         ))}
         {/* Lit borders again on top, so neighbours' borders don't cover them. */}
         {highlight.map((id) => (layout.borders[id] ? <path key={`lit-${id}`} d={layout.borders[id]} className="seat-border lit" data-testid="seat-lit" /> : null))}

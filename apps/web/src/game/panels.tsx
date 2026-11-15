@@ -703,12 +703,32 @@ export function GroupsPanel({
   const { state } = game;
   const ctrl = controllers(pack, state);
   const you = playerOf(state, game.viewer);
+  /** Each party's share of a group, biggest first: of its campaign cost led (region groups) or of its meter's pips (national). */
+  const shares = (id: string): { id: string; pct: number }[] => {
+    const g = pack.groups.find((x) => x.id === id)!;
+    const weight: Record<string, number> = {};
+    if (g.kind === "national") for (const p of state.players) weight[p.id] = meterOf(state, id, p.id).steps;
+    else
+      for (const r of pack.regions) {
+        if (!g.regions.includes(r.id)) continue;
+        const leader = regionLeader(state, r.id);
+        if (leader !== null) weight[leader] = (weight[leader] ?? 0) + r.baseCost;
+      }
+    const total = g.kind === "national" ? Object.values(weight).reduce((a, b) => a + b, 0) : groupCampaignCost(pack, g);
+    return total
+      ? Object.entries(weight)
+          .filter(([, w]) => w > 0)
+          .sort((a, b) => b[1] - a[1])
+          .map(([pid, w]) => ({ id: pid, pct: (100 * w) / total }))
+      : [];
+  };
   const row = (id: string) => {
     const g = pack.groups.find((x) => x.id === id)!;
     const owner = ctrl[id];
     const national = g.kind === "national";
     const on = focus === id;
     const wallet = you.wallets[id] ?? 0;
+    const split = shares(id);
     const open = () => (national ? onOpen(id) : onFocus(on ? null : id));
     return (
       <li key={id}>
@@ -720,6 +740,14 @@ export function GroupsPanel({
           onClick={open}
           data-testid={`group-row-${id}`}
         >
+          {split.length > 0 && (
+            <span className="group-bar" aria-hidden="true">
+              {split.map((x) => (
+                <i key={x.id} style={{ width: `${x.pct}%`, background: partyColor(state, x.id) }} />
+              ))}
+            </span>
+          )}
+          <span className="sr-only">{split.length ? `Shares: ${split.map((x) => `${groupLabel(playerOf(state, x.id).party.name)} ${Math.round(x.pct)}%`).join(", ")}.` : "Nobody leads yet."}</span>
           <span className="group-row-name">
             {g.name}
             <small>
