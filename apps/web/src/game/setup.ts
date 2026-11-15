@@ -30,6 +30,8 @@ export interface MatchConfig {
   tutorial?: boolean;
   /** Luck factor: seats are drawn at random on election night, weighted by pips. */
   luck?: boolean;
+  /** Calm first turn: parties that aim at the same step on turn 1 all get it, so nobody's opening is lost to a clash. */
+  calmStart?: boolean;
   /** Online: seconds each person has to send a plan; none waits for everyone. */
   turnSeconds?: number | null;
 }
@@ -136,7 +138,7 @@ export function defaultConfig(mode: Mode, level: AiLevel = "normal"): MatchConfi
   seats.push(humanSeat(seats, 1, mode === "online"));
   if (mode !== "solo") seats.push(humanSeat(seats, 2, mode === "online"));
   while (seats.length < 3) seats.push(aiSeat(seats, seats.length, level));
-  return { mode, map: map.id, seats: isPresidential() ? withCandidateParties(seats) : seats };
+  return { mode, map: map.id, calmStart: true, seats: isPresidential() ? withCandidateParties(seats) : seats };
 }
 
 /** The most seats at a table. Past five, each extra party lowers everyone's base income (core's baseIncomeFor). */

@@ -6853,3 +6853,8 @@
 .group-mod.good { color: #2f8f4a; }
 .group-mod.bad { color: #c0392b; font-size: 12px; }
 .group-row.on .group-mod.good { color: #7ddc98; }
+/* The plan's own panel (wide screens) and the leaders list inside the Rivals tab. */
+.plan-card { max-height: calc(100dvh - 120px); overflow-y: auto; }
+.plan-card-body { padding: 4px 14px 12px; }
+.plan-card-body .sums { margin-top: 8px; }
+.leaders-card.in-tab { display: block; width: auto; align-self: stretch; box-shadow: none; border-width: 3px; margin-bottom: 12px; zoom: 1; }

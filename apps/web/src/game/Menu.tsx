@@ -527,6 +527,13 @@ export function SetupScreen({
                 <small className="muted">Run out of time and you sit the turn out; after 3 missed turns in a row the computer plays for you until you're back.</small>
               </label>
             )}
+            <label className="check luck-option">
+              <input type="checkbox" checked={config.calmStart === true} onChange={(e) => setConfig({ ...config, calmStart: e.target.checked })} data-testid="setup-calm" />
+              <span>
+                <b>Calm first turn</b>
+                <small className="muted"> On turn 1, parties that aim at the same step of the same region all get it, so nobody's opening is lost to a clash.</small>
+              </span>
+            </label>
             {mode === "solo" && (
               <label className="check luck-option">
                 <input type="checkbox" checked={watchOnly} onChange={(e) => setWatchOnly(e.target.checked)} data-testid="setup-watch" />

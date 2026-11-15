@@ -15,7 +15,7 @@ export interface RoomView {
   status: "lobby" | "active" | "finished";
   youHost: boolean;
   you: string | null;
-  setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean; turnSeconds?: number | null; mode?: "quick" | "ranked" };
+  setup: { map: string; seats: Seat[]; customs?: MatchConfig["customs"]; luck?: boolean; calmStart?: boolean; turnSeconds?: number | null; mode?: "quick" | "ranked" };
   seats: { id: string; kind: "human" | "ai"; label: string; level: AiLevel; party: Seat["party"]; leaderId: string; playerName: string | null; ready: boolean }[];
   state: GameState | null;
   turnsPlayed: number;
@@ -76,7 +76,7 @@ export function inviteLink(code: string): string {
 /** Opens a lobby for the setup chosen on the setup screen; returns its invite code. */
 export async function openLobby(config: MatchConfig): Promise<string> {
   await ensureAccount();
-  const setup = { map: config.map ?? "uk", seats: config.seats, customs: config.customs ?? [], ...(config.luck ? { luck: true } : {}), turnSeconds: config.turnSeconds ?? null };
+  const setup = { map: config.map ?? "uk", seats: config.seats, customs: config.customs ?? [], ...(config.luck ? { luck: true } : {}), ...(config.calmStart ? { calmStart: true } : {}), turnSeconds: config.turnSeconds ?? null };
   let res: Response;
   try {
     res = await fetch(`${API_URL}/api/matches`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${sessionToken()}` }, body: JSON.stringify({ setup }) });
@@ -111,6 +111,7 @@ export function configOf(view: RoomView): MatchConfig {
     seats: view.seats.map((s) => ({ id: s.id, kind: s.kind, label: s.playerName ?? s.label, level: s.level, party: s.party, leaderId: s.leaderId })),
     ...(view.setup.customs?.length ? { customs: view.setup.customs } : {}),
     ...(view.setup.luck ? { luck: true } : {}),
+    ...(view.setup.calmStart ? { calmStart: true } : {}),
     turnSeconds: view.setup.turnSeconds ?? null,
   };
 }

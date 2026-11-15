@@ -468,7 +468,8 @@ test("the campaign board zooms, a tap still picks a region while zoomed, and the
   await page.getByTestId("zoom-reset").click();
   expect(await zoom()).toBe(1);
   await expect(page.getByTestId("zoom-reset")).toHaveCount(0);
-  // Whole board again: tapping a region selects it as before.
+  // Whole board again: tapping a region selects it as before (once the board has drawn the new view).
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await tapRegion(page, "nw");
   await expect(page.locator(".region-card")).toBeVisible();
 });
