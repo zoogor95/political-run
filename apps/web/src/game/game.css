@@ -4698,8 +4698,8 @@
 }
 
 .rank-cards.many {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
 }
 
 .rank-card {
@@ -6858,3 +6858,7 @@
 .plan-card-body { padding: 4px 14px 12px; }
 .plan-card-body .sums { margin-top: 8px; }
 .leaders-card.in-tab { display: block; width: auto; align-self: stretch; box-shadow: none; border-width: 3px; margin-bottom: 12px; zoom: 1; }
+
+/* The seat map zooms like the board: its buttons sit over its corner, and the seat map is the positioned parent. */
+.seat-map .zoom-controls { right: 12px; bottom: 12px; }
+.seat-map svg { cursor: grab; }
