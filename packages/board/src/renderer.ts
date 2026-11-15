@@ -52,6 +52,17 @@ export class BoardView {
   private resizeObserver: ResizeObserver | undefined;
   private readonly cx: number;
   private readonly cy: number;
+  /** The view the player has chosen on top of the fitted board: how far in, and how far dragged (screen pixels). */
+  private zoomLevel = 1;
+  private pan = { x: 0, y: 0 };
+  /** Where the board sits when it is fitted to the screen: its scale, and the offset of its top left corner. */
+  private fitted = { s: 1, x: 0, y: 0, w: 0, h: 0, px: 0, py: 0 };
+  /** The most the player can zoom in. */
+  static readonly MAX_ZOOM = 6;
+  /** A pointer that moved far enough to be a drag: the tap that ends it is not a tap. */
+  private dragged = false;
+  private recacheTimer: ReturnType<typeof setTimeout> | undefined;
+  private viewListeners: (() => void)[] = [];
 
   private constructor(app: Application, board: BoardData, opts: BoardViewOptions) {
     this.app = app;
@@ -73,6 +84,7 @@ export class BoardView {
     this.geo.addChild(this.lift);
     app.renderer.on("resize", () => this.fit());
     this.fit();
+    this.attachGestures();
   }
 
   /** Creates a board inside a parent element; the canvas follows the parent's size. */
@@ -189,7 +201,142 @@ export class BoardView {
   }
 
   private tap(id: string) {
+    // The end of a drag or a pinch isn't a tap on whatever lies under the finger.
+    if (this.dragged) return;
     for (const h of this.tapHandlers) h(id);
+  }
+
+  /** How far in the player is: 1 is the whole board. */
+  get zoom(): number {
+    return this.zoomLevel;
+  }
+
+  /** Calls back whenever the zoom or the pan changes (so buttons can show or hide the reset). */
+  onView(handler: () => void): void {
+    this.viewListeners.push(handler);
+  }
+
+  /** Zooms by a factor around a point on the canvas (its centre by default), keeping that point still. */
+  zoomBy(factor: number, at?: Point): void {
+    const W = this.app.screen.width, H = this.app.screen.height;
+    const p = at ?? { x: W / 2, y: H / 2 };
+    const next = Math.min(BoardView.MAX_ZOOM, Math.max(1, this.zoomLevel * factor));
+    const k = next / this.zoomLevel;
+    // Keep the board point under `p` where it is: screen = pan + zoom * fitted, so scale the offset from p.
+    this.pan = { x: p.x - k * (p.x - this.pan.x), y: p.y - k * (p.y - this.pan.y) };
+    this.zoomLevel = next;
+    this.applyView();
+  }
+
+  /** Back to the whole board. */
+  resetView(): void {
+    this.zoomLevel = 1;
+    this.pan = { x: 0, y: 0 };
+    this.applyView();
+  }
+
+  /** Puts the fitted board, zoomed and dragged as the player has it, on the canvas, never letting it slide away. */
+  private applyView() {
+    const W = this.app.screen.width, H = this.app.screen.height;
+    const f = this.fitted;
+    const z = this.zoomLevel;
+    // The board's box on screen at this zoom, before the drag: from z * f.x to z * (f.x + f.w).
+    const left = z * f.x, right = z * (f.x + f.w), top = z * f.y, bottom = z * (f.y + f.h);
+    const clamp = (pan: number, lo: number, hi: number, size: number) => {
+      // A board smaller than the canvas stays centred; a bigger one can't be dragged past its edges.
+      if (hi - lo <= size) return (size - (hi + lo)) / 2;
+      return Math.min(-lo, Math.max(size - hi, pan));
+    };
+    this.pan = { x: clamp(this.pan.x, left, right, W), y: clamp(this.pan.y, top, bottom, H) };
+    this.world.scale.set(f.s * z);
+    this.world.position.set(this.pan.x + z * this.fitted.px, this.pan.y + z * this.fitted.py);
+    this.viewListeners.forEach((l) => l());
+    this.invalidate();
+    // The cached layers are sharp at the size they were drawn: redraw them once the player stops.
+    clearTimeout(this.recacheTimer);
+    this.recacheTimer = setTimeout(() => this.recache(), 160);
+  }
+
+  private recache() {
+    const res = Math.min(4, Math.max(0.5, this.fitted.s * this.zoomLevel * this.app.renderer.resolution));
+    for (const c of [this.base, this.marks]) {
+      if (this.cached) c.cacheAsTexture(false);
+      c.cacheAsTexture({ resolution: res, antialias: true });
+    }
+    this.cached = true;
+    this.invalidate();
+  }
+
+  /** Mouse wheel and trackpad zoom, drag to move, and pinch with two fingers. */
+  private attachGestures() {
+    const canvas = this.app.canvas as HTMLCanvasElement;
+    canvas.style.touchAction = "none";
+    const at = (e: { clientX: number; clientY: number }): Point => {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        // Pinching on a trackpad arrives as a wheel with ctrlKey; a mouse wheel moves by notches.
+        const k = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015));
+        this.zoomBy(k, at(e));
+      },
+      { passive: false },
+    );
+    const down = new Map<number, Point>();
+    let last: { d: number; mid: Point } | null = null;
+    let travelled = 0;
+    const pair = () => {
+      const [a, b] = [...down.values()];
+      return { d: Math.hypot(a!.x - b!.x, a!.y - b!.y), mid: { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 } };
+    };
+    canvas.addEventListener("pointerdown", (e) => {
+      down.set(e.pointerId, at(e));
+      if (down.size === 1) {
+        this.dragged = false;
+        travelled = 0;
+      }
+      if (down.size === 2) {
+        last = pair();
+        this.dragged = true; // two fingers is never a tap
+      }
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      const prev = down.get(e.pointerId);
+      if (!prev) return;
+      const now = at(e);
+      down.set(e.pointerId, now);
+      if (down.size === 2 && last) {
+        const cur = pair();
+        this.pan = { x: this.pan.x + (cur.mid.x - last.mid.x), y: this.pan.y + (cur.mid.y - last.mid.y) };
+        if (last.d > 0) this.zoomBy(cur.d / last.d, cur.mid);
+        else this.applyView();
+        last = cur;
+        return;
+      }
+      if (down.size === 1) {
+        travelled += Math.hypot(now.x - prev.x, now.y - prev.y);
+        // A small wobble is still a tap; past a few pixels it's a drag (and the board moves only when zoomed in).
+        if (travelled > 6) this.dragged = true;
+        if (this.dragged && this.zoomLevel > 1) {
+          this.pan = { x: this.pan.x + (now.x - prev.x), y: this.pan.y + (now.y - prev.y) };
+          this.applyView();
+        }
+      }
+    });
+    const up = (e: PointerEvent) => {
+      down.delete(e.pointerId);
+      if (down.size < 2) last = null;
+      // Let the tap that ends a drag arrive first (it is ignored), then forget the drag.
+      if (down.size === 0) setTimeout(() => (this.dragged = false), 0);
+    };
+    canvas.addEventListener("pointerup", up);
+    canvas.addEventListener("pointercancel", up);
+    canvas.addEventListener("pointerleave", (e) => {
+      if (e.pointerType === "mouse") up(e);
+    });
   }
 
   private trace(g: Graphics, shapes: Shape[]) {
@@ -388,15 +535,10 @@ export class BoardView {
     const W = this.app.screen.width, H = this.app.screen.height;
     const m = this.opts.margin;
     const s = Math.min((W * (1 - 2 * m)) / (x1 - x0), (H * (1 - 2 * m)) / (y1 - y0));
-    this.world.scale.set(s);
-    this.world.position.set((W - (x1 - x0) * s) / 2 - x0 * s, (H - (y1 - y0) * s) / 2 - y0 * s);
-    // Re-draw the cached layers at the new size so they stay sharp.
-    const res = Math.min(4, Math.max(0.5, s * this.app.renderer.resolution));
-    for (const c of [this.base, this.marks]) {
-      if (this.cached) c.cacheAsTexture(false);
-      c.cacheAsTexture({ resolution: res, antialias: true });
-    }
-    this.cached = true;
-    this.invalidate();
+    const px = (W - (x1 - x0) * s) / 2 - x0 * s, py = (H - (y1 - y0) * s) / 2 - y0 * s;
+    // The fitted board's box on screen (for keeping a zoomed board from being dragged away), and its position.
+    this.fitted = { s, x: x0 * s + px, y: y0 * s + py, w: (x1 - x0) * s, h: (y1 - y0) * s, px, py };
+    this.applyView();
+    this.recache();
   }
 }
