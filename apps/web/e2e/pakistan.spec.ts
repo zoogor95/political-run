@@ -68,3 +68,34 @@ test("a whole Pakistan match: reserved seats are declared last and the count rea
   await page.getByTestId("result-group-sindh").click();
   await expect(map.getByTestId("seat-lit").first()).toBeVisible();
 });
+
+test("eight parties on the Pakistan results: one party to a row, and the seat map zooms", async ({ page }, info) => {
+  test.setTimeout(400_000);
+  test.skip(info.project.name !== "desktop", "checked on the desktop layout");
+  await page.setViewportSize({ width: 1000, height: 560 });
+  await page.goto("/?map=pk&seed=5&ai=easy&players=8");
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await submitTurn(page);
+  await expect(page.getByTestId("results")).toBeVisible();
+  await page.screenshot({ path: info.outputPath("pk-8-results.png") });
+
+  // One card per row: every card shares a left edge and none sits beside another.
+  const cards = page.getByTestId("ranks").locator("li");
+  await expect(cards).toHaveCount(8);
+  const boxes = await cards.evaluateAll((els) => els.map((e) => ({ x: Math.round(e.getBoundingClientRect().left), y: Math.round(e.getBoundingClientRect().top) })));
+  expect(new Set(boxes.map((b) => b.x)).size).toBe(1);
+  expect(new Set(boxes.map((b) => b.y)).size).toBe(8);
+
+  // The seat map zooms in and out, and labels that collided at first appear as there is room.
+  const map = page.getByTestId("seat-map");
+  const labels = () => map.locator(".seat-label").count();
+  const before = await labels();
+  const zoomOf = () => map.getByTestId("seat-zoom").getAttribute("data-zoom");
+  expect(await zoomOf()).toBe("1.00");
+  for (let i = 0; i < 4; i++) await page.getByTestId("seat-zoom-in").click();
+  expect(Number(await zoomOf())).toBeGreaterThan(4);
+  expect(await labels()).toBeGreaterThanOrEqual(before);
+  await page.screenshot({ path: info.outputPath("pk-8-zoomed.png") });
+  await page.getByTestId("seat-zoom-reset").click();
+  expect(await zoomOf()).toBe("1.00");
+});
