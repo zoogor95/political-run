@@ -305,3 +305,25 @@ describe("base income by table size", () => {
     expect(MAX_PLAYERS).toBe(8);
   });
 });
+
+describe("luck report", () => {
+  it("compares seats won with the seats a player's pips were worth, as a percentage", async () => {
+    const { luckReport, countedSeats } = await import("../src/index.js");
+    const s = newMatch(["a", "b"]);
+    setSteps(s, "north", "a", 3);
+    setSteps(s, "north", "b", 1);
+    // Weights 2*3-1 = 5 and 2*1-1 = 1: of North's 40 seats, a is worth 40 x 5/6 and b 40 x 1/6.
+    const won = { north: { a: 36, b: 4 } };
+    expect(luckReport(pack, s, won)).toBeNull(); // luck factor off: nothing was drawn
+    s.luck = true;
+    const report = luckReport(pack, s, won)!;
+    expect(report.a!.expected).toBeCloseTo(33.333, 2);
+    expect(report.a!.actual).toBe(36);
+    expect(report.a!.pct).toBeCloseTo(8, 0);
+    expect(report.b!.pct).toBeCloseTo(-40, 0);
+    // The real draw is always accounted for: seats won add up to seats expected, region by region.
+    const drawn = luckReport(pack, s, countedSeats(pack, s))!;
+    const sum = (k: "expected" | "actual") => Object.values(drawn).reduce((n, v) => n + v[k], 0);
+    expect(sum("actual")).toBeCloseTo(sum("expected"), 5);
+  });
+});

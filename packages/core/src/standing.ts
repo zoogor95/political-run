@@ -91,6 +91,26 @@ function expectedSeats(state: GameState, regionId: string, seats: number): Recor
   return Object.fromEntries(ranked.map((id, i) => [id, shares[i]!]));
 }
 
+/**
+ * How lucky each player was at the count: the general seats they won (`won`, by region) against the seats their pips
+ * were worth in the draw (the expected number, not rounded), and the difference as a percentage of the expected number.
+ * Null when the luck factor is off (nothing was drawn) or the race is presidential.
+ */
+export function luckReport(pack: MapPack, state: GameState, won: Record<string, Record<string, number>>): Record<string, { expected: number; actual: number; pct: number }> | null {
+  if (!state.luck || pack.gameType === "presidential") return null;
+  const expected: Record<string, number> = Object.fromEntries(state.players.map((p) => [p.id, 0]));
+  const actual: Record<string, number> = Object.fromEntries(state.players.map((p) => [p.id, 0]));
+  for (const r of pack.regions) {
+    const weights = luckWeights(state, r.id);
+    const total = Object.values(weights).reduce((a, b) => a + b, 0);
+    for (const p of state.players) {
+      if (total > 0) expected[p.id]! += (r.seats * (weights[p.id] ?? 0)) / total;
+      actual[p.id]! += won[r.id]?.[p.id] ?? 0;
+    }
+  }
+  return Object.fromEntries(state.players.map((p) => [p.id, { expected: expected[p.id]!, actual: actual[p.id]!, pct: expected[p.id]! > 0 ? (100 * (actual[p.id]! - expected[p.id]!)) / expected[p.id]! : 0 }]));
+}
+
 /** A key that stays the same for the whole match: its seed, or for old saves its leaders and party names. */
 export function matchKey(state: GameState): string {
   return String(state.seed ?? state.players.map((p) => `${p.leaderId}/${p.party.name}`).join("|"));
