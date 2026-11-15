@@ -445,6 +445,34 @@ test("resign and watch: the computer takes your party and you watch the match go
 });
 
 
+test("the campaign board zooms, a tap still picks a region while zoomed, and the whole board comes back", async ({ page }) => {
+  await start(page);
+  const zoom = () => page.evaluate(() => (window as unknown as { __game: { view: { zoom: number } } }).__game.view.zoom);
+  expect(await zoom()).toBe(1);
+  await expect(page.getByTestId("zoom-reset")).toHaveCount(0);
+  await page.getByTestId("zoom-in").click();
+  await page.getByTestId("zoom-in").click();
+  expect(await zoom()).toBeGreaterThan(2);
+  await expect(page.getByTestId("zoom-reset")).toBeVisible();
+  // The mouse wheel zooms too, and never past the limit.
+  const box = (await page.getByTestId("board").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 30; i++) await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(100);
+  expect(await zoom()).toBeLessThanOrEqual(6);
+  // Dragging the zoomed board moves it without selecting anything.
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 40, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.getByTestId("zoom-reset")).toBeVisible();
+  await page.getByTestId("zoom-reset").click();
+  expect(await zoom()).toBe(1);
+  await expect(page.getByTestId("zoom-reset")).toHaveCount(0);
+  // Whole board again: tapping a region selects it as before.
+  await tapRegion(page, "nw");
+  await expect(page.locator(".region-card")).toBeVisible();
+});
+
 test("the step control stays where it is while you plan: notes appearing above it never move the + button", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "phones stack the card and scroll it");
   // A tall window, so the card is shorter than the panel: that's where the control used to follow the content down.
