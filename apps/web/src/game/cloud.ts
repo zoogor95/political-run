@@ -116,7 +116,7 @@ async function api<T>(method: string, path: string, body?: unknown, token = save
       throw new CloudError("This device was signed out of the online backup. Restore with your recovery code to turn it back on.");
     }
     // Sign-in and registration errors are worded for the player by the server (taken name, wrong password, locked out…).
-    if (data?.error && ["username_taken", "bad_login", "locked", "bad_username", "bad_password", "already_registered"].includes(data.error.code)) throw new CloudError(data.error.message);
+    if (data?.error && ["username_taken", "bad_login", "locked", "bad_username", "bad_password", "already_registered", "no_password"].includes(data.error.code)) throw new CloudError(data.error.message);
     throw new CloudError(data?.error?.code === "no_account" ? "No profile has that recovery code. Check it and try again." : "The game's server had a problem. Try again in a minute.");
   }
   return data as T;
@@ -245,6 +245,11 @@ export async function signIn(username: string, password: string): Promise<void> 
     applyRemote(res, false);
     await push();
   });
+}
+
+/** Changes the password of the signed-in account; every other device is signed out. */
+export async function changePassword(current: string, next: string): Promise<void> {
+  await api("PUT", "/api/me/password", { current, next });
 }
 
 /** Whether a username is free, as far as the server can tell (null when it can't be asked). */

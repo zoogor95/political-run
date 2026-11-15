@@ -457,4 +457,24 @@ describe("username and password accounts", () => {
     expect((await call("POST", "/api/accounts/login", { body: { username: "gone_soon", password: "correct horse" } })).status).toBe(401);
     expect((await register("gone_soon", "new password!")).status).toBe(201);
   });
+
+  it("changes the password with the current one, signs other devices out, and counts wrong guesses toward the lockout", async () => {
+    const first = await register("changer", "old password!");
+    const other = await call("POST", "/api/accounts/login", { body: { username: "changer", password: "old password!" } });
+    const put = (token: string, body: unknown, now?: number) => call("PUT", "/api/me/password", { token, body, ...(now ? { now } : {}) });
+    expect((await put(first.data.token, { current: "nope nope nope", next: "new password!" })).data.error.code).toBe("bad_login");
+    expect((await put(first.data.token, { current: "old password!", next: "short" })).status).toBe(400);
+    expect((await put(first.data.token, { current: "old password!", next: "new password!" })).status).toBe(200);
+    // This device stays signed in; the other one is signed out; only the new password works.
+    expect((await call("GET", "/api/me", { token: first.data.token })).status).toBe(200);
+    expect((await call("GET", "/api/me", { token: other.data.token })).status).toBe(401);
+    expect((await call("POST", "/api/accounts/login", { body: { username: "changer", password: "old password!" } })).status).toBe(401);
+    expect((await call("POST", "/api/accounts/login", { body: { username: "changer", password: "new password!" } })).status).toBe(200);
+    // A guest profile with no password has nothing to change.
+    const guest = (await signIn("h".repeat(43))).data;
+    expect((await put(guest.token, { current: "x", next: "new password!" })).data.error.code).toBe("no_password");
+    // Wrong current passwords lock it like signing in does.
+    for (let i = 0; i < 5; i++) await put(first.data.token, { current: "wrong guess!!", next: "new password!" });
+    expect((await put(first.data.token, { current: "new password!", next: "another one!!" })).status).toBe(429);
+  });
 });
