@@ -385,3 +385,68 @@ describe("tournaments", () => {
     expect(mine.filter((t) => t.length === 0)).toHaveLength(3);
   });
 });
+
+describe("username and password accounts", () => {
+  const register = (username: string, password = "correct horse", token?: string) => call("POST", "/api/accounts/register", { body: { username, password }, ...(token ? { token } : {}) });
+
+  it("registers a new account, signs in with it, and keeps usernames unique whatever the case", async () => {
+    const r = await register("Ali_K");
+    expect(r.status).toBe(201);
+    expect(r.data.account).toMatchObject({ displayName: "Ali_K", username: "Ali_K" });
+    expect((await call("GET", "/api/me", { token: r.data.token })).data.account.username).toBe("Ali_K");
+    // The same name in any case is taken, and the answer says so before anyone tries to register it.
+    expect((await call("GET", "/api/accounts/username?name=ali_k")).data).toEqual({ valid: true, available: false });
+    expect((await call("GET", "/api/accounts/username?name=someone")).data).toEqual({ valid: true, available: true });
+    expect((await call("GET", "/api/accounts/username?name=a")).data).toEqual({ valid: false, available: false });
+    const dup = await register("ALI_k", "another password");
+    expect(dup.status).toBe(409);
+    expect(dup.data.error.code).toBe("username_taken");
+
+    const login = await call("POST", "/api/accounts/login", { body: { username: "ali_K", password: "correct horse" } });
+    expect(login.status).toBe(200);
+    expect(login.data.account.id).toBe(r.data.account.id);
+    expect((await call("GET", "/api/me", { token: login.data.token })).status).toBe(200);
+  });
+
+  it("rejects bad usernames and passwords, and never stores the password", async () => {
+    expect((await register("no spaces")).status).toBe(400);
+    expect((await register("ab")).status).toBe(400);
+    expect((await register("fine_name", "short")).status).toBe(400);
+    await register("storecheck", "my secret phrase");
+    const row = await env.DB.prepare("SELECT password_hash, salt FROM credentials WHERE username_key = 'storecheck'").first<{ password_hash: string; salt: string }>();
+    expect(JSON.stringify(row)).not.toContain("my secret phrase");
+    expect(row!.password_hash.length).toBeGreaterThan(30);
+  });
+
+  it("gives the same answer for a wrong password and an unknown name, and locks after five wrong passwords", async () => {
+    await register("lockme", "right password");
+    const wrongName = await call("POST", "/api/accounts/login", { body: { username: "nobody_here", password: "right password" } });
+    const wrongPass = await call("POST", "/api/accounts/login", { body: { username: "lockme", password: "wrong password" } });
+    expect([wrongName.status, wrongName.data.error.code]).toEqual([401, "bad_login"]);
+    expect([wrongPass.status, wrongPass.data.error.code]).toEqual([401, "bad_login"]);
+    for (let i = 0; i < 4; i++) await call("POST", "/api/accounts/login", { body: { username: "lockme", password: "wrong password" } });
+    // Now locked, even for the right password, until the lock runs out.
+    const locked = await call("POST", "/api/accounts/login", { body: { username: "lockme", password: "right password" } });
+    expect([locked.status, locked.data.error.code]).toEqual([429, "locked"]);
+    const later = await call("POST", "/api/accounts/login", { body: { username: "lockme", password: "right password" }, now: T0 + 16 * 60_000 });
+    expect(later.status).toBe(200);
+  });
+
+  it("adds a username to a guest profile without losing it, once", async () => {
+    const guest = (await signIn("g".repeat(43), { displayName: "Guesty" })).data;
+    const up = await register("upgraded", "a good password", guest.token);
+    expect(up.status).toBe(200);
+    expect(up.data.account).toMatchObject({ id: guest.account.id, displayName: "Guesty", username: "upgraded" });
+    expect((await register("second_try", "a good password", guest.token)).data.error.code).toBe("already_registered");
+    const login = await call("POST", "/api/accounts/login", { body: { username: "upgraded", password: "a good password" } });
+    expect(login.data.account.id).toBe(guest.account.id);
+  });
+
+  it("frees the username when the account is deleted", async () => {
+    const r = await register("gone_soon");
+    expect((await call("DELETE", "/api/me", { token: r.data.token })).status).toBe(200);
+    expect((await call("GET", "/api/accounts/username?name=gone_soon")).data.available).toBe(true);
+    expect((await call("POST", "/api/accounts/login", { body: { username: "gone_soon", password: "correct horse" } })).status).toBe(401);
+    expect((await register("gone_soon", "new password!")).status).toBe(201);
+  });
+});

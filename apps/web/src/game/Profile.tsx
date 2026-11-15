@@ -9,7 +9,7 @@ import { onUnlock, setProfileName, useProfile } from "./profile";
 
 const LEVEL = { easy: "Easy", normal: "Normal", hard: "Hard" } as const;
 
-export function ProfileScreen({ onBack, onParty }: { onBack: () => void; onParty?: () => void }) {
+export function ProfileScreen({ onBack, onParty, onLogin }: { onBack: () => void; onParty?: () => void; onLogin?: () => void }) {
   const p = useProfile();
   const cloud = useCloud();
   const s = p.stats;
@@ -61,6 +61,7 @@ export function ProfileScreen({ onBack, onParty }: { onBack: () => void; onParty
           </div>
         </section>
       )}
+      {onLogin && <AccountSection onLogin={onLogin} />}
       <BackupPanel />
       <CupTitles />
       <HomeRegions />
@@ -217,7 +218,7 @@ function BackupPanel() {
         </div>
       )}
       <div className="backup-actions">
-        {!fresh && !showCode && (
+        {!fresh && !showCode && cloud.code !== "" && (
           <button type="button" onClick={() => setShowCode(true)} data-testid="show-code">
             Show recovery code
           </button>
@@ -226,7 +227,7 @@ function BackupPanel() {
           Sync now
         </button>
         <button type="button" onClick={() => void attempt(stopBackup)} data-testid="backup-stop">
-          Stop backing up here
+          {cloud.username ? "Sign out of this device" : "Stop backing up here"}
         </button>
         {confirmDelete ? (
           <>
@@ -357,6 +358,29 @@ function HomeRegions() {
           {error}
         </p>
       )}
+    </section>
+  );
+}
+
+/** Username and password: sign in on any device, or add a login to this profile. */
+function AccountSection({ onLogin }: { onLogin: () => void }) {
+  const cloud = useCloud();
+  const username = cloud.state !== "off" ? cloud.username : null;
+  return (
+    <section className="backup account" data-testid="account-section" aria-label="Account">
+      <h2>Account</h2>
+      {username ? (
+        <p data-testid="account-name">
+          Signed in as <b>{username}</b>.
+        </p>
+      ) : (
+        <p>Make a username and password to get your profile back on any device, or sign in to one you already have.</p>
+      )}
+      <div className="backup-actions">
+        <button type="button" className={username ? "" : "primary"} onClick={onLogin} data-testid="open-login">
+          {username ? "Account details" : "Sign in or create an account"}
+        </button>
+      </div>
     </section>
   );
 }
