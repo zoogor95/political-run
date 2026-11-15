@@ -121,6 +121,7 @@ export function MainMenu({
   onOnline,
   onOngoing,
   onQuick,
+  onLeaderboards,
 }: {
   onContinue: () => void;
   onNew: (mode: Mode) => void;
@@ -130,6 +131,7 @@ export function MainMenu({
   onOnline: () => void;
   onOngoing: () => void;
   onQuick: () => void;
+  onLeaderboards: () => void;
 }) {
   const save = loadMatch();
   const profile = useProfile();
@@ -266,7 +268,7 @@ export function MainMenu({
               </span>
             )}
           </button>
-          <button type="button" disabled title="Coming soon">
+          <button type="button" onClick={onLeaderboards} data-testid="open-leaderboards">
             Leaderboards
           </button>
           <button type="button" disabled title="Coming soon">

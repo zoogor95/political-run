@@ -8,6 +8,7 @@ import { MainMenu } from "./game/MainMenu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
 import { CreatePartyScreen } from "./game/CreateParty";
 import { QuickMatchScreen } from "./game/Quick";
+import { LeaderboardsScreen } from "./game/Leaderboards";
 import { registerServiceWorker } from "./game/push";
 import { loadMatch, clearSave } from "./game/saves";
 import { defaultConfig, type Mode } from "./game/setup";
@@ -27,6 +28,7 @@ type Screen =
   | { name: "profile" }
   | { name: "party" }
   | { name: "quick" }
+  | { name: "leaderboards" }
   | { name: "online" }
   | { name: "ongoing" }
   | { name: "lobby"; link: MatchLink }
@@ -100,6 +102,7 @@ function App() {
           }}
           onProfile={() => setScreen({ name: "profile" })}
           onQuick={() => setScreen({ name: "quick" })}
+          onLeaderboards={() => setScreen({ name: "leaderboards" })}
           onOnline={() => setScreen({ name: "online" })}
           onOngoing={() => setScreen({ name: "ongoing" })}
           onTutorial={() => {
@@ -117,6 +120,7 @@ function App() {
       )}
       {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} onParty={() => setScreen({ name: "party" })} />}
       {screen.name === "party" && <CreatePartyScreen onBack={() => setScreen({ name: "profile" })} />}
+      {screen.name === "leaderboards" && <LeaderboardsScreen onBack={toMenu} />}
       {screen.name === "quick" && <QuickMatchScreen onBack={toMenu} onMatched={quickMatched} />}
       {screen.name === "online" && (
         <OnlineHub

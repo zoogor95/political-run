@@ -293,6 +293,25 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     return env.MATCHMAKER.get(env.MATCHMAKER.idFromName("global")).fetch(new Request(`https://matchmaker/ws?map=${map}&ranked=${q.get("ranked") === "1" ? 1 : 0}`, { headers }));
   }
 
+  // Leaderboards: the top 50 players by rating on a map, or the top leaders by season score. ?season= defaults to now.
+  if (at("GET", "/api/leaderboard")) {
+    const q = new URL(req.url).searchParams;
+    const map = q.get("map") ?? "";
+    if (!PACKS[map]) throw new ApiError(400, "bad_map", "Unknown map");
+    const season = /^\d{4}-Q[1-4]$/.test(q.get("season") ?? "") ? q.get("season")! : seasonOf(now).id;
+    const me = await authed(req, env, now).then((a) => a.accountId).catch(() => null);
+    if (q.get("board") === "candidates") {
+      const rows = await env.DB.prepare(
+        "SELECT candidate_ref AS candidate, SUM(games) AS games, SUM(wins) AS wins, SUM(score) AS score, COUNT(*) AS players FROM candidate_stats WHERE season_id = ? AND map_pack_id = ? GROUP BY candidate_ref ORDER BY score DESC, wins DESC LIMIT 50",
+      ).bind(season, map).all();
+      return json({ season, map, board: "candidates", rows: rows.results });
+    }
+    const rows = await env.DB.prepare(
+      "SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins FROM ratings r JOIN accounts a ON a.id = r.account_id WHERE r.season_id = ? AND r.map_pack_id = ? AND a.status = 'active' ORDER BY r.rating DESC, r.games DESC LIMIT 50",
+    ).bind(season, map).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
+    return json({ season, map, board: "players", rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
+  }
+
   // This season's ratings for the signed-in player, by map.
   if (at("GET", "/api/ratings/me")) {
     const { accountId } = await authed(req, env, now);
