@@ -1,7 +1,7 @@
 /** Leaderboards: this season's top players by ranked rating on each map, and the leaders who score best. */
 import { useEffect, useState } from "react";
 import { API_URL, ensureAccount, sessionToken } from "./cloud";
-import { myRatings } from "./quick";
+import { HOME_COUNTRIES, myRatings } from "./quick";
 import { candidateName, MAPS, preferredMap, type MapId } from "./model";
 
 interface PlayerRow {
@@ -25,13 +25,13 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
   const [mapId, setMapId] = useState<MapId>(preferredMap);
   const [kind, setKind] = useState<"players" | "candidates">("players");
   const [region, setRegion] = useState("");
-  const [home, setHome] = useState<Record<string, string>>({});
+  const [home, setHome] = useState<{ country: string | null; region: string | null }>({ country: null, region: null });
   const [data, setData] = useState<Board | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     if (!sessionToken()) return;
     myRatings()
-      .then((r) => setHome(r.home ?? {}))
+      .then((r) => setHome(r.home ?? { country: null, region: null }))
       .catch(() => undefined);
   }, []);
   // A region belongs to one map: changing maps goes back to everywhere.
@@ -87,7 +87,7 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
             {MAPS[mapId].pack.regions.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
-                {home[mapId] === r.id ? " (your region)" : ""}
+                {home.region === r.id && HOME_COUNTRIES.find((c) => c.code === home.country)?.map === mapId ? " (your region)" : ""}
               </option>
             ))}
           </select>

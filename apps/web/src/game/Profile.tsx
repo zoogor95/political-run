@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "./achievements";
 import { play } from "./audio";
 import { backUp, CloudError, deleteBackup, restore, sessionToken, stopBackup, syncNow, useCloud } from "./cloud";
-import { myRatings, setHomeRegion } from "./quick";
+import { HOME_COUNTRIES, myRatings, setHome } from "./quick";
 import { MAPS } from "./model";
 import { onUnlock, setProfileName, useProfile } from "./profile";
 
@@ -308,51 +308,59 @@ function CupTitles() {
   );
 }
 
-/** Where you're from on each map: it puts you on that region's leaderboard. Saved to the online account. */
+/** Where you live: a country and a region of it. It puts you on that region's leaderboard. Saved to the online account. */
 function HomeRegions() {
-  const [home, setHome] = useState<Record<string, string>>({});
+  const [home, setHomeState] = useState<{ country: string | null; region: string | null }>({ country: null, region: null });
   const [error, setError] = useState("");
   useEffect(() => {
     if (!sessionToken()) return;
     let live = true;
     myRatings()
-      .then((r) => live && setHome(r.home ?? {}))
+      .then((r) => live && setHomeState(r.home ?? { country: null, region: null }))
       .catch(() => undefined);
     return () => {
       live = false;
     };
   }, []);
-  const choose = async (map: string, region: string) => {
+  const save = async (country: string | null, region: string | null) => {
     setError("");
     try {
-      await setHomeRegion(map, region || null);
-      setHome((h) => {
-        const next = { ...h };
-        if (region) next[map] = region;
-        else delete next[map];
-        return next;
-      });
+      await setHome(country, region);
+      setHomeState({ country, region });
     } catch {
       setError("Couldn't save your home region. Try again in a moment.");
     }
   };
+  const entry = HOME_COUNTRIES.find((c) => c.code === home.country);
+  const map = entry ? MAPS[entry.map] : undefined;
   return (
-    <section className="backup home-regions" data-testid="home-regions" aria-label="Home regions">
-      <h2>Home region</h2>
-      <p className="small">Pick where you're from on each map to appear on that region's leaderboard. This is shown only as a leaderboard filter, never next to your name.</p>
-      {Object.values(MAPS).map((m) => (
-        <label key={m.id} className="find">
-          <span>{m.name}</span>
-          <select value={home[m.id] ?? ""} onChange={(e) => void choose(m.id, e.target.value)} data-testid={`home-${m.id}`}>
+    <section className="backup home-regions" data-testid="home-regions" aria-label="Home region">
+      <h2>Where you live</h2>
+      <p className="small">Pick your country and region to appear on that region's leaderboard. It is only used as a leaderboard filter and is never shown next to your name.</p>
+      <label className="find">
+        <span>Country</span>
+        <select value={home.country ?? ""} onChange={(e) => void save(e.target.value || null, null)} data-testid="home-country">
+          <option value="">Not set</option>
+          {HOME_COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {MAPS[c.map].name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {map && (
+        <label className="find">
+          <span>Region</span>
+          <select value={home.region ?? ""} onChange={(e) => void save(home.country, e.target.value || null)} data-testid="home-region">
             <option value="">Not set</option>
-            {m.pack.regions.map((r) => (
+            {map.pack.regions.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
               </option>
             ))}
           </select>
         </label>
-      ))}
+      )}
       {error && (
         <p className="backup-error" role="alert">
           {error}

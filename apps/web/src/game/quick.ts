@@ -83,16 +83,23 @@ export class QuickSearch {
 }
 
 /** This season's ratings for the signed-in player, by map (an empty list until they play ranked). */
-export async function myRatings(): Promise<{ season: { name: string }; ratings: { map: string; rating: number; games: number; wins: number }[]; titles?: { id: string; name: string; map: string; rank: 1 | 2 }[]; home?: Record<string, string> }> {
+export async function myRatings(): Promise<{ season: { name: string }; ratings: { map: string; rating: number; games: number; wins: number }[]; titles?: { id: string; name: string; map: string; rank: 1 | 2 }[]; home?: { country: string | null; region: string | null } }> {
   await ensureAccount();
   const res = await fetch(`${API_URL}/api/ratings/me`, { headers: { authorization: `Bearer ${sessionToken()}` } });
   if (!res.ok) throw new Error(`ratings ${res.status}`);
   return (await res.json()) as Awaited<ReturnType<typeof myRatings>>;
 }
 
-/** Saves (or with null clears) the player's home region on a map, for the regional leaderboards. */
-export async function setHomeRegion(map: string, region: string | null): Promise<void> {
+/** Saves where the player lives (a country code and a region of it, either may be null), for the regional leaderboards. */
+export async function setHome(country: string | null, region: string | null): Promise<void> {
   await ensureAccount();
-  const res = await fetch(`${API_URL}/api/me/home`, { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${sessionToken()}` }, body: JSON.stringify({ map, region }) });
+  const res = await fetch(`${API_URL}/api/me/home`, { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${sessionToken()}` }, body: JSON.stringify({ country, region }) });
   if (!res.ok) throw new Error(`home ${res.status}`);
 }
+
+/** The countries a home can be in: each is one of the game's maps, so its regions are that map's regions. */
+export const HOME_COUNTRIES = [
+  { code: "GB", map: "uk" },
+  { code: "PK", map: "pk" },
+  { code: "US", map: "us" },
+] as const;
