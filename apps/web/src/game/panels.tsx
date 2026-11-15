@@ -454,14 +454,14 @@ function LuckOdds({ state, regionId, label }: { state: GameState; regionId: stri
   );
 }
 
-export function PlanPanel({ game, onOpen }: { game: GameApi; onOpen: (id: string) => void }) {
+export function PlanPanel({ game, onOpen, untitled }: { game: GameApi; onOpen: (id: string) => void; untitled?: boolean }) {
   const { state, plan, issues } = game;
   const lines = planLines(state, plan, game.viewer);
   const total = lines.reduce((a, l) => a + l.cost, 0);
   const you = playerOf(state, game.viewer);
   return (
     <section>
-      <h3>Your plan</h3>
+      {!untitled && <h3>Your plan</h3>}
       {lines.length === 0 ? (
         <p className="muted">Tap a region to plan steps there.</p>
       ) : (
@@ -923,13 +923,25 @@ export function RivalsPanel({ game, highlight, onHighlight }: { game: GameApi; h
  * Every party at a glance, as on the design's board: you first, then the rest by projected seats, each with leader,
  * who plays it and the seats; your money underneath. Tap a party to see what it leads on the map.
  */
-export function LeadersCard({ game, highlight, onHighlight }: { game: GameApi; highlight: string | null; onHighlight: (id: string | null) => void }) {
+/** The plan in a panel of its own beside the board (wide screens), so what you're spending is always in view. */
+export function PlanCard({ game, onOpen }: { game: GameApi; onOpen: (id: string) => void }) {
+  return (
+    <section className="leaders-card plan-card" data-testid="plan-card" aria-label="Your plan">
+      <h3 className="leaders-head">YOUR PLAN</h3>
+      <div className="plan-card-body">
+        <PlanPanel game={game} onOpen={onOpen} untitled />
+      </div>
+    </section>
+  );
+}
+
+export function LeadersCard({ game, highlight, onHighlight, inTab }: { game: GameApi; highlight: string | null; onHighlight: (id: string | null) => void; inTab?: boolean }) {
   const state = game.stage === "recap" && game.report ? game.report.before : game.state;
   const seats = projectedSeats(pack, state);
   const order = [...state.players].sort((a, b) => (a.id === game.viewer ? -1 : b.id === game.viewer ? 1 : (seats[b.id] ?? 0) - (seats[a.id] ?? 0)));
   const you = state.players.find((p) => p.id === game.viewer);
   return (
-    <section className="leaders-card" data-testid="leaders-card" aria-label="Leaders">
+    <section className={`leaders-card${inTab ? " in-tab" : ""}`} data-testid="leaders-card" aria-label="Leaders">
       <h3 className="leaders-head">{presidential() ? "CANDIDATES" : "LEADERS"}</h3>
       <ul>
         {order.map((p) => {
@@ -967,7 +979,7 @@ export function LeadersCard({ game, highlight, onHighlight }: { game: GameApi; h
           );
         })}
       </ul>
-      {you && !game.watching && (
+      {you && !game.watching && !inTab && (
         <div className="leaders-money">
           <span>Your money</span>
           <b>{money(totalMoney(you))}</b>

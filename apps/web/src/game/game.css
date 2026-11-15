@@ -6847,3 +6847,9 @@
   border-width: 3px; border-radius: 12px; box-shadow: 0 3px 0 var(--ink); padding: 3px 8px; gap: 8px; font-size: 13px;
 }
 .board-wrap.replaying .replay-strip button { width: 28px; height: 28px; font-size: 12px; border-width: 2px; border-radius: 8px; }
+
+/* The plan's own panel (wide screens) and the leaders list inside the Rivals tab. */
+.plan-card { max-height: calc(100dvh - 120px); overflow-y: auto; }
+.plan-card-body { padding: 4px 14px 12px; }
+.plan-card-body .sums { margin-top: 8px; }
+.leaders-card.in-tab { display: block; width: auto; align-self: stretch; box-shadow: none; border-width: 3px; margin-bottom: 12px; zoom: 1; }

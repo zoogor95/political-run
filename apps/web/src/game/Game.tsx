@@ -7,7 +7,7 @@ import { useSettings } from "./settings";
 import { Countdown } from "./Online";
 import { ElectionNightView, type NightPhase } from "./election";
 import { RankCards, ReplayStrip, ResultsBanner, ResultsBar, ResultsPanel } from "./results";
-import { GroupDetail, GroupsPanel, LeadersCard, PartyPanel, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
+import { GroupDetail, GroupsPanel, LeadersCard, PartyPanel, PlanCard, PlanPanel, RivalsPanel, TABS, TopBar, TrackCard, type Tab } from "./panels";
 import { BreakingCard, RecapPanel, SummaryView, Ticker } from "./recap";
 import { Coach } from "./Coach";
 import { SeatMap } from "./SeatMap";
@@ -24,6 +24,14 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const settings = useSettings();
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("plan");
+  // On a wide screen the plan has a panel of its own beside the board, and the leaders move into the Rivals tab.
+  const [wide, setWide] = useState(() => window.matchMedia("(min-width: 1180px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1180px)");
+    const on = () => setWide(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   const [highlight, setHighlight] = useState<string | null>(null);
   // A region group picked in the Groups tab: its regions stay lit on the board.
   const [groupFocus, setGroupFocus] = useState<string | null>(null);
@@ -135,6 +143,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   // The seat map: regions fill as they are declared; in the results, the replay slider shows the seats each turn's board
   // would have won.
   const results = game.stage === "results" && night !== null;
+  const planBeside = wide && game.stage === "planning" && !game.watching && !onNight;
   const showSeats = (onNight || results) && seatView;
   const seatMap = useMemo(() => {
     if (!night || !(onNight || results)) return null;
@@ -408,10 +417,11 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
                     You're watching: {game.online && !game.online.resigned && !game.resignedSeats.length ? "the players and computers plan" : "the computers plan"} every party. Tap any region to see how it stands.
                   </p>
                 ) : (
-                  <PlanPanel game={game} onOpen={setSelected} />
+                  !planBeside && <PlanPanel game={game} onOpen={setSelected} />
                 ))}
               {tab === "party" && <PartyPanel game={game} />}
               {tab === "groups" && <GroupsPanel game={game} onOpen={setSelected} focus={groupFocus} onFocus={setGroupFocus} />}
+              {tab === "rivals" && planBeside && <LeadersCard game={game} highlight={highlight} onHighlight={setHighlight} inTab />}
               {tab === "rivals" && <RivalsPanel game={game} highlight={highlight} onHighlight={setHighlight} />}
               {tab === "plan" && report && (
                 <section className="last" data-testid="last-turn">
@@ -425,7 +435,8 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
             </>
           )}
         </aside>
-        {!onNight && game.stage !== "results" && <LeadersCard game={game} highlight={highlight} onHighlight={setHighlight} />}
+        {planBeside && <PlanCard game={game} onOpen={setSelected} />}
+        {!planBeside && !onNight && game.stage !== "results" && <LeadersCard game={game} highlight={highlight} onHighlight={setHighlight} />}
         </div>
         {results && !presidential() && <RankCards game={game} />}
       </main>
