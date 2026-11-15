@@ -36,6 +36,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
   const [ready, setReady] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const viewRef = useRef<BoardView | null>(null);
+  const [zoomed, setZoomed] = useState(false);
   // Recap: regions are revealed one by one, the board showing last turn's state until each is revealed.
   const report = game.report;
   const recapRegions = useMemo(() => (report ? report.summary.changedRegions.filter((id) => board.regions.some((r) => r.id === id)) : []), [report]);
@@ -185,6 +186,7 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
         play("tap");
         setSelected((cur) => (cur === id ? null : id));
       });
+      view.onView(() => setZoomed(view.zoom > 1.001));
       view.setStyles(styles);
       setReady(true);
     })();
@@ -274,6 +276,21 @@ export function Game({ start, onMenu, onSettings }: { start: GameStart; onMenu: 
       <main className="game-body">
         <div className={`board-wrap${showGroupCard ? " with-card" : ""}`}>
           <div className={`board${showSeats ? " under" : ""}`} ref={host} data-testid="board" />
+          {!showSeats && (
+            <div className="zoom-controls" role="group" aria-label="Zoom the board">
+              <button type="button" aria-label="Zoom in" onClick={() => viewRef.current?.zoomBy(1.5)} data-testid="zoom-in">
+                +
+              </button>
+              <button type="button" aria-label="Zoom out" onClick={() => viewRef.current?.zoomBy(1 / 1.5)} data-testid="zoom-out">
+                −
+              </button>
+              {zoomed && (
+                <button type="button" aria-label="Show the whole board" onClick={() => viewRef.current?.resetView()} data-testid="zoom-reset">
+                  ⤢
+                </button>
+              )}
+            </div>
+          )}
           {showSeats && seatMap && (
             <SeatMap
               state={seatMap.state}
