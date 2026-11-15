@@ -329,7 +329,7 @@ test("leaderboards can be narrowed to a region", async ({ page }, info) => {
   await expect(page.getByTestId("lb-region")).toHaveValue("");
 });
 
-test("the profile saves a home region for each map", async ({ page }, info) => {
+test("the profile saves one home region: the country you live in, then a region of it", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "one run is enough");
   await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
   const saved: unknown[] = [];
@@ -340,10 +340,20 @@ test("the profile saves a home region for each map", async ({ page }, info) => {
   await page.goto("/");
   await page.getByTestId("open-profile").click();
   await expect(page.getByTestId("home-regions")).toBeVisible();
-  await page.getByTestId("home-pk").selectOption("lahore");
+  // There is one home, not one per map: no region choice until a country is picked.
+  await expect(page.getByTestId("home-region")).toHaveCount(0);
+  await page.getByTestId("home-country").selectOption("PK");
   await expect.poll(() => saved.length).toBe(1);
-  expect(saved[0]).toEqual({ map: "pk", region: "lahore" });
-  await page.getByTestId("home-pk").selectOption("");
+  expect(saved[0]).toEqual({ country: "PK", region: null });
+  await page.getByTestId("home-region").selectOption("lahore");
   await expect.poll(() => saved.length).toBe(2);
-  expect(saved[1]).toEqual({ map: "pk", region: null });
+  expect(saved[1]).toEqual({ country: "PK", region: "lahore" });
+  // Changing country clears the region (it belonged to the old country); "Not set" clears the home.
+  await page.getByTestId("home-country").selectOption("GB");
+  await expect.poll(() => saved.length).toBe(3);
+  expect(saved[2]).toEqual({ country: "GB", region: null });
+  await page.getByTestId("home-country").selectOption("");
+  await expect.poll(() => saved.length).toBe(4);
+  expect(saved[3]).toEqual({ country: null, region: null });
+  await expect(page.getByTestId("home-region")).toHaveCount(0);
 });

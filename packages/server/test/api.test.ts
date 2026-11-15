@@ -307,17 +307,25 @@ describe("leaderboards", () => {
     ]);
     expect((await call("GET", "/api/leaderboard?map=xx", { now })).status).toBe(400);
     expect((await call("GET", "/api/leaderboard?map=pk", { now })).data.rows).toEqual([]);
-    // Home regions: set on the profile, validated against the map, and used to filter the board.
-    expect((await call("PUT", "/api/me/home", { token: a.token, now, body: { map: "uk", region: "nowhere" } })).status).toBe(400);
-    expect((await call("PUT", "/api/me/home", { token: a.token, now, body: { map: "xx", region: "nw" } })).status).toBe(400);
-    expect((await call("PUT", "/api/me/home", { token: a.token, now, body: { map: "uk", region: "nw" } })).status).toBe(200);
-    expect((await call("PUT", "/api/me/home", { token: b.token, now, body: { map: "uk", region: "lon" } })).status).toBe(200);
-    expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ uk: "nw" });
+    // One home region per person, where they live: a country and a region of it. It filters the board for that country's map.
+    const put = (token: string, body: unknown) => call("PUT", "/api/me/home", { token, now, body });
+    expect((await put(a.token, { country: "XX", region: "nw" })).status).toBe(400);
+    expect((await put(a.token, { country: "GB", region: "zz" })).status).toBe(400);
+    expect((await put(a.token, { country: "GB", region: "lahore" })).status).toBe(400); // a region of another country
+    expect((await put(a.token, { country: "GB", region: "nw" })).status).toBe(200);
+    expect((await put(b.token, { country: "GB", region: "lon" })).status).toBe(200);
+    expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ country: "GB", region: "nw" });
+    expect((await call("GET", "/api/me", { token: a.token, now })).data.account).toMatchObject({ homeCountry: "GB", homeRegion: "nw" });
     const nw = await call("GET", "/api/leaderboard?map=uk&region=nw", { token: a.token, now });
     expect(nw.data).toMatchObject({ region: "nw", rows: [{ rank: 1, name: "Ali", you: true }] });
     expect((await call("GET", "/api/leaderboard?map=uk&region=zz", { now })).status).toBe(400);
-    expect((await call("PUT", "/api/me/home", { token: a.token, now, body: { map: "uk", region: null } })).status).toBe(200);
+    // Living in Britain doesn't put anyone on Pakistan's regional boards, and the country alone (no region) is allowed.
+    expect((await call("GET", "/api/leaderboard?map=pk&region=lahore", { now })).data.rows).toEqual([]);
+    expect((await put(a.token, { country: "GB" })).status).toBe(200);
+    expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ country: "GB", region: null });
     expect((await call("GET", "/api/leaderboard?map=uk&region=nw", { now })).data.rows).toEqual([]);
+    expect((await put(a.token, { country: null })).status).toBe(200);
+    expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ country: null, region: null });
     const cands = await call("GET", "/api/leaderboard?map=uk&board=candidates", { now });
     expect(cands.data.rows).toEqual([{ candidate: "keir-starmer", games: 12, wins: 8, score: 16, players: 2 }]);
   });
