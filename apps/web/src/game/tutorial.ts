@@ -51,7 +51,7 @@ export const TUTORIAL: CoachStep[] = [
   {
     id: "spread",
     title: "Spread your money",
-    text: "Each step costs 10% more than the one before, so a few steps in many regions go further than a pile in one. Add two more regions to your plan. Your plan and money are in the Plan tab.",
+    text: "Each step costs 10% more than the one before, so a few steps in many regions go further than a pile in one. Add two more regions to your plan. Your plan and money are in the Your plan panel (the Plan tab on a narrow screen).",
     target: "plan-list",
     done: (c) => planned(c).length >= 3,
   },
