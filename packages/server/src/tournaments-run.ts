@@ -8,7 +8,7 @@ import type { Env } from "./api.js";
 import { notifyAccounts } from "./push.js";
 import { createQuickMatch } from "./quick.js";
 import { PACKS } from "./room.js";
-import { advancing, cupFor, isFinal, MIN_ENTRANTS, MAX_ENTRANTS, phaseAt, seatTables, TOURNAMENT_TURN_SECONDS } from "./tournament.js";
+import { advancing, cupCanBeCreated, cupFor, isFinal, MIN_ENTRANTS, MAX_ENTRANTS, phaseAt, seatTables, TOURNAMENT_TURN_SECONDS } from "./tournament.js";
 
 interface TournamentRow {
   id: string;
@@ -30,6 +30,8 @@ export async function runTournaments(env: Env, now = Date.now()): Promise<void> 
   for (const map of Object.keys(PACKS)) {
     try {
       const cup = cupFor(map, now);
+      // The first cups can come after their sign-up window has closed (the feature started mid-season): skip those, the next one opens on schedule.
+      if (!cupCanBeCreated(cup, now)) continue;
       await env.DB.prepare("INSERT OR IGNORE INTO tournaments (id, name, map_pack_id, rules, starts_at, ends_at, status) VALUES (?, ?, ?, ?, ?, ?, 'scheduled')")
         .bind(cup.id, cup.name, map, JSON.stringify({ turnSeconds: TOURNAMENT_TURN_SECONDS, tableSize: 4, opensAt: cup.opensAt }), cup.startsAt, cup.endsBefore)
         .run();

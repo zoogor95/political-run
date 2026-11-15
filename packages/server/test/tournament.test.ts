@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { advancing, cupFor, isFinal, phaseAt, roundsFor, seatTables, SIGNUP_DAYS } from "../src/tournament.js";
+import { advancing, cupCanBeCreated, cupFor, isFinal, phaseAt, roundsFor, seatTables, SIGNUP_DAYS } from "../src/tournament.js";
 
 describe("tournament schedule", () => {
   it("has a Winter Cup from January and a Summer Cup from July, one per map", () => {
@@ -42,5 +42,15 @@ describe("tournament brackets", () => {
   it("sends the table's first finisher through", () => {
     expect(advancing(["x", "y", "z"])).toBe("x");
     expect(advancing([])).toBeNull();
+  });
+});
+
+describe("when a cup is made", () => {
+  it("only while people can still sign up, never after the window has closed", () => {
+    const cup = cupFor("uk", Date.UTC(2027, 0, 5));
+    expect(cupCanBeCreated(cup, Date.UTC(2027, 0, 5))).toBe(true);
+    expect(cupCanBeCreated(cup, cup.startsAt - 1)).toBe(true);
+    expect(cupCanBeCreated(cup, cup.startsAt)).toBe(false);
+    expect(cupCanBeCreated(cupFor("uk", Date.UTC(2027, 4, 1)), Date.UTC(2027, 4, 1))).toBe(false); // mid-season: wait for the Summer Cup
   });
 });
