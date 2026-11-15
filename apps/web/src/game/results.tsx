@@ -4,7 +4,7 @@
  * bar with the match's numbers and Replay map, Share, Rematch and Main menu.
  */
 import { useEffect, useState } from "react";
-import { controllers, majority, meterOf, totalSeats, type AiLevel, type GameState } from "@majority-map/core";
+import { controllers, luckReport, majority, meterOf, totalSeats, type AiLevel, type GameState } from "@majority-map/core";
 import { ACHIEVEMENTS } from "./achievements";
 import { textOn } from "./panels";
 import { candidateName, money, pack, playerOf, presidential, trackName } from "./model";
@@ -212,6 +212,65 @@ function Formation({ s, game }: { s: GameState; game: GameApi }) {
 }
 
 /** The right-hand column: the race (presidential) or the chamber (parliamentary), the headline of the match and the groups. */
+/** The match in numbers for every party: seats, money spent and lost in clashes, regions locked, and (with the luck factor on) how lucky the count was. */
+function MatchStats({ game }: { game: GameApi }) {
+  const { s, result, me } = finalNight(game);
+  const luck = luckReport(pack, s, result.regionSeats);
+  const place = presidential() ? "States" : "Regions";
+  const lostBy = (id: string) => game.summaries.reduce((a, t) => a + (t.parties.find((p) => p.playerId === id)?.conflicts.reduce((x, c) => x + c.amount, 0) ?? 0), 0);
+  const lockedBy = (id: string) => Object.values(s.locked).filter((o) => o === id).length;
+  return (
+    <section className="match-stats" data-testid="match-stats">
+      <h3>Match stats</h3>
+      <div className="stats-scroll">
+        <table className="list">
+          <thead>
+            <tr>
+              <th>Party</th>
+              <th>{presidential() ? "Votes" : "Seats"}</th>
+              <th>Spent</th>
+              <th title="Money lost in clashes">Lost</th>
+              <th title={`${place} locked`}>Locked</th>
+              {luck && <th title="Seats won against the seats the party's pips were worth in the draw">Luck</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {result.ranking.map((id) => {
+              const p = playerOf(s, id);
+              const l = luck?.[id];
+              const pct = l ? Math.round(l.pct * 10) / 10 : 0;
+              return (
+                <tr key={id} className={id === me && game.solo ? "you" : ""} data-testid={`stats-row-${id}`}>
+                  <td>
+                    <span className="stats-party" title={p.party.name}>
+                      <i className="chip" style={{ background: p.party.color }} /> {p.party.name}
+                    </span>
+                  </td>
+                  <td>{result.seats[id] ?? 0}</td>
+                  <td>{money(p.spent)}</td>
+                  <td>{money(lostBy(id))}</td>
+                  <td>{lockedBy(id)}</td>
+                  {l && (
+                    <td className={pct > 0 ? "good" : pct < 0 ? "bad" : ""} title={`Won ${l.actual} general seats; ${l.expected.toFixed(1)} expected from pips`} data-testid={`luck-${id}`}>
+                      {pct > 0 ? "+" : ""}
+                      {pct.toFixed(1)}%
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {luck ? (
+        <p className="small muted">Luck is how far a party's general seats landed above (+) or below (−) the number its pips were worth in the draw.</p>
+      ) : (
+        !presidential() && <p className="small muted">The luck factor was off, so seats followed pips exactly.</p>
+      )}
+    </section>
+  );
+}
+
 export function ResultsPanel({ game, litGroup, onGroup }: { game: GameApi; litGroup: string | null; onGroup: (groupId: string) => void }) {
   const { s, result } = finalNight(game);
   const ctrl = controllers(pack, s);
@@ -237,6 +296,7 @@ export function ResultsPanel({ game, litGroup, onGroup }: { game: GameApi; litGr
           <b>{game.matchHeadline.text}</b>
         </p>
       )}
+      <MatchStats game={game} />
       {s.luck && (
         <p className="results-luck" data-testid="luck-note">
           Luck factor on: every seat was drawn by chance, weighted by pips with each pip of lead counting double.

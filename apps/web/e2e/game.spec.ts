@@ -501,3 +501,33 @@ test("groups where your leader has a bonus or penalty are marked in the list", a
   // The mark explains itself to screen readers.
   await expect(marks.first()).toContainText(/bonus|penalty/);
 });
+
+test("the results show every party's match stats, with how lucky each was when the luck factor is on", async ({ page }, info) => {
+  test.setTimeout(240_000);
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.goto("/?seed=42&ai=easy&luck");
+  await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 30_000 });
+  for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await submitTurn(page);
+  await expect(page.getByTestId("results")).toBeVisible();
+  const stats = page.getByTestId("match-stats");
+  await stats.scrollIntoViewIfNeeded();
+  await expect(stats.locator("tbody tr")).toHaveCount(3);
+  const cells = await stats.locator('[data-testid^="luck-"]').allTextContents();
+  expect(cells).toHaveLength(3);
+  for (const c of cells) expect(c).toMatch(/^[+-]?\d+\.\d%$/);
+  // Seats are shared out, so what some parties gain others lose: the luck percentages can't all be on one side.
+  const signs = new Set(cells.map((c) => (c.startsWith("-") ? "-" : "+")));
+  expect(signs.size).toBe(2);
+  await page.screenshot({ path: info.outputPath("results-stats.png") });
+});
+
+test("without the luck factor the stats table has no luck column", async ({ page }, info) => {
+  test.setTimeout(240_000);
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await start(page);
+  for (let i = 0; i < 60 && (await page.getByTestId("results").count()) === 0; i++) await submitTurn(page);
+  const stats = page.getByTestId("match-stats");
+  await expect(stats.locator("tbody tr")).toHaveCount(3);
+  await expect(stats.locator('[data-testid^="luck-"]')).toHaveCount(0);
+  await expect(stats).toContainText("luck factor was off");
+});
