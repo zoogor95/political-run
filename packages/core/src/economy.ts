@@ -65,15 +65,20 @@ export const MAX_PLAYERS = 8;
 
 /**
  * The base income each party gets (and starts with) at a table of this many players. More parties share the same map
- * and the same voters, so each extra player takes a fifth off the previous figure, rounded to a round number: starting
- * from the pack's figure for two players, the UK's £175K goes £140K, £110K, £90K, £70K, £60K, £50K for three to eight.
+ * and the same voters, so each extra player takes 15% off the previous figure, rounded to a round number: starting
+ * from the pack's figure for two players, the UK's £175K goes £150K, £130K, £110K, £90K, £80K, £70K for three to eight. Group incomes shrink by the same ratio (groupIncomeFor).
  * The rounding unit is a tenth of the figure's power of ten (10K for the UK and the US, 1M for Pakistan's rupees).
  */
 export function baseIncomeFor(pack: MapPack, players: number): number {
   const unit = 10 ** (Math.floor(Math.log10(pack.rules.baseIncome)) - 1);
   let income = pack.rules.baseIncome;
-  for (let n = 3; n <= players; n++) income = Math.round((income * 0.8) / unit) * unit;
+  for (let n = 3; n <= players; n++) income = Math.round((income * 0.85) / unit) * unit;
   return roundMoney(pack, income);
+}
+
+/** What a group pays its controller each turn at a table this size: its listed income, cut by the same ratio as the base income. */
+export function groupIncomeFor(pack: MapPack, group: GroupDef, players: number): number {
+  return roundMoney(pack, (group.income * baseIncomeFor(pack, players)) / pack.rules.baseIncome);
 }
 
 /** Sum of the group's regions' campaign costs; control needs leads worth more than half of it. */
@@ -125,7 +130,7 @@ export function grantIncome(pack: MapPack, state: GameState, events: TurnEvent[]
     const groups: Record<string, number> = {};
     for (const g of pack.groups) {
       if (ctrl[g.id] !== player.id) continue;
-      const amount = roundMoney(pack, g.income * incomeMultiplier(pack, player, g.id));
+      const amount = roundMoney(pack, groupIncomeFor(pack, g, state.players.length) * incomeMultiplier(pack, player, g.id));
       player.wallets[g.id] = (player.wallets[g.id] ?? 0) + amount;
       groups[g.id] = amount;
     }

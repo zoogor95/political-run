@@ -18,7 +18,7 @@
  * leads at the overtaking step) are kept as tuning switches, off by default, for testing on other maps.
  */
 import { groupModifier, moveCost, playerById } from "./costs.js";
-import { controllers, isRegion, nationalGroup, pay, totalMoney, trackIds } from "./economy.js";
+import { controllers, groupIncomeFor, isRegion, nationalGroup, pay, totalMoney, trackIds } from "./economy.js";
 import { nextRandom } from "./rng.js";
 import { meterOf, projectedSeats, regionLeader, regionRanking, seatWeight } from "./standing.js";
 import { assignsMembers, canPick, pickPool, validatePlan } from "./turn.js";
@@ -198,7 +198,7 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
       const leader = regionLeader(state, track);
       const top = leader ? steps(track, leader) : 0;
       if (leader !== playerId && to > top) {
-        for (const g of pack.groups) if (g.kind === "state" && g.regions.includes(track)) v += incomeWorth(g.income) * (1 + groupModifier(pack, payer, g.id) / 100) * 0.5;
+        for (const g of pack.groups) if (g.kind === "state" && g.regions.includes(track)) v += incomeWorth(groupIncomeFor(pack, g, state.players.length)) * (1 + groupModifier(pack, payer, g.id) / 100) * 0.5;
       }
       // The last regions to reach contention start the final turn: worth it when ahead, a mistake when behind.
       if (t.rush > 0 && !final && from < pack.rules.contentionAt && to >= pack.rules.contentionAt && !contested(track)) v += region.seats * t.rush;
@@ -213,7 +213,7 @@ export function planSmart(pack: MapPack, state: GameState, playerId: string, lev
     const top = Math.max(0, ...others.map((id) => steps(track, id)));
     const need = Math.max(pack.rules.contentionAt, top + 1);
     if (final) return 0;
-    return incomeWorth(g.income) * (1 + groupModifier(pack, payer, g.id) / 100) * Math.min(1, to / need);
+    return incomeWorth(groupIncomeFor(pack, g, state.players.length)) * (1 + groupModifier(pack, payer, g.id) / 100) * Math.min(1, to / need);
   };
 
   const tracks = trackIds(pack).filter((id) => state.locked[id] === undefined);

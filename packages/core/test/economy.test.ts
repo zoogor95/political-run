@@ -1,4 +1,4 @@
-import { baseIncomeFor } from "../src/index.js";
+import { baseIncomeFor, groupIncomeFor } from "../src/index.js";
 import { describe, expect, it } from "vitest";
 import {
   allInContention,
@@ -89,14 +89,14 @@ describe("income", () => {
     setSteps(s, "unions", "b", 3);
     const { state, events } = resolveTurn(pack, s, {});
     const a = state.players[0]!;
-    expect(a.money).toBe(1_000_000 + baseIncomeFor(pack, 3)); // three players: 200K of the pack's 250K
-    expect(a.wallets).toMatchObject({ capital: 55_000, mainland: 50_000 }); // Ann: +10% Capital
-    expect(state.players[1]!.wallets.unions).toBe(40_000);
-    expect(events).toContainEqual({ type: "income", playerId: "a", base: baseIncomeFor(pack, 3), groups: { capital: 55_000, mainland: 50_000 } });
+    expect(a.money).toBe(1_000_000 + baseIncomeFor(pack, 3)); // three players: 210K of the pack's 250K
+    expect(a.wallets).toMatchObject({ capital: 46_000, mainland: 42_000 }); // group incomes shrink like the base (x0.84 at three players); Ann: +10% Capital
+    expect(state.players[1]!.wallets.unions).toBe(34_000);
+    expect(events).toContainEqual({ type: "income", playerId: "a", base: baseIncomeFor(pack, 3), groups: { capital: 46_000, mainland: 42_000 } });
   });
 
   it("GDD example: +25% turns 50K of income into 62.5K, rounded to the nearest 1K: 63K", () => {
-    const s = newMatch();
+    const s = newMatch(["a", "b"]); // two players: group incomes unscaled
     s.players[0]!.leaderId = "cat"; // +50% Capital
     s.players[0]!.members.push({ candidateId: "bob", regionId: null, assignedTurn: null }); // nothing on Capital
     const half = { ...pack, candidates: pack.candidates.map((c) => (c.id === "cat" ? { ...c, modifiers: { capital: 25 } } : c)) };
@@ -109,12 +109,12 @@ describe("income", () => {
     richen(s);
     setSteps(s, "city", "a", 1);
     s = resolveTurn(pack, s, {}).state;
-    expect(s.players[0]!.wallets.capital).toBe(55_000);
+    expect(s.players[0]!.wallets.capital).toBe(46_000);
     const r = resolveTurn(pack, s, { b: { steps: { city: 2 } } });
     expect(r.events).toContainEqual({ type: "control_lost", groupId: "capital", playerId: "a" });
     expect(r.events).toContainEqual({ type: "control_gained", groupId: "capital", playerId: "b" });
-    expect(r.state.players[0]!.wallets.capital).toBe(55_000);
-    expect(r.state.players[1]!.wallets.capital).toBe(50_000); // Bob has no Capital modifier (his -10% is on Mainland)
+    expect(r.state.players[0]!.wallets.capital).toBe(46_000);
+    expect(r.state.players[1]!.wallets.capital).toBe(42_000); // Bob has no Capital modifier (his -10% is on Mainland)
   });
 });
 
@@ -202,5 +202,14 @@ describe("calm first turn", () => {
     later.calmStart = true;
     later.turn = 2;
     expect(resolveTurn(pack, later, plans).events.some((e) => e.type === "conflict")).toBe(true);
+  });
+});
+
+describe("group incomes at bigger tables", () => {
+  it("shrink by the same ratio as the base income", () => {
+    const capital = pack.groups.find((g) => g.id === "capital")!;
+    expect(groupIncomeFor(pack, capital, 2)).toBe(capital.income);
+    expect(groupIncomeFor(pack, capital, 3)).toBe(42_000); // 210K / 250K of 50K
+    expect(groupIncomeFor(pack, capital, 8)).toBeLessThan(groupIncomeFor(pack, capital, 5));
   });
 });
