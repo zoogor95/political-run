@@ -5,7 +5,7 @@
   "currency": "$",
   "rules": {
     "steps": 10,
-    "contentionAt": 3,
+    "contentionAt": 4,
     "firstEntryMax": 2,
     "costGrowth": 1,
     "costClampMin": 0.5,
@@ -391,7 +391,7 @@
         "ri",
         "ct"
       ],
-      "income": 33000
+      "income": 66000
     },
     {
       "id": "mid-atlantic",
@@ -406,7 +406,7 @@
         "dc",
         "va"
       ],
-      "income": 56000
+      "income": 112000
     },
     {
       "id": "rust-belt",
@@ -420,7 +420,7 @@
         "in",
         "il"
       ],
-      "income": 56000
+      "income": 112000
     },
     {
       "id": "old-south",
@@ -436,7 +436,7 @@
         "tn",
         "ky"
       ],
-      "income": 49000
+      "income": 98000
     },
     {
       "id": "sun-belt",
@@ -450,7 +450,7 @@
         "nv",
         "tx"
       ],
-      "income": 68000
+      "income": 136000
     },
     {
       "id": "farm-belt",
@@ -465,7 +465,7 @@
         "mn",
         "mo"
       ],
-      "income": 37000
+      "income": 74000
     },
     {
       "id": "mountain-west",
@@ -481,7 +481,7 @@
         "nm",
         "az"
       ],
-      "income": 40000
+      "income": 80000
     },
     {
       "id": "pacific",
@@ -494,7 +494,7 @@
         "hi",
         "ak"
       ],
-      "income": 52000
+      "income": 104000
     },
     {
       "id": "energy",
@@ -510,14 +510,14 @@
         "ak",
         "nm"
       ],
-      "income": 49000
+      "income": 98000
     },
     {
       "id": "unions",
       "name": "Labor unions",
       "kind": "national",
       "regions": [],
-      "income": 50000,
+      "income": 100000,
       "baseCost": 70000
     },
     {
@@ -525,7 +525,7 @@
       "name": "Small business",
       "kind": "national",
       "regions": [],
-      "income": 50000,
+      "income": 100000,
       "baseCost": 70000
     },
     {
@@ -533,7 +533,7 @@
       "name": "Seniors",
       "kind": "national",
       "regions": [],
-      "income": 50000,
+      "income": 100000,
       "baseCost": 70000
     },
     {
@@ -541,7 +541,7 @@
       "name": "Young voters",
       "kind": "national",
       "regions": [],
-      "income": 40000,
+      "income": 80000,
       "baseCost": 70000
     },
     {
@@ -549,7 +549,7 @@
       "name": "Veterans",
       "kind": "national",
       "regions": [],
-      "income": 40000,
+      "income": 80000,
       "baseCost": 70000
     },
     {
@@ -557,7 +557,7 @@
       "name": "Faith voters",
       "kind": "national",
       "regions": [],
-      "income": 50000,
+      "income": 100000,
       "baseCost": 70000
     }
   ],
