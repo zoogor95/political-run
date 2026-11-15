@@ -277,6 +277,10 @@ test("election night ending in a hung parliament forms a coalition government", 
   await page.getByTestId("replay-open").click();
   await page.getByTestId("replay").fill("0");
   await expect(page.getByText("Start", { exact: true })).toBeVisible();
+  // The replay bar sits under the map, never over it.
+  const mapBox = (await page.getByTestId("board").boundingBox())!;
+  const barBox = (await page.getByTestId("replay").locator("xpath=..").boundingBox())!;
+  expect(barBox.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height - 1);
   await page.getByTestId("replay-close").click();
   await expect(page.getByTestId("replay")).toHaveCount(0);
   await page.getByRole("button", { name: "Rematch" }).click();
