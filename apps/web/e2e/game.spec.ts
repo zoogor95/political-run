@@ -471,6 +471,8 @@ test("the campaign board zooms, a tap still picks a region while zoomed, and the
   // Whole board again: tapping a region selects it as before.
   await tapRegion(page, "nw");
   await expect(page.locator(".region-card")).toBeVisible();
+});
+
 test("the step control stays where it is while you plan: notes appearing above it never move the + button", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "phones stack the card and scroll it");
   // A tall window, so the card is shorter than the panel: that's where the control used to follow the content down.
