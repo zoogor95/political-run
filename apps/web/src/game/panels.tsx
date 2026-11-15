@@ -729,6 +729,7 @@ export function GroupsPanel({
     const on = focus === id;
     const wallet = you.wallets[id] ?? 0;
     const split = shares(id);
+    const mod = groupModifier(pack, you, id);
     const open = () => (national ? onOpen(id) : onFocus(on ? null : id));
     return (
       <li key={id}>
@@ -750,6 +751,12 @@ export function GroupsPanel({
           <span className="sr-only">{split.length ? `Shares: ${split.map((x) => `${groupLabel(playerOf(state, x.id).party.name)} ${Math.round(x.pct)}%`).join(", ")}.` : "Nobody leads yet."}</span>
           <span className="group-row-name">
             {g.name}
+            {mod !== 0 && (
+              <span className={`group-mod ${mod > 0 ? "good" : "bad"}`} title={mod > 0 ? "Your leader has a bonus here" : "Your leader has a penalty here"} data-testid={`group-mod-${id}`}>
+                {mod > 0 ? "★" : "▼"}
+                <span className="sr-only">{mod > 0 ? " Your leader has a bonus here." : " Your leader has a penalty here."}</span>
+              </span>
+            )}
             <small>
               {national ? "National" : `${g.regions.length} ${presidential() ? (g.regions.length === 1 ? "state" : "states") : g.regions.length === 1 ? "region" : "regions"}`} · {money(g.income)} a turn
             </small>

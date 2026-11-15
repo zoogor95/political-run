@@ -492,3 +492,12 @@ test("the step control stays where it is while you plan: notes appearing above i
   await page.getByTestId("step-down").click();
   expect(Math.abs((await plus.boundingBox())!.y - y0)).toBeLessThan(1);
 });
+
+test("groups where your leader has a bonus or penalty are marked in the list", async ({ page }) => {
+  await start(page);
+  await page.getByTestId("tab-groups").click();
+  const marks = page.locator('[data-testid^="group-mod-"]');
+  await expect(marks.first()).toBeVisible();
+  // The mark explains itself to screen readers.
+  await expect(marks.first()).toContainText(/bonus|penalty/);
+});
