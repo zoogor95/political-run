@@ -440,3 +440,22 @@ test("resign and watch: the computer takes your party and you watch the match go
   await expect(page.getByTestId("resign-button")).toHaveCount(0);
 });
 
+
+test("the step control stays where it is while you plan: notes appearing above it never move the + button", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "phones stack the card and scroll it");
+  // A tall window, so the card is shorter than the panel: that's where the control used to follow the content down.
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await start(page);
+  await page.getByTestId("find-region").selectOption("yh");
+  const plus = page.getByTestId("step-up");
+  await expect(plus).toBeVisible();
+  const y0 = (await plus.boundingBox())!.y;
+  // Each press adds to the plan and puts a note above the control ("you'd lead…"); the button must not move. (A first entry is up to two steps.)
+  for (let i = 0; i < 2; i++) {
+    await plus.click();
+    await expect(page.getByTestId("target")).toContainText(`Step ${i + 1}`);
+    expect(Math.abs((await plus.boundingBox())!.y - y0)).toBeLessThan(1);
+  }
+  await page.getByTestId("step-down").click();
+  expect(Math.abs((await plus.boundingBox())!.y - y0)).toBeLessThan(1);
+});
