@@ -17,7 +17,7 @@ import { tutorialDone } from "./tutorial";
 const ink = "#2b2440";
 
 /** The five match boxes, in the design's order. */
-const BOXES: { id: string; title: string; about: string; chip: string; color: string; chipBg: string; mode?: Mode | "online" | "quick"; icon: ReactNode; darkIcon?: boolean }[] = [
+const BOXES: { id: string; title: string; about: string; chip: string; color: string; chipBg: string; mode?: Mode | "online" | "quick" | "tournaments"; icon: ReactNode; darkIcon?: boolean }[] = [
   {
     id: "new-solo",
     title: "Solo campaign",
@@ -75,6 +75,7 @@ const BOXES: { id: string; title: string; about: string; chip: string; color: st
     chip: "FREE ENTRY",
     color: "#df4338",
     chipBg: "#fbe0dd",
+    mode: "tournaments",
     icon: (
       <>
         <path d="M20 8h24v14a12 12 0 0 1-24 0z" />
@@ -122,6 +123,7 @@ export function MainMenu({
   onOngoing,
   onQuick,
   onLeaderboards,
+  onTournaments,
 }: {
   onContinue: () => void;
   onNew: (mode: Mode) => void;
@@ -132,6 +134,7 @@ export function MainMenu({
   onOngoing: () => void;
   onQuick: () => void;
   onLeaderboards: () => void;
+  onTournaments: () => void;
 }) {
   const save = loadMatch();
   const profile = useProfile();
@@ -156,6 +159,7 @@ export function MainMenu({
   const open = (box: (typeof BOXES)[number]) => {
     if (box.mode === "online") onOnline();
     else if (box.mode === "quick") onQuick();
+    else if (box.mode === "tournaments") onTournaments();
     else if (box.mode) onNew(box.mode);
   };
   const when = save ? new Date(save.savedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "";

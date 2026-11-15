@@ -37,3 +37,7 @@ class_name = "Matchmaker"
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["Matchmaker"]
+
+# Tournaments are driven by a timer: open sign-up, start rounds, seat winners (src/tournaments-run.ts).
+[triggers]
+crons = ["*/15 * * * *"]

@@ -8,6 +8,7 @@ import { randomToken, sha256, uuidv7 } from "./crypto.js";
 import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
 import { checkSubscription, vapidKeys } from "./push.js";
 import { seasonOf } from "./ratings.js";
+import { MAX_ENTRANTS, MIN_ENTRANTS } from "./tournament.js";
 
 export interface Env {
   DB: D1Database;
@@ -291,6 +292,47 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     headers.set("x-account-id", accountId);
     headers.set("x-account-name", name);
     return env.MATCHMAKER.get(env.MATCHMAKER.idFromName("global")).fetch(new Request(`https://matchmaker/ws?map=${map}&ranked=${q.get("ranked") === "1" ? 1 : 0}`, { headers }));
+  }
+
+  // Tournaments: the cups (one per map, twice a year), joining and leaving while sign-up is open, and the bracket.
+  if (at("GET", "/api/tournaments")) {
+    const me = await authed(req, env, now).then((a) => a.accountId).catch(() => null);
+    const rows = await env.DB.prepare(
+      `SELECT t.id, t.name, t.map_pack_id AS map, t.status, t.cancelled, t.starts_at AS startsAt, t.ends_at AS endsBefore, json_extract(t.rules, '$.opensAt') AS opensAt,
+              (SELECT COUNT(*) FROM tournament_entries e WHERE e.tournament_id = t.id) AS entrants,
+              (SELECT a.display_name FROM tournament_entries e JOIN accounts a ON a.id = e.account_id WHERE e.tournament_id = t.id AND e.rank = 1) AS champion,
+              (SELECT MAX(round) FROM tournament_tables x WHERE x.tournament_id = t.id) AS round,
+              (SELECT e.rank FROM tournament_entries e WHERE e.tournament_id = t.id AND e.account_id = ?1) AS yourRank,
+              (SELECT 1 FROM tournament_entries e WHERE e.tournament_id = t.id AND e.account_id = ?1) AS entered,
+              (SELECT x.match_code FROM tournament_tables x WHERE x.tournament_id = t.id AND x.players LIKE '%' || ?1 || '%' AND x.winner_account_id IS NULL ORDER BY x.round DESC LIMIT 1) AS yourTable
+         FROM tournaments t ORDER BY t.starts_at DESC, t.map_pack_id LIMIT 30`,
+    ).bind(me ?? "").all();
+    return json({ now, tournaments: rows.results.map((r) => ({ ...r, entered: r.entered === 1, cancelled: r.cancelled === 1 })), maxEntrants: MAX_ENTRANTS, minEntrants: MIN_ENTRANTS });
+  }
+  const cup = /^\/api\/tournaments\/([a-z0-9-]{3,40})(\/join)?$/.exec(pathname);
+  if (cup && req.method === "POST" && cup[2]) {
+    const { accountId } = await authed(req, env, now);
+    const t = await env.DB.prepare("SELECT status, starts_at FROM tournaments WHERE id = ?").bind(cup[1]).first<{ status: string; starts_at: number }>();
+    if (!t) throw new ApiError(404, "no_cup", "No such tournament");
+    if (t.status !== "open" || now >= t.starts_at) throw new ApiError(409, "closed", "Sign-up for this cup isn't open");
+    const count = (await env.DB.prepare("SELECT COUNT(*) AS n FROM tournament_entries WHERE tournament_id = ?").bind(cup[1]).first<{ n: number }>())!.n;
+    if (count >= MAX_ENTRANTS) throw new ApiError(409, "full", "This cup is full");
+    await env.DB.prepare("INSERT OR IGNORE INTO tournament_entries (tournament_id, account_id, joined_at) VALUES (?, ?, ?)").bind(cup[1], accountId, now).run();
+    return new Response(null, { status: 204 });
+  }
+  if (cup && req.method === "DELETE" && cup[2]) {
+    const { accountId } = await authed(req, env, now);
+    const t = await env.DB.prepare("SELECT status, starts_at FROM tournaments WHERE id = ?").bind(cup[1]).first<{ status: string; starts_at: number }>();
+    if (!t || t.status !== "open" || now >= t.starts_at) throw new ApiError(409, "closed", "You can only withdraw while sign-up is open");
+    await env.DB.prepare("DELETE FROM tournament_entries WHERE tournament_id = ? AND account_id = ?").bind(cup[1], accountId).run();
+    return new Response(null, { status: 204 });
+  }
+  if (cup && req.method === "GET" && !cup[2]) {
+    const tables = await env.DB.prepare(
+      `SELECT x.round, x.table_no AS tableNo, x.match_code AS code, x.players, x.winner_account_id AS winner FROM tournament_tables x WHERE x.tournament_id = ? ORDER BY x.round, x.table_no`,
+    ).bind(cup[1]).all<{ round: number; tableNo: number; code: string; players: string; winner: string | null }>();
+    const names = new Map((await env.DB.prepare("SELECT a.id, a.display_name AS name FROM tournament_entries e JOIN accounts a ON a.id = e.account_id WHERE e.tournament_id = ?").bind(cup[1]).all<{ id: string; name: string }>()).results.map((r) => [r.id, r.name]));
+    return json({ rounds: tables.results.map((r) => ({ round: r.round, tableNo: r.tableNo, code: r.code, players: (JSON.parse(r.players) as string[]).map((id) => names.get(id) ?? "Player"), winner: r.winner ? (names.get(r.winner) ?? "Player") : null })) });
   }
 
   // Leaderboards: the top 50 players by rating on a map, or the top leaders by season score. ?season= defaults to now.
