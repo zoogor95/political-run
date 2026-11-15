@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react";
 import type { CandidateDef, CustomCandidate } from "@majority-map/core";
 import { map } from "./model";
-import { Portrait, toAvatar } from "./Portrait";
+import { candidateAvatar, Portrait, toAvatar } from "./Portrait";
 import { PRODUCTS } from "./store";
 import { isPresidential, type MatchConfig, type Seat } from "./setup";
 
@@ -26,14 +26,6 @@ function saveFavs(f: Set<string>) {
     // Favourites are a convenience; without storage they last until the page closes.
   }
 }
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter((w) => /^[A-Z]/.test(w))
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("") || name.slice(0, 1).toUpperCase();
 
 /** One entry in the grid: a roster candidate or one of yours. */
 interface Entry {
@@ -184,7 +176,7 @@ export function CandidatePicker({
                 <div key={e.id} className={`cand-card${chosen === e.id ? " on" : ""}${by ? " taken" : ""}`}>
                   <button type="button" className="cand-pick" aria-pressed={chosen === e.id} onClick={() => setChosen(e.id)} data-testid={`cand-${e.id}`}>
                     <span className="cand-face" style={{ opacity: by ? 0.55 : 1 }}>
-                      {e.custom ? <Portrait avatar={toAvatar(e.custom.avatar)} size={64} label={`Portrait of ${e.name}`} /> : initials(e.name)}
+                      <Portrait avatar={e.custom ? toAvatar(e.custom.avatar) : candidateAvatar(e.id)} size={64} label={`Portrait of ${e.name}`} />
                     </span>
                     <span className="cand-text">
                       <b>{e.name}</b>
@@ -224,7 +216,7 @@ export function CandidatePicker({
 
           <aside className="cand-detail" data-testid="picker-detail">
             <div className="cand-detail-head" style={{ background: seat.party.color }}>
-              <span className="cand-face big">{pick.custom ? <Portrait avatar={toAvatar(pick.custom.avatar)} size={78} label={`Portrait of ${pick.name}`} /> : initials(pick.name)}</span>
+              <span className="cand-face big"><Portrait avatar={pick.custom ? toAvatar(pick.custom.avatar) : candidateAvatar(pick.id)} size={78} label={`Portrait of ${pick.name}`} /></span>
               <span>
                 <b>{pick.name}</b>
                 <small>{pick.custom ? "Your candidate" : presidential ? `Runs as ${pick.affiliation === "Independent" ? "an Independent" : `the ${pick.affiliation} candidate`}` : pick.affiliation}</small>
