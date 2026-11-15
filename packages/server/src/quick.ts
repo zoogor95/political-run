@@ -6,7 +6,14 @@ import { ratingChanges, seasonOf, START_RATING } from "./ratings.js";
 import { PACKS, quickSetup, type QuickPlayer, type RoomData } from "./room.js";
 
 /** Starts a quick match for these people (2 to 4) and returns its invite code: the match row, then its room. */
-export async function createQuickMatch(env: Env, map: string, ranked: boolean, people: { accountId: string; name: string }[], now = Date.now()): Promise<string> {
+export async function createQuickMatch(
+  env: Env,
+  map: string,
+  ranked: boolean,
+  people: { accountId: string; name: string }[],
+  now = Date.now(),
+  tournament?: { id: string; turnSeconds: number },
+): Promise<{ code: string; matchId: string }> {
   if (!env.MATCHES) throw new Error("Online matches aren't available here");
   // Their saved parties (Create your party), where they've backed one up.
   const saved = await env.DB.prepare(`SELECT account_id, name, color, emblem FROM party_profiles WHERE account_id IN (${people.map(() => "?").join(",")})`)
@@ -17,16 +24,16 @@ export async function createQuickMatch(env: Env, map: string, ranked: boolean, p
     return { ...p, party: party ? { name: party.name, color: party.color, emblem: party.emblem } : null };
   });
   const seed = Math.floor(Math.random() * 1_000_000);
-  const setup = quickSetup(map, players, ranked, seed);
+  const setup = quickSetup(map, players, ranked, seed, tournament ? { mode: "tournament", turnSeconds: tournament.turnSeconds } : {});
   const matchId = uuidv7(now);
   let code = "";
   for (let tries = 0; tries < 5 && !code; tries++) {
     const candidate = inviteCode();
     try {
       await env.DB.prepare(
-        "INSERT INTO matches (id, mode, game_type, map_pack_id, content_version, engine_version, seed, status, turn_timer_seconds, invite_code, created_by, created_at) VALUES (?, ?, ?, ?, '1', '1', ?, 'lobby', ?, ?, ?, ?)",
+        "INSERT INTO matches (id, mode, game_type, map_pack_id, content_version, engine_version, seed, status, turn_timer_seconds, invite_code, created_by, created_at, tournament_id) VALUES (?, ?, ?, ?, '1', '1', ?, 'lobby', ?, ?, ?, ?, ?)",
       )
-        .bind(matchId, ranked ? "ranked" : "quick", PACKS[map]!.gameType, map, seed, setup.turnSeconds, candidate, people[0]!.accountId, now)
+        .bind(matchId, tournament ? "tournament" : ranked ? "ranked" : "quick", PACKS[map]!.gameType, map, seed, setup.turnSeconds, candidate, people[0]!.accountId, now, tournament?.id ?? null)
         .run();
       code = candidate;
     } catch (e) {
@@ -36,7 +43,7 @@ export async function createQuickMatch(env: Env, map: string, ranked: boolean, p
   if (!code) throw new Error("Couldn't make an invite code");
   const res = await env.MATCHES.get(env.MATCHES.idFromName(code)).fetch("https://room/create-quick", { method: "POST", body: JSON.stringify({ code, matchId, setup, players, seed }) });
   if (!res.ok) throw new Error(`room ${res.status}`);
-  return code;
+  return { code, matchId };
 }
 
 /**

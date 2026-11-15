@@ -99,7 +99,7 @@ export class Matchmaker extends DurableObject<Env> {
   private async form(queue: string, group: { ws: WebSocket; who: Searcher }[]) {
     const [map, mode] = queue.split(":") as [string, string];
     try {
-      const code = await createQuickMatch(
+      const { code } = await createQuickMatch(
         this.env,
         map,
         mode === "ranked",

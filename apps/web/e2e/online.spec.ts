@@ -260,3 +260,13 @@ test("leaderboards: open from the menu, pick a map and a board", async ({ page }
   await page.getByTestId("lb-candidates").click();
   await expect(page.getByTestId("lb-empty")).toBeVisible();
 });
+
+
+test("tournaments: the menu box opens the screen that explains the cups", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  await page.goto("/");
+  await page.locator('[data-testid="tournaments"]').first().click();
+  await expect(page.getByRole("heading", { name: "Tournaments" })).toBeVisible();
+  await expect(page.getByText("24 hours a turn")).toBeVisible();
+});

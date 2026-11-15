@@ -311,3 +311,61 @@ describe("leaderboards", () => {
     expect(cands.data.rows).toEqual([{ candidate: "keir-starmer", games: 12, wins: 8, score: 16, players: 2 }]);
   });
 });
+
+describe("tournaments", () => {
+  /** Stand-in match rooms: starting one succeeds, which is all the runner needs from it. */
+  const fakeRooms = () => ({ idFromName: (n: string) => n, get: () => ({ fetch: async () => new Response(null, { status: 204 }) }) }) as unknown as DurableObjectNamespace;
+
+  /** Finishes every unfinished table match of the cup's current round, the first-listed person winning each. */
+  async function finishRound(id: string) {
+    const rows = await env.DB.prepare("SELECT match_id, players FROM tournament_tables WHERE tournament_id = ? AND winner_account_id IS NULL").bind(id).all<{ match_id: string; players: string }>();
+    for (const r of rows.results) {
+      const ids = JSON.parse(r.players) as string[];
+      for (const [i, acc] of ids.entries()) {
+        await env.DB.prepare("INSERT INTO match_seats (match_id, seat, account_id, candidate_kind, candidate_ref, party_name, final_rank) VALUES (?, ?, ?, 'roster', 'x', 'P', ?)").bind(r.match_id, i, acc, i + 1).run();
+      }
+      await env.DB.prepare("UPDATE matches SET status = 'finished' WHERE id = ?").bind(r.match_id).run();
+    }
+  }
+
+  it("plays a cup from sign-up to champion: sign-up, round one tables, winners into the final, ranks", async () => {
+    const { runTournaments } = await import("../src/tournaments-run.js");
+    env.MATCHES = fakeRooms();
+    const jan = Date.UTC(2027, 0, 3);
+    await runTournaments(env, jan);
+    const list = await call("GET", "/api/tournaments", { now: jan });
+    expect(list.data.tournaments.map((t: { id: string; status: string }) => `${t.id}:${t.status}`).sort()).toEqual(["pk-2027-winter:open", "uk-2027-winter:open", "us-2027-winter:open"]);
+
+    const people = [];
+    for (let i = 0; i < 5; i++) people.push((await signIn(String(i).repeat(43), { displayName: `P${i}` })).data);
+    for (const p of people) expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: p.token, now: jan })).status).toBe(204);
+    expect((await call("DELETE", "/api/tournaments/uk-2027-winter/join", { token: people[4].token, now: jan })).status).toBe(204);
+    expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: people[4].token, now: jan })).status).toBe(204);
+    expect((await call("POST", "/api/tournaments/nope-1/join", { token: people[0].token, now: jan })).status).toBe(404);
+
+    // Sign-up closes: five people make two tables.
+    const start = Date.UTC(2027, 0, 16);
+    await runTournaments(env, start);
+    let tables = (await call("GET", "/api/tournaments/uk-2027-winter", { now: start })).data.rounds;
+    expect(tables.map((t: { players: string[] }) => t.players.length).sort()).toEqual([2, 3]);
+    expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: people[0].token, now: start })).status).toBe(409);
+    // The pk and us cups had nobody: cancelled.
+    expect((await env.DB.prepare("SELECT cancelled FROM tournaments WHERE id = 'pk-2027-winter'").first<{ cancelled: number }>())!.cancelled).toBe(1);
+
+    // Round one ends: the two winners go to the final.
+    await finishRound("uk-2027-winter");
+    await runTournaments(env, start + 86_400_000 * 20);
+    tables = (await call("GET", "/api/tournaments/uk-2027-winter", { now: start })).data.rounds;
+    expect(tables.filter((t: { round: number }) => t.round === 2)).toHaveLength(1);
+    expect(tables.find((t: { round: number }) => t.round === 2).players).toHaveLength(2);
+
+    // The final ends: a champion and ranks.
+    await finishRound("uk-2027-winter");
+    await runTournaments(env, start + 86_400_000 * 40);
+    const done = (await call("GET", "/api/tournaments", { now: start })).data.tournaments.find((t: { id: string }) => t.id === "uk-2027-winter");
+    expect(done).toMatchObject({ status: "finished", entrants: 5 });
+    expect(done.champion).toMatch(/^P\d$/);
+    const ranks = await env.DB.prepare("SELECT rank FROM tournament_entries WHERE tournament_id = 'uk-2027-winter' AND rank IS NOT NULL ORDER BY rank").all<{ rank: number }>();
+    expect(ranks.results.map((r) => r.rank)).toEqual([1, 2]);
+  });
+});

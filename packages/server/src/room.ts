@@ -52,7 +52,7 @@ export interface MatchSetup {
   /** Time each person has to send a plan; none means the match waits for everyone. */
   turnSeconds?: number | null;
   /** A quick match found by matchmaking; "ranked" ones move the players' ratings. Absent: a private match. */
-  mode?: "quick" | "ranked";
+  mode?: "quick" | "ranked" | "tournament";
 }
 
 /** Turn timers on offer: a minute for a quick game up to a day for a slow one. */
@@ -447,7 +447,7 @@ export interface QuickPlayer {
  * saved party when its colour and emblem are still free (else their name's party in the next free colour); on the
  * Presidential map parties follow the candidates, as always.
  */
-export function quickSetup(map: string, players: QuickPlayer[], ranked: boolean, seed: number): MatchSetup {
+export function quickSetup(map: string, players: QuickPlayer[], ranked: boolean, seed: number, opts: { mode?: "tournament"; turnSeconds?: number } = {}): MatchSetup {
   const pack = PACKS[map];
   if (!pack) throw new RoomError("Unknown map");
   // A seeded shuffle of the roster, then one leader from each real party before any party gets a second.
@@ -475,7 +475,7 @@ export function quickSetup(map: string, players: QuickPlayer[], ranked: boolean,
     names.push(name.toLowerCase());
     return { id: `p${i + 1}`, kind: "human", label: p.name.slice(0, 28), level: "normal", party: { name, color, emblem }, leaderId: leaders[i % leaders.length]!.id };
   });
-  return { map, seats: pack.gameType === "presidential" ? candidateParties(pack, seats) : seats, turnSeconds: QUICK_TURN_SECONDS, mode: ranked ? "ranked" : "quick" };
+  return { map, seats: pack.gameType === "presidential" ? candidateParties(pack, seats) : seats, turnSeconds: opts.turnSeconds ?? QUICK_TURN_SECONDS, mode: opts.mode ?? (ranked ? "ranked" : "quick") };
 }
 
 /** A quick match, started: everyone found is seated and ready, and the first turn's clock is running. */
