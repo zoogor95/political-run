@@ -61,18 +61,19 @@ export function pay(pack: MapPack, player: PlayerState, trackId: string, amount:
   return paidFrom;
 }
 
-/** Tables up to this size get the pack's base income as written; every player beyond it takes a tenth off. */
-export const FULL_INCOME_PLAYERS = 5;
 export const MAX_PLAYERS = 8;
 
 /**
  * The base income each party gets (and starts with) at a table of this many players. More parties share the same map
- * and the same voters, so past five players each extra one cuts it by a tenth of the pack's figure: 90% at six, 80% at
- * seven, 70% at eight. Two to five players get the pack's figure, which is what the maps are tuned for.
+ * and the same voters, so each extra player takes a fifth off the previous figure, rounded to a round number: starting
+ * from the pack's figure for two players, the UK's £175K goes £140K, £110K, £90K, £70K, £60K, £50K for three to eight.
+ * The rounding unit is a tenth of the figure's power of ten (10K for the UK and the US, 1M for Pakistan's rupees).
  */
 export function baseIncomeFor(pack: MapPack, players: number): number {
-  const scale = 1 - 0.1 * Math.max(0, players - FULL_INCOME_PLAYERS);
-  return roundMoney(pack, pack.rules.baseIncome * scale);
+  const unit = 10 ** (Math.floor(Math.log10(pack.rules.baseIncome)) - 1);
+  let income = pack.rules.baseIncome;
+  for (let n = 3; n <= players; n++) income = Math.round((income * 0.8) / unit) * unit;
+  return roundMoney(pack, income);
 }
 
 /** Sum of the group's regions' campaign costs; control needs leads worth more than half of it. */

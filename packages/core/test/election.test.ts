@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { baseIncomeFor } from "../src/index.js";
 import {
   allocateReserved,
   countElection,
@@ -97,7 +98,7 @@ describe("election and government", () => {
     expect(state.meters.city!.c!.steps).toBe(2);
     expect(state.meters.south!.a!.reached).toHaveLength(3);
     expect(regionLeader(state, "south")).toBe("b"); // b still reached step 3 first
-    expect(state.players[0]!.money).toBe(123 + pack.rules.baseIncome);
+    expect(state.players[0]!.money).toBe(123 + baseIncomeFor(pack, state.players.length));
   });
 
   it("a tie in the second round is broken by total pips, then by less money spent", () => {

@@ -10,12 +10,12 @@ Hoard loses to every other strategy, so it's left out of the field the limit is 
 
 | Strategy | What it does | Duels won vs competitive strategies | Duels won vs all | Free-for-all wins vs even share |
 | --- | --- | ---: | ---: | ---: |
-| Balanced | The Hard AI as it is: best seats for the money, groups when worth it. | 46.0% | 55.1% | 1.05× |
-| Big regions | Concentrates on the regions with the most seats. | 58.1% | 64.1% | 0.97× |
-| Small regions | Picks up the cheap regions with few seats that others leave alone. | 47.5% | 55.2% | 0.76× |
-| Groups and income | Chases region and national groups for income first, seats later. | 51.2% | 59.0% | 0.96× |
-| Rush | Brings regions into contention early to end the campaign while ahead. | 47.2% | 55.4% | 0.99× |
-| Hoard | Keeps a quarter of its money back each turn and pours the savings in on the final turn. | (loses to all) | 11.0% | 1.28× |
+| Balanced | The Hard AI as it is: best seats for the money, groups when worth it. | 46.0% | 55.1% | 0.93× |
+| Big regions | Concentrates on the regions with the most seats. | 58.1% | 64.1% | 1.14× |
+| Small regions | Picks up the cheap regions with few seats that others leave alone. | 47.5% | 55.2% | 0.85× |
+| Groups and income | Chases region and national groups for income first, seats later. | 51.2% | 59.0% | 0.98× |
+| Rush | Brings regions into contention early to end the campaign while ahead. | 47.2% | 55.4% | 1.06× |
+| Hoard | Keeps a quarter of its money back each turn and pours the savings in on the final turn. | (loses to all) | 11.0% | 1.04× |
 
 An even share in a free-for-all is 1.00×: a 4-player strategy at 1.00× wins a quarter of its games.
 
@@ -36,26 +36,26 @@ Row strategy's win rate against the column strategy.
 
 Wins compared with an even share, across every match the leader played. Leaders outside 0.80× to 1.25× are flagged for the next tuning pass.
 
-No leader is outside the band.
+Flagged: Bilawal Bhutto Zardari.
 
 | Leader | Matches | Wins vs even share |
 | --- | ---: | ---: |
-| Aleem Khan | 759 | 1.19× |
+| Khalid Maqbool Siddiqui | 770 | 1.18× |
 | Imran Khan | 729 | 1.18× |
-| Khalid Maqbool Siddiqui | 770 | 1.17× |
-| Benazir Bhutto | 753 | 1.03× |
-| Akhtar Mengal | 738 | 1.02× |
-| Nawaz Sharif | 747 | 1.01× |
-| Maryam Nawaz | 742 | 1.00× |
-| Hafiz Naeem ur Rehman | 722 | 1.00× |
-| Aimal Wali Khan | 750 | 0.99× |
-| Shehbaz Sharif | 751 | 0.98× |
-| Murad Ali Shah | 776 | 0.98× |
-| Ahsan Iqbal | 736 | 0.96× |
-| Bilawal Bhutto Zardari | 766 | 0.90× |
-| Gohar Ali Khan | 745 | 0.89× |
-| Asif Ali Zardari | 732 | 0.88× |
-| Fazl-ur-Rehman | 742 | 0.82× |
+| Akhtar Mengal | 738 | 1.09× |
+| Shehbaz Sharif | 751 | 1.08× |
+| Aimal Wali Khan | 750 | 1.05× |
+| Aleem Khan | 759 | 1.05× |
+| Nawaz Sharif | 747 | 1.02× |
+| Benazir Bhutto | 753 | 1.01× |
+| Hafiz Naeem ur Rehman | 722 | 0.98× |
+| Murad Ali Shah | 776 | 0.97× |
+| Asif Ali Zardari | 732 | 0.96× |
+| Maryam Nawaz | 742 | 0.95× |
+| Ahsan Iqbal | 736 | 0.91× |
+| Fazl-ur-Rehman | 742 | 0.90× |
+| Gohar Ali Khan | 745 | 0.85× |
+| Bilawal Bhutto Zardari | 766 | 0.79× |
 
 ## Custom candidates
 
@@ -65,22 +65,22 @@ The strongest custom candidates a player can build within the 10-point budget, e
 
 | Build | Bonuses and penalties | Points | Matches | Wins vs even share |
 | --- | --- | ---: | ---: | ---: |
-| max-punjab | +5% Punjab, +5% Urban Sindh | 10 | 160 | 0.85× |
-| max-sindh | +15% Sindh, +5% Balochistan | 10 | 160 | 0.83× |
-| max-kp | +15% Khyber Pakhtunkhwa, +5% Balochistan | 10 | 160 | 0.76× |
-| max-balochistan | +15% Balochistan, +10% Sindh, +5% Islamabad and Rawalpindi | 10 | 160 | 0.73× |
-| max-capital | +15% Islamabad and Rawalpindi, +10% Sindh, +5% Balochistan | 10 | 160 | 1.00× |
+| max-punjab | +5% Punjab, +5% Urban Sindh | 10 | 160 | 0.81× |
+| max-sindh | +15% Sindh, +5% Balochistan | 10 | 160 | 0.71× |
+| max-kp | +15% Khyber Pakhtunkhwa, +5% Balochistan | 10 | 160 | 0.74× |
+| max-balochistan | +15% Balochistan, +10% Sindh, +5% Islamabad and Rawalpindi | 10 | 160 | 0.83× |
+| max-capital | +15% Islamabad and Rawalpindi, +10% Sindh, +5% Balochistan | 10 | 160 | 0.88× |
 | max-south-punjab | +15% South Punjab, +5% Balochistan | 10 | 160 | 1.05× |
-| max-urban-sindh | +15% Urban Sindh, +5% Sindh, +5% Balochistan | 10 | 160 | 0.81× |
-| max-cities | +5% Big cities, +5% Urban Sindh | 10 | 160 | 0.98× |
-| max-farmers | +15% Farmers, +5% Balochistan | 10 | 160 | 1.02× |
-| max-traders | +15% Traders, +5% Balochistan | 10 | 160 | 0.97× |
-| max-youth | +15% Young voters, +5% Balochistan | 10 | 160 | 0.83× |
-| max-overseas | +15% Overseas Pakistanis, +5% Balochistan | 10 | 160 | 0.85× |
+| max-urban-sindh | +15% Urban Sindh, +5% Sindh, +5% Balochistan | 10 | 160 | 1.04× |
+| max-cities | +5% Big cities, +5% Urban Sindh | 10 | 160 | 0.85× |
+| max-farmers | +15% Farmers, +5% Balochistan | 10 | 160 | 0.86× |
+| max-traders | +15% Traders, +5% Balochistan | 10 | 160 | 0.95× |
+| max-youth | +15% Young voters, +5% Balochistan | 10 | 160 | 0.76× |
+| max-overseas | +15% Overseas Pakistanis, +5% Balochistan | 10 | 160 | 0.98× |
 | max-workers | +15% Workers, +5% Balochistan | 10 | 160 | 0.88× |
-| max-women | +15% Women voters, +5% Balochistan | 10 | 160 | 1.11× |
-| penalties-1 | −15% Punjab, +10% Big cities, +10% Sindh | 10 | 160 | 0.66× |
-| penalties-2 | −15% Punjab, −15% Big cities, +15% Sindh, +15% Khyber Pakhtunkhwa | -6 | 160 | 0.43× |
+| max-women | +15% Women voters, +5% Balochistan | 10 | 160 | 0.95× |
+| penalties-1 | −15% Punjab, +10% Big cities, +10% Sindh | 10 | 160 | 0.78× |
+| penalties-2 | −15% Punjab, −15% Big cities, +15% Sindh, +15% Khyber Pakhtunkhwa | -6 | 160 | 0.47× |
 
 ## Difficulty levels
 
@@ -89,9 +89,9 @@ Each line-up is played in every seat order with random leaders, every party on t
 | Line-up | Matches | Wins by level (even share) |
 | --- | ---: | --- |
 | Normal, Easy, Easy | 320 | Normal 71.6% (33.3%) · Easy 28.4% (66.7%) |
-| Hard, Easy, Easy | 320 | Hard 73.8% (33.3%) · Easy 26.3% (66.7%) |
-| Hard, Normal, Normal | 320 | Hard 65.0% (33.3%) · Normal 35.0% (66.7%) |
-| Hard, Hard, Normal | 320 | Hard 76.6% (66.7%) · Normal 23.4% (33.3%) |
+| Hard, Easy, Easy | 320 | Hard 71.3% (33.3%) · Easy 28.7% (66.7%) |
+| Hard, Normal, Normal | 320 | Hard 55.0% (33.3%) · Normal 45.0% (66.7%) |
+| Hard, Hard, Normal | 320 | Hard 73.4% (66.7%) · Normal 26.6% (33.3%) |
 
 ## Seat order
 
@@ -102,22 +102,22 @@ Seat 1 is the first player in the list. Plans are secret and resolve together, s
 | 2p seat 1 | 2000 | 1.01× |
 | 2p seat 2 | 2000 | 0.99× |
 | 3p seat 1 | 692 | 1.02× |
-| 3p seat 2 | 692 | 1.00× |
-| 3p seat 3 | 692 | 0.98× |
-| 4p seat 1 | 658 | 1.28× |
-| 4p seat 2 | 658 | 0.82× |
-| 4p seat 3 | 658 | 1.02× |
-| 4p seat 4 | 658 | 0.88× |
-| 5p seat 1 | 650 | 1.46× |
+| 3p seat 2 | 692 | 1.01× |
+| 3p seat 3 | 692 | 0.96× |
+| 4p seat 1 | 658 | 1.13× |
+| 4p seat 2 | 658 | 1.03× |
+| 4p seat 3 | 658 | 0.90× |
+| 4p seat 4 | 658 | 0.94× |
+| 5p seat 1 | 650 | 1.25× |
 | 5p seat 2 | 650 | 0.96× |
-| 5p seat 3 | 650 | 0.85× |
-| 5p seat 4 | 650 | 0.88× |
-| 5p seat 5 | 650 | 0.85× |
+| 5p seat 3 | 650 | 0.88× |
+| 5p seat 4 | 650 | 0.85× |
+| 5p seat 5 | 650 | 1.05× |
 
 ## Match shape
 
-- Length: 12.7 turns on average (6 to 30).
+- Length: 13.2 turns on average (6 to 34).
 - Second rounds after a tie: 0.1% of matches.
 - Matches that hit the 40-turn cap: 0.0%.
-- The winner holds 59.1% of the seats on average; 76.4% of winners have a majority.
-- Money lost to clashes (two parties aiming for the same step): 46.8% of all spending.
+- The winner holds 57.4% of the seats on average; 69.3% of winners have a majority.
+- Money lost to clashes (two parties aiming for the same step): 35.3% of all spending.

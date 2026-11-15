@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { baseIncomeFor } from "../src/index.js";
 import {
   PRESIDENTIAL_RULES,
   canPick,
@@ -123,7 +124,7 @@ describe("Presidential: majority, elimination and tiebreaks", () => {
     expect(state.round).toBe(2);
     // The eliminated candidate gets no income and can't plan.
     expect(playerById(state, "b").money).toBe(playerById(s, "b").money);
-    expect(playerById(state, "a").money).toBe(playerById(s, "a").money + pack.rules.baseIncome);
+    expect(playerById(state, "a").money).toBe(playerById(s, "a").money + baseIncomeFor(pack, state.players.length));
     expect(validatePlan(pack, state, "b", { steps: { north: 1 } }).map((i) => i.code)).toEqual(["eliminated"]);
     expect(validatePlan(pack, state, "b", {})).toEqual([]);
   });
