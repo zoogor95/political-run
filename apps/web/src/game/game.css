@@ -2077,26 +2077,6 @@
   padding-bottom: 18px;
 }
 
-.menu-map {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--cream);
-  border: 3px solid var(--ink);
-  border-radius: 14px;
-  box-shadow: 0 4px 0 var(--ink);
-  padding: 0 0 0 14px;
-}
-
-.menu-map select {
-  font: 800 15px "Nunito", sans-serif;
-  color: var(--ink);
-  background: transparent;
-  border: 0;
-  padding: 10px 14px 10px 0;
-  cursor: pointer;
-}
-
 .menu-bar-buttons {
   display: flex;
   gap: 12px;
@@ -4269,8 +4249,7 @@
     gap: 8px;
   }
 
-  .menu-bar-buttons button,
-  .menu-map select {
+  .menu-bar-buttons button {
     font-size: 12.5px;
     padding: 6px 10px;
   }
