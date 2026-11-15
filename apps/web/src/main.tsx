@@ -8,6 +8,7 @@ import { MainMenu } from "./game/MainMenu";
 import { AchievementToast, ProfileScreen } from "./game/Profile";
 import { CreatePartyScreen } from "./game/CreateParty";
 import { QuickMatchScreen } from "./game/Quick";
+import { LoginScreen } from "./game/Login";
 import { LeaderboardsScreen } from "./game/Leaderboards";
 import { TournamentsScreen } from "./game/Tournaments";
 import { registerServiceWorker } from "./game/push";
@@ -27,6 +28,7 @@ import "./game/game.css";
 type Screen =
   | { name: "menu" }
   | { name: "profile" }
+  | { name: "login" }
   | { name: "party" }
   | { name: "quick" }
   | { name: "leaderboards" }
@@ -124,7 +126,8 @@ function App() {
           onSettings={openSettings}
         />
       )}
-      {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} onParty={() => setScreen({ name: "party" })} />}
+      {screen.name === "profile" && <ProfileScreen onBack={() => setScreen({ name: "menu" })} onParty={() => setScreen({ name: "party" })} onLogin={() => setScreen({ name: "login" })} />}
+      {screen.name === "login" && <LoginScreen onBack={() => setScreen({ name: "profile" })} />}
       {screen.name === "party" && <CreatePartyScreen onBack={() => setScreen({ name: "profile" })} />}
       {screen.name === "tournaments" && <TournamentsScreen onBack={toMenu} onOpenMatch={quickMatched} />}
       {screen.name === "leaderboards" && <LeaderboardsScreen onBack={toMenu} />}

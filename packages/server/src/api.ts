@@ -4,7 +4,7 @@
  * Games and Game Center will link more identities to the same account. No emails, phone numbers, passwords or locations
  * are stored (design document, Database tab).
  */
-import { randomToken, sha256, uuidv7 } from "./crypto.js";
+import { base64url, fromBase64url, hashPassword, PASSWORD_ITERATIONS, randomToken, sameText, sha256, uuidv7 } from "./crypto.js";
 import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
 import { checkSubscription, vapidKeys } from "./push.js";
 import { seasonOf } from "./ratings.js";
@@ -84,6 +84,20 @@ function cleanName(name: unknown): string {
   return n;
 }
 
+/** A login name: 3 to 20 letters, digits or underscores. Names are compared ignoring case, so "Ali" and "ali" are the same name. */
+function cleanUsername(name: unknown): string {
+  if (typeof name !== "string" || !/^[A-Za-z0-9_]{3,20}$/.test(name.trim())) throw new ApiError(400, "bad_username", "A username is 3 to 20 letters, numbers or underscores");
+  return name.trim();
+}
+
+function cleanPassword(password: unknown): string {
+  if (typeof password !== "string" || password.length < 8 || password.length > 128) throw new ApiError(400, "bad_password", "A password is 8 to 128 characters");
+  return password;
+}
+
+const LOGIN_TRIES = 5;
+const LOCK_MINUTES = 15;
+
 function optionalText(value: unknown, field: string, max: number): string | null {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value !== "string" || value.length > max) throw new ApiError(400, "bad_field", `${field} must be text up to ${max} characters`);
@@ -149,7 +163,7 @@ async function profile(env: Env, accountId: string) {
   const s = one<{ settings: string }>(settings);
   const st = one<{ stats: string }>(stats);
   return {
-    account: accountView(one<AccountRow>(account)!),
+    account: { ...accountView(one<AccountRow>(account)!), username: ((await env.DB.prepare("SELECT username FROM credentials WHERE account_id = ?").bind(accountId).first<string>("username")) ?? null) as string | null },
     settings: s ? (JSON.parse(s.settings) as unknown) : null,
     party: one<{ name: string; color: string; emblem: string }>(party),
     stats: st ? (JSON.parse(st.stats) as unknown) : null,
@@ -400,6 +414,75 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     return json({ token, created, ...(await profile(env, accountId)) }, created ? 201 : 200);
   }
 
+  // Username and password accounts. Registering while signed in (a guest profile with progress) adds a username and password to
+  // that profile; registering signed out makes a new one. Usernames are unique, ignoring case.
+  if (at("GET", "/api/accounts/username")) {
+    const name = new URL(req.url).searchParams.get("name") ?? "";
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(name.trim())) return json({ valid: false, available: false });
+    const taken = await env.DB.prepare("SELECT 1 FROM credentials WHERE username_key = ?").bind(name.trim().toLowerCase()).first();
+    return json({ valid: true, available: !taken });
+  }
+
+  if (at("POST", "/api/accounts/register")) {
+    const b = await body<{ username?: unknown; password?: unknown; deviceLabel?: unknown }>(req);
+    const username = cleanUsername(b.username);
+    const password = cleanPassword(b.password);
+    const key = username.toLowerCase();
+    const label = optionalText(b.deviceLabel, "deviceLabel", 64);
+    const me = req.headers.get("authorization") ? await authed(req, env, now).catch(() => null) : null;
+    if (me && (await env.DB.prepare("SELECT 1 FROM credentials WHERE account_id = ?").bind(me.accountId).first())) throw new ApiError(409, "already_registered", "This profile already has a username");
+    if (await env.DB.prepare("SELECT 1 FROM credentials WHERE username_key = ?").bind(key).first()) throw new ApiError(409, "username_taken", "That username is taken. Pick another");
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const hash = await hashPassword(password, salt);
+    const accountId = me?.accountId ?? uuidv7(now);
+    const credentials = env.DB.prepare("INSERT INTO credentials (account_id, username, username_key, password_hash, salt, iterations, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(
+      accountId,
+      username,
+      key,
+      hash,
+      base64url(salt),
+      PASSWORD_ITERATIONS,
+      now,
+    );
+    try {
+      if (me) await credentials.run();
+      else await env.DB.batch([env.DB.prepare("INSERT INTO accounts (id, display_name, created_at, last_seen_at) VALUES (?, ?, ?, ?)").bind(accountId, username, now, now), credentials]);
+    } catch (e) {
+      // Someone registered the same name between the check and the insert: the unique index caught it.
+      if (await env.DB.prepare("SELECT 1 FROM credentials WHERE username_key = ?").bind(key).first()) throw new ApiError(409, "username_taken", "That username is taken. Pick another");
+      throw e;
+    }
+    const token = me ? null : await newSession(env, accountId, label, now);
+    return json({ ...(token ? { token } : {}), created: !me, ...(await profile(env, accountId)) }, me ? 200 : 201);
+  }
+
+  if (at("POST", "/api/accounts/login")) {
+    const b = await body<{ username?: unknown; password?: unknown; deviceLabel?: unknown }>(req);
+    const username = typeof b.username === "string" ? b.username.trim() : "";
+    const password = typeof b.password === "string" ? b.password : "";
+    const label = optionalText(b.deviceLabel, "deviceLabel", 64);
+    const row = await env.DB.prepare(
+      "SELECT c.account_id, c.password_hash, c.salt, c.iterations, c.failed_attempts, c.locked_until FROM credentials c JOIN accounts a ON a.id = c.account_id WHERE c.username_key = ? AND a.status = 'active'",
+    )
+      .bind(username.toLowerCase())
+      .first<{ account_id: string; password_hash: string; salt: string; iterations: number; failed_attempts: number; locked_until: number }>();
+    if (row && row.locked_until > now) throw new ApiError(429, "locked", `Too many wrong passwords. Try again in ${Math.ceil((row.locked_until - now) / 60_000)} minutes`);
+    // Hash even for a name that doesn't exist, so the answer takes the same time either way.
+    const attempt = await hashPassword(password, row ? fromBase64url(row.salt) : new Uint8Array(16), row?.iterations ?? PASSWORD_ITERATIONS);
+    if (!row || !sameText(attempt, row.password_hash)) {
+      if (row) {
+        const fails = row.failed_attempts + 1;
+        await env.DB.prepare("UPDATE credentials SET failed_attempts = ?, locked_until = ? WHERE account_id = ?")
+          .bind(fails >= LOGIN_TRIES ? 0 : fails, fails >= LOGIN_TRIES ? now + LOCK_MINUTES * 60_000 : 0, row.account_id)
+          .run();
+      }
+      throw new ApiError(401, "bad_login", "Wrong username or password");
+    }
+    if (row.failed_attempts > 0) await env.DB.prepare("UPDATE credentials SET failed_attempts = 0, locked_until = 0 WHERE account_id = ?").bind(row.account_id).run();
+    const token = await newSession(env, row.account_id, label, now);
+    return json({ token, created: false, ...(await profile(env, row.account_id)) });
+  }
+
   if (at("GET", "/api/me")) {
     const { accountId } = await authed(req, env, now);
     return json(await profile(env, accountId));
@@ -506,6 +589,7 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       del("account_stats"),
       del("account_achievements"),
       del("cloud_saves"),
+      del("credentials"),
       del("home_regions"),
       del("custom_candidates", "owner_account_id"),
       env.DB.prepare("UPDATE accounts SET display_name = 'Deleted player', avatar = '{}', home_country = NULL, home_region = NULL, status = 'deleted', deleted_at = ? WHERE id = ?").bind(now, accountId),
