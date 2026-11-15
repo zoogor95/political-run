@@ -339,16 +339,16 @@ describe("tournaments", () => {
     const people = [];
     for (let i = 0; i < 5; i++) people.push((await signIn(String(i).repeat(43), { displayName: `P${i}` })).data);
     for (const p of people) expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: p.token, now: jan })).status).toBe(204);
-    expect((await call("DELETE", "/api/tournaments/uk-2027-winter/join", { token: people[4].token, now: jan })).status).toBe(204);
-    expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: people[4].token, now: jan })).status).toBe(204);
-    expect((await call("POST", "/api/tournaments/nope-1/join", { token: people[0].token, now: jan })).status).toBe(404);
+    expect((await call("DELETE", "/api/tournaments/uk-2027-winter/join", { token: people[4]!.token, now: jan })).status).toBe(204);
+    expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: people[4]!.token, now: jan })).status).toBe(204);
+    expect((await call("POST", "/api/tournaments/nope-1/join", { token: people[0]!.token, now: jan })).status).toBe(404);
 
     // Sign-up closes: five people make two tables.
     const start = Date.UTC(2027, 0, 16);
     await runTournaments(env, start);
     let tables = (await call("GET", "/api/tournaments/uk-2027-winter", { now: start })).data.rounds;
     expect(tables.map((t: { players: string[] }) => t.players.length).sort()).toEqual([2, 3]);
-    expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: people[0].token, now: start })).status).toBe(409);
+    expect((await call("POST", "/api/tournaments/uk-2027-winter/join", { token: people[0]!.token, now: start })).status).toBe(409);
     // The pk and us cups had nobody: cancelled.
     expect((await env.DB.prepare("SELECT cancelled FROM tournaments WHERE id = 'pk-2027-winter'").first<{ cancelled: number }>())!.cancelled).toBe(1);
 
