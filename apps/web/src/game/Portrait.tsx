@@ -2,6 +2,8 @@
  * Cartoon candidate portrait, drawn from avatar parts (the design's Portrait component, custom mode): skin, hair style
  * and colour (short, long, bun or hijab), beard, glasses, outfit colour and tie.
  */
+import { pack } from "./model";
+
 export type HairStyle = "short" | "long" | "bun" | "hijab";
 
 export interface Avatar {
@@ -31,6 +33,45 @@ export const HAIR_STYLES: { id: HairStyle; name: string }[] = [
 const HAIR = "M34 42C33 27 45 21 52 23C63 23 68 32 66 42C62 34 56 31 50 32C44 32 38 36 34 42Z";
 const BEARD = "M37.4 47C37.4 62.5 44.4 67 50 67C55.6 67 62.6 62.5 62.6 47C60.8 56 56.8 59.2 50 59.2C43.2 59.2 39.2 56 37.4 47Z";
 const INK = "#2b2440";
+
+const hash = (text: string): number => {
+  let h = 2166136261;
+  for (const ch of text) {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+};
+const pick = <T,>(items: readonly T[], seed: number): T => items[(Math.imul(seed, 2654435761) >>> 0) % items.length]!;
+
+/**
+ * A cartoon character for a roster politician, made from their id so it is always the same one. It is a stylised
+ * character, not a likeness: every skin tone is the same neutral one and hair is only short or long, so nothing says
+ * what the real person looks like. Politicians of one party share an outfit and backdrop colour, so a party reads at a glance.
+ * (Final caricatures are the artist's job.)
+ */
+export function rosterAvatar(c: { id: string; affiliation?: string }): Avatar {
+  const h = hash(c.id);
+  const party = hash(c.affiliation ?? "");
+  return {
+    skin: "#e2b08a",
+    hair: pick(HAIRS.slice(0, 8), h),
+    hairStyle: (h >>> 7) % 2 === 0 ? "short" : "long",
+    beard: (h >>> 11) % 4 === 0,
+    glasses: (h >>> 15) % 5 === 0,
+    outfit: pick(OUTFITS, party),
+    tie: (h >>> 19) % 3 !== 0,
+    bg: pick(BACKGROUNDS, party >>> 3),
+  };
+}
+
+/** The portrait of a candidate in the current match: the player's own design for a custom one, the roster character otherwise. */
+export function candidateAvatar(id: string): Avatar {
+  const c = pack.candidates.find((x) => x.id === id);
+  const custom = c as unknown as { custom?: unknown; avatar?: Record<string, unknown> } | undefined;
+  if (custom && "custom" in custom && custom.avatar) return toAvatar(custom.avatar);
+  return rosterAvatar({ id, ...(c?.affiliation ? { affiliation: c.affiliation } : {}) });
+}
 
 /** Reads an avatar from saved data, filling anything missing or unknown with the defaults. */
 export function toAvatar(data: Record<string, unknown> | undefined): Avatar {

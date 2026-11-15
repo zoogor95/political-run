@@ -25,7 +25,7 @@ import {
   type Plan,
 } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
-import { Portrait, toAvatar } from "./Portrait";
+import { candidateAvatar, Portrait, toAvatar } from "./Portrait";
 import { overspends, type GameApi } from "./useGame";
 import { candidate, candidateName, groupName, map, money, pack, planLines, plannedPlayer, playerOf, presidential, trackName, votesWord } from "./model";
 
@@ -179,24 +179,10 @@ function Meter({ state, trackId, playerId, plannedTo }: { state: GameState; trac
   );
 }
 
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter((w) => /^[A-Z]/.test(w))
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("");
-
-/** A party's face on the region card: a custom candidate's portrait, or the leader's initials on the party colour. */
+/** A party's face on the region card: its leader's portrait. */
 function Face({ state, playerId, size = 44 }: { state: GameState; playerId: string; size?: number }) {
   const p = playerOf(state, playerId);
-  const c = candidate(p.leaderId);
-  if (c && "custom" in c) return <Portrait avatar={toAvatar((c as CustomCandidate).avatar)} size={size} label={`Portrait of ${c.name}`} />;
-  return (
-    <span className="face" style={{ width: size, height: size, background: `color-mix(in srgb, ${p.party.color} 22%, #fff)`, borderColor: p.party.color }} aria-hidden="true">
-      {initialsOf(candidateName(p.leaderId))}
-    </span>
-  );
+  return <Portrait avatar={candidateAvatar(p.leaderId)} size={size} label={`Portrait of ${candidateName(p.leaderId)}`} />;
 }
 
 const voters = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M` : `${Math.round(n / 1000)}K`);
@@ -341,9 +327,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
           )}
           {member && (
             <div className="region-member">
-              <span className="face" style={{ width: 44, height: 44, background: `color-mix(in srgb, ${playerOf(state, game.viewer).party.color} 22%, #fff)`, borderColor: playerOf(state, game.viewer).party.color }} aria-hidden="true">
-                {initialsOf(candidateName(member.candidateId))}
-              </span>
+              <Portrait avatar={candidateAvatar(member.candidateId)} size={44} label={`Portrait of ${candidateName(member.candidateId)}`} />
               <span>
                 <small>PARTY MEMBER HERE</small>
                 <b>{candidateName(member.candidateId)}</b>
@@ -862,14 +846,7 @@ export function GroupDetail({ game, groupId, onClose }: { game: GameApi; groupId
       </div>
       <div className="group-detail-owner">
         {owner ? (
-          <span className="leader-initials" style={{ background: `color-mix(in srgb, ${partyColor(state, owner)} 22%, #fff)`, borderColor: partyColor(state, owner) }} aria-hidden="true">
-            {candidateName(playerOf(state, owner).leaderId)
-              .split(/\s+/)
-              .filter((w) => /^[A-Z]/.test(w))
-              .map((w) => w[0])
-              .slice(0, 2)
-              .join("")}
-          </span>
+          <Portrait avatar={candidateAvatar(playerOf(state, owner).leaderId)} size={62} label={`Portrait of ${candidateName(playerOf(state, owner).leaderId)}`} />
         ) : (
           <span className="leader-initials open" aria-hidden="true">
             ?
@@ -962,18 +939,7 @@ export function LeadersCard({ game, highlight, onHighlight, inTab }: { game: Gam
           return (
             <li key={p.id} className={`${mine ? "you" : ""}${highlight === p.id ? " on" : ""}${p.eliminated !== undefined ? " out" : ""}`}>
               <button type="button" onClick={() => onHighlight(highlight === p.id ? null : p.id)} aria-pressed={highlight === p.id} aria-label={`${p.party.name}: show what they lead on the map`}>
-                {custom ? (
-                  <Portrait avatar={toAvatar(custom.avatar)} size={44} label={`Portrait of ${custom.name}`} />
-                ) : (
-                  <span className="leader-initials" style={{ background: `color-mix(in srgb, ${p.party.color} 22%, #fff)`, borderColor: p.party.color }} aria-hidden="true">
-                    {candidateName(p.leaderId)
-                      .split(/\s+/)
-                      .filter((w) => /^[A-Z]/.test(w))
-                      .map((w) => w[0])
-                      .slice(0, 2)
-                      .join("")}
-                  </span>
-                )}
+                <Portrait avatar={candidateAvatar(p.leaderId)} size={44} label={`Portrait of ${candidateName(p.leaderId)}`} />
                 <span className="leader-text">
                   <small>
                     <i className="chip" style={{ background: p.party.color }} /> {who.toUpperCase()}

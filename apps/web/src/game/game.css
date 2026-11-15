@@ -6881,3 +6881,6 @@
 .match-stats tr.you td:first-child { font-weight: 900; }
 .match-stats .small { margin: 4px 0 0; }
 .match-stats .stats-party { display: inline-block; max-width: 118px; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+
+/* Roster politicians' characters on the results ranking cards. */
+.rank-portrait { display: flex; flex: none; }

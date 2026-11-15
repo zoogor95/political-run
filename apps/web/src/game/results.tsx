@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { controllers, luckReport, majority, meterOf, totalSeats, type AiLevel, type GameState } from "@majority-map/core";
 import { ACHIEVEMENTS } from "./achievements";
 import { textOn } from "./panels";
+import { candidateAvatar, Portrait } from "./Portrait";
 import { candidateName, money, pack, playerOf, presidential, trackName } from "./model";
 import { useProfile } from "./profile";
 import { myRatings } from "./quick";
@@ -21,14 +22,6 @@ const partyColor = (s: GameState, id: string) => playerOf(s, id).party.color;
 /** A party colour dark enough to read as text on cream. */
 const inked = (color: string) => `color-mix(in srgb, ${color} 70%, #2b2440)`;
 const votesText = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}K` : `${Math.round(n)}`);
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter((w) => /^[A-Z]/.test(w))
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("") || name.slice(0, 1).toUpperCase();
-
 function finalNight(game: GameApi) {
   const night = game.election!;
   return { night, s: night.state, result: night.result, me: game.humans[0]! };
@@ -118,8 +111,8 @@ export function RankCards({ game }: { game: GameApi }) {
         return (
           <li key={id} className={`rank-card${kind === "YOU" ? " you" : ""}`} title={`${groups} ${groups === 1 ? "group" : "groups"} held`}>
             <span className="rank-place">{i + 1}</span>
-            <span className="call-face rank-face" style={{ background: `color-mix(in srgb, ${p.party.color} 22%, #fff)`, borderColor: p.party.color }} aria-hidden="true">
-              {initials(leader)}
+            <span className="rank-portrait">
+              <Portrait avatar={candidateAvatar(p.leaderId)} size={44} label={`Portrait of ${leader}`} />
             </span>
             <span className="rank-text">
               <b>
