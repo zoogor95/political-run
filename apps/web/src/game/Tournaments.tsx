@@ -36,6 +36,16 @@ interface BracketTable {
   winner: string | null;
 }
 
+/** The next half-year cups to open after a moment: the Summer Cups on 1 July, the Winter Cups on 1 January. */
+function nextSeason(now: number): { name: "Summer" | "Winter"; opens: number } {
+  const d = new Date(now);
+  const year = d.getUTCFullYear();
+  const summer = Date.UTC(year, 6, 1);
+  if (now < Date.UTC(year, 0, 1) + 14 * 86_400_000) return { name: "Winter", opens: Date.UTC(year, 0, 1) };
+  if (now < summer) return { name: "Summer", opens: summer };
+  return { name: "Winter", opens: Date.UTC(year + 1, 0, 1) };
+}
+
 const day = (t: number) => new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 async function call(method: string, path: string) {
@@ -92,6 +102,14 @@ export function TournamentsScreen({ onBack, onOpenMatch }: { onBack: () => void;
         <p className="backup-error" role="alert">
           {error}
         </p>
+      )}
+      {data && !data.tournaments.some((c) => c.status === "scheduled" || c.status === "open") && (
+        <section className="backup cup" data-testid="cups-next">
+          <h2>No cup is open for sign-up</h2>
+          <p className="small">
+            The next {nextSeason(data.now).name} Cups open for sign-up on {day(nextSeason(data.now).opens)}, one for each map, with two weeks to enter.
+          </p>
+        </section>
       )}
       {data?.tournaments.map((c) => (
         <section key={c.id} className="backup cup" data-testid={`cup-${c.id}`}>

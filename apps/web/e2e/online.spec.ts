@@ -298,3 +298,14 @@ test("tournaments: a finished cup shows its champion and a bracket you can open 
   await page.getByTestId("cup-bracket-uk-2027-winter").click();
   await expect(bracket).toHaveCount(0);
 });
+
+test("tournaments: with no cup open the screen says when the next ones open", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  const now = Date.UTC(2026, 10, 15);
+  await page.route("**/api/tournaments", (r) => r.fulfill({ json: { now, tournaments: [], maxEntrants: 256, minEntrants: 4 } }));
+  await page.goto("/");
+  await page.locator('[data-testid="tournaments"]').first().click();
+  await expect(page.getByTestId("cups-next")).toContainText("Winter Cups open for sign-up on");
+  await expect(page.getByTestId("cups-next")).toContainText("2027");
+});
