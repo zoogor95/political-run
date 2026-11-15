@@ -21,7 +21,7 @@ const BOXES: { id: string; title: string; about: string; chip: string; color: st
   {
     id: "new-solo",
     title: "Solo campaign",
-    about: "You against 1 to 4 AI candidates. Easy, Normal and Hard.",
+    about: "You against 1 to 7 AI candidates. Easy, Normal and Hard.",
     chip: "OFFLINE OK",
     color: "#2f6fdf",
     chipBg: "#dce8fd",

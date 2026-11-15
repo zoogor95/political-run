@@ -6719,3 +6719,19 @@
 .setup.quick .quick-mode button:disabled {
   opacity: 0.7;
 }
+
+/* Region names on the hex map, over the hexes, readable on any party colour. */
+.seat-label {
+  font-family: "Lilita One", sans-serif;
+  fill: var(--ink);
+  stroke: #fffaf0;
+  stroke-width: 0.35em;
+  paint-order: stroke;
+  stroke-linejoin: round;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.seat-region.dim ~ .seat-label {
+  opacity: 0.35;
+}
