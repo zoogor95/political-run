@@ -348,10 +348,15 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       ).bind(season, map).all();
       return json({ season, map, board: "candidates", rows: rows.results });
     }
+    // ?region= keeps only the players whose home region on this map is that one.
+    const region = q.get("region");
+    if (region && !PACKS[map]!.regions.some((r) => r.id === region)) throw new ApiError(400, "bad_region", "That isn't a region on this map");
     const rows = await env.DB.prepare(
-      "SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins FROM ratings r JOIN accounts a ON a.id = r.account_id WHERE r.season_id = ? AND r.map_pack_id = ? AND a.status = 'active' ORDER BY r.rating DESC, r.games DESC LIMIT 50",
-    ).bind(season, map).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
-    return json({ season, map, board: "players", rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
+      `SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins FROM ratings r JOIN accounts a ON a.id = r.account_id
+         ${region ? "JOIN home_regions h ON h.account_id = r.account_id AND h.map_pack_id = r.map_pack_id AND h.region_id = ?3" : ""}
+        WHERE r.season_id = ?1 AND r.map_pack_id = ?2 AND a.status = 'active' ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
+    ).bind(...(region ? [season, map, region] : [season, map])).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
+    return json({ season, map, board: "players", ...(region ? { region } : {}), rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
   }
 
   // This season's ratings for the signed-in player, by map.
@@ -363,7 +368,8 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     const titles = await env.DB.prepare(
       "SELECT t.id, t.name, t.map_pack_id AS map, e.rank FROM tournament_entries e JOIN tournaments t ON t.id = e.tournament_id WHERE e.account_id = ? AND e.rank IN (1, 2) AND t.cancelled = 0 ORDER BY t.starts_at DESC",
     ).bind(accountId).all();
-    return json({ season, ratings: rows.results, titles: titles.results });
+    const home = await env.DB.prepare("SELECT map_pack_id AS map, region_id AS region FROM home_regions WHERE account_id = ?").bind(accountId).all<{ map: string; region: string }>();
+    return json({ season, ratings: rows.results, titles: titles.results, home: Object.fromEntries(home.results.map((h) => [h.map, h.region])) });
   }
 
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
@@ -430,6 +436,25 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     return json({ ok: true });
   }
 
+  // A home region on a map (or none, to clear it): where the player is from, for the regional leaderboards.
+  if (at("PUT", "/api/me/home")) {
+    const { accountId } = await authed(req, env, now);
+    const b = await body<{ map?: unknown; region?: unknown }>(req);
+    const pack = typeof b.map === "string" ? PACKS[b.map] : undefined;
+    if (!pack) throw new ApiError(400, "bad_map", "Unknown map");
+    if (b.region === null || b.region === undefined) {
+      await env.DB.prepare("DELETE FROM home_regions WHERE account_id = ? AND map_pack_id = ?").bind(accountId, b.map).run();
+      return json({ ok: true });
+    }
+    if (typeof b.region !== "string" || !pack.regions.some((r) => r.id === b.region)) throw new ApiError(400, "bad_region", "That isn't a region on this map");
+    await env.DB.prepare(
+      "INSERT INTO home_regions (account_id, map_pack_id, region_id, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(account_id, map_pack_id) DO UPDATE SET region_id = excluded.region_id, updated_at = excluded.updated_at",
+    )
+      .bind(accountId, b.map, b.region, now)
+      .run();
+    return json({ ok: true });
+  }
+
   if (at("PUT", "/api/me/party")) {
     const { accountId } = await authed(req, env, now);
     const b = await body<{ name?: unknown; color?: unknown; emblem?: unknown }>(req);
@@ -481,6 +506,7 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       del("account_stats"),
       del("account_achievements"),
       del("cloud_saves"),
+      del("home_regions"),
       del("custom_candidates", "owner_account_id"),
       env.DB.prepare("UPDATE accounts SET display_name = 'Deleted player', avatar = '{}', home_country = NULL, home_region = NULL, status = 'deleted', deleted_at = ? WHERE id = ?").bind(now, accountId),
     ]);

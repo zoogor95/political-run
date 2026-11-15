@@ -1,6 +1,7 @@
 /** Leaderboards: this season's top players by ranked rating on each map, and the leaders who score best. */
 import { useEffect, useState } from "react";
 import { API_URL, ensureAccount, sessionToken } from "./cloud";
+import { myRatings } from "./quick";
 import { candidateName, MAPS, preferredMap, type MapId } from "./model";
 
 interface PlayerRow {
@@ -23,8 +24,18 @@ type Board = { season: string; board: "players"; rows: PlayerRow[] } | { season:
 export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
   const [mapId, setMapId] = useState<MapId>(preferredMap);
   const [kind, setKind] = useState<"players" | "candidates">("players");
+  const [region, setRegion] = useState("");
+  const [home, setHome] = useState<Record<string, string>>({});
   const [data, setData] = useState<Board | null>(null);
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (!sessionToken()) return;
+    myRatings()
+      .then((r) => setHome(r.home ?? {}))
+      .catch(() => undefined);
+  }, []);
+  // A region belongs to one map: changing maps goes back to everywhere.
+  useEffect(() => setRegion(""), [mapId]);
   useEffect(() => {
     let live = true;
     setData(null);
@@ -32,7 +43,7 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
     void (async () => {
       try {
         await ensureAccount().catch(() => undefined);
-        const res = await fetch(`${API_URL}/api/leaderboard?map=${mapId}&board=${kind}`, { headers: sessionToken() ? { authorization: `Bearer ${sessionToken()}` } : {} });
+        const res = await fetch(`${API_URL}/api/leaderboard?map=${mapId}&board=${kind}${kind === "players" && region ? `&region=${region}` : ""}`, { headers: sessionToken() ? { authorization: `Bearer ${sessionToken()}` } : {} });
         if (!res.ok) throw new Error(String(res.status));
         const board = (await res.json()) as Board;
         if (live) setData(board);
@@ -43,7 +54,7 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
     return () => {
       live = false;
     };
-  }, [mapId, kind]);
+  }, [mapId, kind, region]);
   return (
     <main className="setup online leaderboards" data-testid="leaderboards">
       <header className="setup-head">
@@ -68,12 +79,26 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
           {MAPS[mapId].pack.gameType === "presidential" ? "Candidates" : "Leaders"}
         </button>
       </div>
+      {kind === "players" && (
+        <label className="find">
+          <span>Region</span>
+          <select value={region} onChange={(e) => setRegion(e.target.value)} data-testid="lb-region">
+            <option value="">Everywhere</option>
+            {MAPS[mapId].pack.regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+                {home[mapId] === r.id ? " (your region)" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {error && (
         <p className="backup-error" role="alert">
           {error}
         </p>
       )}
-      {data && data.rows.length === 0 && <p data-testid="lb-empty">Nobody has played ranked on {MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.</p>}
+      {data && data.rows.length === 0 && <p data-testid="lb-empty">{region && kind === "players" ? `Nobody from ${MAPS[mapId].pack.regions.find((r) => r.id === region)?.name ?? "that region"} has played ranked on ${MAPS[mapId].name} this season yet. Set your home region on your profile to appear here.` : `Nobody has played ranked on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.`}</p>}
       {data?.board === "players" && data.rows.length > 0 && (
         <table className="list lb-table" data-testid="lb-table">
           <thead>
