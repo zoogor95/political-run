@@ -95,6 +95,9 @@ function cleanPassword(password: unknown): string {
   return password;
 }
 
+/** The country each map is about, as the two-letter code a profile keeps for where its player lives. */
+const HOME_COUNTRY: Record<string, string> = { uk: "GB", pk: "PK", us: "US" };
+
 const LOGIN_TRIES = 5;
 const LOCK_MINUTES = 15;
 
@@ -362,14 +365,13 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       ).bind(season, map).all();
       return json({ season, map, board: "candidates", rows: rows.results });
     }
-    // ?region= keeps only the players whose home region on this map is that one.
+    // ?region= keeps only the players who live in that region of this map's country.
     const region = q.get("region");
     if (region && !PACKS[map]!.regions.some((r) => r.id === region)) throw new ApiError(400, "bad_region", "That isn't a region on this map");
     const rows = await env.DB.prepare(
       `SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins FROM ratings r JOIN accounts a ON a.id = r.account_id
-         ${region ? "JOIN home_regions h ON h.account_id = r.account_id AND h.map_pack_id = r.map_pack_id AND h.region_id = ?3" : ""}
-        WHERE r.season_id = ?1 AND r.map_pack_id = ?2 AND a.status = 'active' ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
-    ).bind(...(region ? [season, map, region] : [season, map])).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
+        WHERE r.season_id = ?1 AND r.map_pack_id = ?2 AND a.status = 'active' ${region ? "AND a.home_country = ?3 AND a.home_region = ?4" : ""} ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
+    ).bind(...(region ? [season, map, HOME_COUNTRY[map]!, region] : [season, map])).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
     return json({ season, map, board: "players", ...(region ? { region } : {}), rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
   }
 
@@ -382,8 +384,8 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     const titles = await env.DB.prepare(
       "SELECT t.id, t.name, t.map_pack_id AS map, e.rank FROM tournament_entries e JOIN tournaments t ON t.id = e.tournament_id WHERE e.account_id = ? AND e.rank IN (1, 2) AND t.cancelled = 0 ORDER BY t.starts_at DESC",
     ).bind(accountId).all();
-    const home = await env.DB.prepare("SELECT map_pack_id AS map, region_id AS region FROM home_regions WHERE account_id = ?").bind(accountId).all<{ map: string; region: string }>();
-    return json({ season, ratings: rows.results, titles: titles.results, home: Object.fromEntries(home.results.map((h) => [h.map, h.region])) });
+    const home = await env.DB.prepare("SELECT home_country AS country, home_region AS region FROM accounts WHERE id = ?").bind(accountId).first<{ country: string | null; region: string | null }>();
+    return json({ season, ratings: rows.results, titles: titles.results, home: home ?? { country: null, region: null } });
   }
 
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
@@ -519,22 +521,23 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     return json({ ok: true });
   }
 
-  // A home region on a map (or none, to clear it): where the player is from, for the regional leaderboards.
+  // Where the player lives, for the regional leaderboards: a country and a region of it (or none, to clear it). One per person.
   if (at("PUT", "/api/me/home")) {
     const { accountId } = await authed(req, env, now);
-    const b = await body<{ map?: unknown; region?: unknown }>(req);
-    const pack = typeof b.map === "string" ? PACKS[b.map] : undefined;
-    if (!pack) throw new ApiError(400, "bad_map", "Unknown map");
-    if (b.region === null || b.region === undefined) {
-      await env.DB.prepare("DELETE FROM home_regions WHERE account_id = ? AND map_pack_id = ?").bind(accountId, b.map).run();
+    const b = await body<{ country?: unknown; region?: unknown }>(req);
+    if (b.country === null || b.country === undefined) {
+      await env.DB.prepare("UPDATE accounts SET home_country = NULL, home_region = NULL WHERE id = ?").bind(accountId).run();
       return json({ ok: true });
     }
-    if (typeof b.region !== "string" || !pack.regions.some((r) => r.id === b.region)) throw new ApiError(400, "bad_region", "That isn't a region on this map");
-    await env.DB.prepare(
-      "INSERT INTO home_regions (account_id, map_pack_id, region_id, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(account_id, map_pack_id) DO UPDATE SET region_id = excluded.region_id, updated_at = excluded.updated_at",
-    )
-      .bind(accountId, b.map, b.region, now)
-      .run();
+    const mapId = Object.keys(HOME_COUNTRY).find((m) => HOME_COUNTRY[m] === b.country);
+    const pack = mapId ? PACKS[mapId] : undefined;
+    if (!pack) throw new ApiError(400, "bad_country", "Pick one of the countries on the list");
+    let region: string | null = null;
+    if (b.region !== null && b.region !== undefined) {
+      if (typeof b.region !== "string" || !pack.regions.some((r) => r.id === b.region)) throw new ApiError(400, "bad_region", "That isn't a region of that country");
+      region = b.region;
+    }
+    await env.DB.prepare("UPDATE accounts SET home_country = ?, home_region = ? WHERE id = ?").bind(b.country, region, accountId).run();
     return json({ ok: true });
   }
 
@@ -590,7 +593,6 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       del("account_achievements"),
       del("cloud_saves"),
       del("credentials"),
-      del("home_regions"),
       del("custom_candidates", "owner_account_id"),
       env.DB.prepare("UPDATE accounts SET display_name = 'Deleted player', avatar = '{}', home_country = NULL, home_region = NULL, status = 'deleted', deleted_at = ? WHERE id = ?").bind(now, accountId),
     ]);
