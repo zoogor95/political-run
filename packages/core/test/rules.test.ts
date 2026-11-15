@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { baseIncomeFor } from "../src/index.js";
 import {
   allInContention,
   costMultiplier,
@@ -96,8 +97,8 @@ describe("conflicts", () => {
     expect(state.meters.north!.a!.steps).toBe(3);
     expect(state.meters.north!.b!.steps).toBe(5);
     expect(state.meters.north!.c!.steps).toBe(6);
-    expect(state.players[0]!.money).toBe(10_000_000 - costA + pack.rules.baseIncome);
-    expect(state.players[1]!.money).toBe(10_000_000 - costB + pack.rules.baseIncome);
+    expect(state.players[0]!.money).toBe(10_000_000 - costA + baseIncomeFor(pack, state.players.length));
+    expect(state.players[1]!.money).toBe(10_000_000 - costB + baseIncomeFor(pack, state.players.length));
     expect(events).toContainEqual({ type: "conflict", regionId: "north", step: 7, playerIds: ["a", "b"], costs: { a: costA, b: costB } });
   });
 
@@ -274,11 +275,11 @@ describe("contention and the final turn", () => {
 describe("money", () => {
   it("everyone starts with one turn of base money and gets it again every turn", () => {
     let s = newMatch();
-    expect(s.players.map((p) => p.money)).toEqual([250_000, 250_000, 250_000]);
+    expect(s.players.map((p) => p.money)).toEqual([200_000, 200_000, 200_000]); // three players: the pack's 250K, a fifth off
     s = resolveTurn(pack, s, { a: { steps: { north: 1 } } }).state;
-    expect(s.players[0]!.money).toBe(500_000 - 10_000);
+    expect(s.players[0]!.money).toBe(400_000 - 10_000);
     expect(s.players[0]!.spent).toBe(10_000);
-    expect(s.players[1]!.money).toBe(500_000);
+    expect(s.players[1]!.money).toBe(400_000);
   });
 
   it("resolveTurn refuses an invalid plan", () => {
@@ -294,12 +295,13 @@ describe("money", () => {
 });
 
 describe("base income by table size", () => {
-  it("is the pack's figure up to five players, then a tenth less for each extra player", async () => {
+  it("falls by a fifth for each extra player, rounded to a round number: the UK's £175K goes 140K, 110K, 90K, 70K, 60K, 50K", async () => {
     const { baseIncomeFor, MAX_PLAYERS } = await import("../src/index.js");
-    const base = pack.rules.baseIncome;
-    expect([2, 3, 4, 5].map((n) => baseIncomeFor(pack, n))).toEqual([base, base, base, base]);
-    expect([6, 7, 8].map((n) => baseIncomeFor(pack, n))).toEqual([0.9, 0.8, 0.7].map((f) => Math.round((base * f) / 2500) * 2500));
-    expect(baseIncomeFor(pack, 8)).toBeLessThan(baseIncomeFor(pack, 7));
+    const uk = { ...pack, rules: { ...pack.rules, baseIncome: 175_000 } };
+    expect([2, 3, 4, 5, 6, 7, 8].map((n) => baseIncomeFor(uk, n))).toEqual([175_000, 140_000, 110_000, 90_000, 70_000, 60_000, 50_000]);
+    // Pakistan's rupees round to the million; a table of two always gets the pack's figure.
+    const pk = { ...pack, rules: { ...pack.rules, baseIncome: 17_500_000 } };
+    expect([2, 3, 4, 8].map((n) => baseIncomeFor(pk, n))).toEqual([17_500_000, 14_000_000, 11_000_000, 5_000_000]);
     expect(MAX_PLAYERS).toBe(8);
   });
 });

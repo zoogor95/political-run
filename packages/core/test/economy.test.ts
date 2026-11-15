@@ -1,3 +1,4 @@
+import { baseIncomeFor } from "../src/index.js";
 import { describe, expect, it } from "vitest";
 import {
   allInContention,
@@ -88,10 +89,10 @@ describe("income", () => {
     setSteps(s, "unions", "b", 3);
     const { state, events } = resolveTurn(pack, s, {});
     const a = state.players[0]!;
-    expect(a.money).toBe(1_000_000 + 250_000);
+    expect(a.money).toBe(1_000_000 + baseIncomeFor(pack, 3)); // three players: 200K of the pack's 250K
     expect(a.wallets).toMatchObject({ capital: 55_000, mainland: 50_000 }); // Ann: +10% Capital
     expect(state.players[1]!.wallets.unions).toBe(40_000);
-    expect(events).toContainEqual({ type: "income", playerId: "a", base: 250_000, groups: { capital: 55_000, mainland: 50_000 } });
+    expect(events).toContainEqual({ type: "income", playerId: "a", base: baseIncomeFor(pack, 3), groups: { capital: 55_000, mainland: 50_000 } });
   });
 
   it("GDD example: +25% turns 50K of income into 62.5K, rounded to the nearest 1K: 63K", () => {
@@ -157,7 +158,7 @@ describe("spending", () => {
     s.players[0]!.wallets.unions = 4_000;
     const r = resolveTurn(pack, s, { a: { steps: { north: 1 } }, b: { steps: { north: 1 } } });
     expect(r.state.players[0]!.wallets.unions).toBe(0);
-    expect(r.state.players[0]!.money).toBe(250_000 - 6_000 + 250_000);
+    expect(r.state.players[0]!.money).toBe(baseIncomeFor(pack, 3) - 6_000 + baseIncomeFor(pack, 3));
   });
 });
 
