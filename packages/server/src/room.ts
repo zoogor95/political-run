@@ -49,6 +49,8 @@ export interface MatchSetup {
   seats: SeatSetup[];
   customs?: CustomCandidate[];
   luck?: boolean;
+  /** Calm first turn: no clashes on turn 1. */
+  calmStart?: boolean;
   /** Time each person has to send a plan; none means the match waits for everyone. */
   turnSeconds?: number | null;
   /** A quick match found by matchmaking; "ranked" ones move the players' ratings. Absent: a private match. */
@@ -311,7 +313,7 @@ export function start(room: RoomData, accountId: string, now = Date.now()): void
   if (room.seats.some((s) => s.kind === "human" && !s.accountId)) throw new RoomError("Wait until every friend's seat is taken");
   // The host starting is their ready; everyone else says so themselves.
   if (room.seats.some((s) => s.kind === "human" && s.accountId !== room.host && !s.ready)) throw new RoomError("Wait until everyone is ready");
-  room.state = createMatch(packFor(room.setup), { seed: room.seed, players: playersOf(room.seats), ...(room.setup.luck ? { luck: true } : {}) });
+  room.state = createMatch(packFor(room.setup), { seed: room.seed, players: playersOf(room.seats), ...(room.setup.luck ? { luck: true } : {}), ...(room.setup.calmStart ? { calmStart: true } : {}) });
   room.status = "active";
   room.deadline = nextDeadline(room, now);
 }
@@ -475,7 +477,7 @@ export function quickSetup(map: string, players: QuickPlayer[], ranked: boolean,
     names.push(name.toLowerCase());
     return { id: `p${i + 1}`, kind: "human", label: p.name.slice(0, 28), level: "normal", party: { name, color, emblem }, leaderId: leaders[i % leaders.length]!.id };
   });
-  return { map, seats: pack.gameType === "presidential" ? candidateParties(pack, seats) : seats, turnSeconds: opts.turnSeconds ?? QUICK_TURN_SECONDS, mode: opts.mode ?? (ranked ? "ranked" : "quick") };
+  return { map, calmStart: true, seats: pack.gameType === "presidential" ? candidateParties(pack, seats) : seats, turnSeconds: opts.turnSeconds ?? QUICK_TURN_SECONDS, mode: opts.mode ?? (ranked ? "ranked" : "quick") };
 }
 
 /** A quick match, started: everyone found is seated and ready, and the first turn's clock is running. */

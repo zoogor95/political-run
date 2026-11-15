@@ -179,3 +179,28 @@ describe("second round", () => {
     expect(state.meters.unions!.a!.steps).toBe(6);
   });
 });
+
+describe("calm first turn", () => {
+  const plans = { a: { steps: { north: 1 } }, b: { steps: { north: 1 } } };
+  it("lets parties aiming at the same step on turn 1 all have it", () => {
+    const s = newMatch(["a", "b"]);
+    richen(s);
+    s.calmStart = true;
+    const r = resolveTurn(pack, s, plans);
+    expect(r.events.some((e) => e.type === "conflict")).toBe(false);
+    expect(r.events.filter((e) => e.type === "moved")).toHaveLength(2);
+    expect(r.state.meters.north!.a!.steps).toBe(1);
+    expect(r.state.meters.north!.b!.steps).toBe(1);
+  });
+
+  it("changes nothing when the option is off, and nothing after turn 1", () => {
+    const off = newMatch(["a", "b"]);
+    richen(off);
+    expect(resolveTurn(pack, off, plans).events.some((e) => e.type === "conflict")).toBe(true);
+    const later = newMatch(["a", "b"]);
+    richen(later);
+    later.calmStart = true;
+    later.turn = 2;
+    expect(resolveTurn(pack, later, plans).events.some((e) => e.type === "conflict")).toBe(true);
+  });
+});
