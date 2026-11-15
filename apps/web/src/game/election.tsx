@@ -3,6 +3,7 @@ import { majority, meterOf, totalSeats, type GameState } from "@majority-map/cor
 import { textOn } from "./panels";
 import { candidateName, pack, playerOf, presidential, trackName, votesWord } from "./model";
 import type { ElectionNight as Night } from "./useGame";
+import { candidateAvatar, Portrait } from "./Portrait";
 
 const partyName = (s: GameState, id: string) => playerOf(s, id).party.name;
 const partyColor = (s: GameState, id: string) => playerOf(s, id).party.color;
@@ -151,16 +152,13 @@ export function ElectionNightView({
       )}
       {phase === "calling" && call && (
         <div className="call-card" key={call.regionId} data-testid="call-banner">
-          <span className="call-face" style={{ background: call.winner ? `color-mix(in srgb, ${partyColor(s, call.winner)} 22%, #fff)` : "#fff", borderColor: call.winner ? partyColor(s, call.winner) : "#c8bfa6" }} aria-hidden="true">
-            {call.winner
-              ? candidateName(playerOf(s, call.winner).leaderId)
-                  .split(/\s+/)
-                  .filter((w) => /^[A-Z]/.test(w))
-                  .map((w) => w[0])
-                  .slice(0, 2)
-                  .join("")
-              : "?"}
-          </span>
+          {call.winner ? (
+            <Portrait avatar={candidateAvatar(playerOf(s, call.winner).leaderId)} size={52} label={`Portrait of ${candidateName(playerOf(s, call.winner).leaderId)}`} />
+          ) : (
+            <span className="call-face" style={{ background: "#fff", borderColor: "#c8bfa6" }} aria-hidden="true">
+              ?
+            </span>
+          )}
           <span className="call-text">
             <small>{call.reserved ? "DECLARED" : "CALLED"}</small>
             <b>

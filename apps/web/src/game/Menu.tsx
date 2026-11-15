@@ -6,7 +6,7 @@ import { CandidateCreator, UnlockCard } from "./Creator";
 import { loadCustoms, useCustoms } from "./customs";
 import { majority } from "@majority-map/core";
 import { MAPS, map, mapDetail, setPreferredMap, type MapId } from "./model";
-import { Portrait, toAvatar } from "./Portrait";
+import { candidateAvatar, Portrait, toAvatar } from "./Portrait";
 import { useOwns } from "./store";
 import { disablePush, enablePush, pushOn, pushSupported } from "./push";
 import { setProfileParty, useProfile } from "./profile";
@@ -40,14 +40,6 @@ export function EmblemIcon({ emblem, color, size = 24, label }: { emblem: string
     </svg>
   );
 }
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter((w) => /^[A-Z]/.test(w))
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("");
 
 /** A light tint of a colour, for the portrait's backdrop. */
 const tint = (hex: string) => `color-mix(in srgb, ${hex} 22%, #fff)`;
@@ -89,13 +81,7 @@ function SeatTile({
           <span className="seat-tag">{tag}</span>
         </span>
         <span className="seat-face">
-          {custom ? (
-            <Portrait avatar={toAvatar(custom.avatar)} size={80} label={`Portrait of ${custom.name}`} />
-          ) : (
-            <span className="seat-initials" style={{ background: tint(seat.party.color) }} aria-hidden="true">
-              {initials(leaderName)}
-            </span>
-          )}
+          <Portrait avatar={custom ? toAvatar(custom.avatar) : candidateAvatar(seat.leaderId)} size={80} label={`Portrait of ${leaderName}`} />
           <span className="seat-emblem">
             <EmblemIcon emblem={seat.party.emblem} color={seat.party.color} label={`${EMBLEM_NAME[seat.party.emblem] ?? seat.party.emblem} emblem`} />
           </span>
@@ -266,7 +252,7 @@ function PartyEditor({
         <span className="field-label">{presidential ? "CANDIDATE" : "LEADER"}</span>
         <button type="button" className="leader-pick" onClick={onChoose} aria-label={`${seat.label} leader: ${leaderName}. Choose another`} data-leader={seat.leaderId} data-testid={`pick-leader-${seat.id}`}>
           <span className="leader-pick-face" style={{ background: tint(seat.party.color), borderColor: seat.party.color }} aria-hidden="true">
-            {mine ? <Portrait avatar={toAvatar(mine.avatar)} size={36} label="" /> : initials(leaderName)}
+            <Portrait avatar={mine ? toAvatar(mine.avatar) : candidateAvatar(seat.leaderId)} size={36} label="" />
           </span>
           <span className="leader-pick-text">
             <b>{leaderName}</b>
