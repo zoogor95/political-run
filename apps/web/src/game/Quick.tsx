@@ -1,6 +1,6 @@
 /**
  * Quick match: pick a map and casual or ranked, then search. Only real people are matched (never computers): two to
- * four players, five minutes a turn, leaders drawn at random. Ranked matches move your rating for the map this season.
+ * eight players, five minutes a turn, leaders drawn at random. Ranked matches move your rating for the map this season.
  */
 import { useEffect, useState } from "react";
 import { MAPS, mapDetail, preferredMap, type MapId } from "./model";
@@ -62,7 +62,7 @@ export function QuickMatchScreen({ onBack, onMatched }: { onBack: () => void; on
         </button>
         <h1>Quick match</h1>
       </header>
-      <p className="small">Play real people online: two to four players, five minutes a turn. Leaders are drawn at random. You're only matched with people, never computers.</p>
+      <p className="small">Play real people online: two to eight players, five minutes a turn. With more players, each party gets less base income. Leaders are drawn at random. You're only matched with people, never computers.</p>
 
       <section className="backup">
         <h2 id="quick-map">Map</h2>

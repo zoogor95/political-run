@@ -1,4 +1,4 @@
-import { createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
+import { baseIncomeFor, createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
 import { describe, expect, it } from "vitest";
 import { inviteCode } from "../src/api.js";
 import { checkSetup, join, leave, newQuickRoom, newRoom, packFor, pick, quickSetup, resign, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
@@ -346,3 +346,17 @@ describe("quick matches", () => {
   });
 });
 
+
+describe("eight players", () => {
+  it("allows up to eight seats, with each party's income lower past five, and refuses nine", () => {
+    const eight = quickSetup("uk", Array.from({ length: 8 }, (_, i) => ({ accountId: `a${i}`, name: `P${i}` })), false, 11);
+    expect(eight.seats).toHaveLength(8);
+    expect(() => checkSetup(eight)).not.toThrow();
+    const room = newQuickRoom("EIGHT8", "m-8", eight, Array.from({ length: 8 }, (_, i) => ({ accountId: `a${i}`, name: `P${i}` })), 11, 1000);
+    expect(room.status).toBe("active");
+    expect(room.state!.players).toHaveLength(8);
+    expect(room.state!.players[0]!.money).toBe(baseIncomeFor(packFor(eight), 8));
+    expect(room.state!.players[0]!.money).toBeLessThan(packFor(eight).rules.baseIncome * 0.75);
+    expect(() => checkSetup({ ...eight, seats: [...eight.seats, { ...eight.seats[0]!, id: "p9" }] })).toThrow("2 to 8");
+  });
+});

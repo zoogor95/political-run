@@ -1,5 +1,5 @@
 import { moveCost, playerById } from "./costs.js";
-import { controlChanges, controllers, grantIncome, isRegion, pay, trackIds } from "./economy.js";
+import { baseIncomeFor, controlChanges, controllers, grantIncome, isRegion, MAX_PLAYERS, pay, trackIds } from "./economy.js";
 import { seedRng } from "./rng.js";
 import { allInContention, inContention, meterOf } from "./standing.js";
 import type { GameState, MapPack, Plan, PlayerSetup, TurnEvent } from "./types.js";
@@ -13,7 +13,7 @@ export interface MatchSetup {
 
 /** Starts a match on an empty board. Every player gets the first turn's base money. */
 export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
-  if (setup.players.length < 2 || setup.players.length > 5) throw new Error("A match needs 2 to 5 players");
+  if (setup.players.length < 2 || setup.players.length > MAX_PLAYERS) throw new Error(`A match needs 2 to ${MAX_PLAYERS} players`);
   const ids = new Set(setup.players.map((p) => p.id));
   if (ids.size !== setup.players.length) throw new Error("Player ids must be unique");
   const colors = new Set(setup.players.map((p) => p.party.color.toLowerCase()));
@@ -40,7 +40,7 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
       leaderId: p.leaderId,
       party: { ...p.party },
       members: [],
-      money: pack.rules.baseIncome,
+      money: baseIncomeFor(pack, setup.players.length),
       wallets: wallets(),
       spent: 0,
     })),

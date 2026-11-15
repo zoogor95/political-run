@@ -292,3 +292,14 @@ describe("money", () => {
     expect(s).toEqual(copy);
   });
 });
+
+describe("base income by table size", () => {
+  it("is the pack's figure up to five players, then a tenth less for each extra player", async () => {
+    const { baseIncomeFor, MAX_PLAYERS } = await import("../src/index.js");
+    const base = pack.rules.baseIncome;
+    expect([2, 3, 4, 5].map((n) => baseIncomeFor(pack, n))).toEqual([base, base, base, base]);
+    expect([6, 7, 8].map((n) => baseIncomeFor(pack, n))).toEqual([0.9, 0.8, 0.7].map((f) => Math.round((base * f) / 2500) * 2500));
+    expect(baseIncomeFor(pack, 8)).toBeLessThan(baseIncomeFor(pack, 7));
+    expect(MAX_PLAYERS).toBe(8);
+  });
+});

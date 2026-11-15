@@ -74,3 +74,19 @@ describe("board specifics", () => {
     expect(load("in").notes.join(" ")).toMatch(/Survey of India/);
   });
 });
+
+describe("eight players on a map", () => {
+  it("plays a whole eight-party match on the UK map, with less money each than at a full table of five", async () => {
+    const { createMatch, playOut, baseIncomeFor } = await import("@majority-map/core");
+    const pack = ukJson as unknown as MapPack;
+    const players = pack.candidates.slice(0, 8).map((c, i) => ({ id: `p${i}`, leaderId: c.id, party: { name: `P${i}`, color: `#00000${i}`, emblem: `e${i}` } }));
+    const state = createMatch(pack, { seed: 7, players });
+    expect(state.players).toHaveLength(8);
+    expect(state.players[0]!.money).toBe(baseIncomeFor(pack, 8));
+    expect(state.players[0]!.money).toBeLessThan(baseIncomeFor(pack, 5));
+    const out = playOut(pack, state, () => "normal");
+    expect(Object.keys(out.result.seats)).toHaveLength(8);
+    expect(Object.values(out.result.seats).reduce((a, b) => a + b, 0)).toBe(650);
+    expect(() => createMatch(pack, { seed: 7, players: [...players, { ...players[0]!, id: "p9" }] })).toThrow(/2 to 8/);
+  });
+});

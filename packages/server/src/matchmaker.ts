@@ -1,7 +1,7 @@
 /**
  * Matchmaking for quick matches: one Durable Object holds everyone searching, a queue per map and mode (casual or
  * ranked). Only real people are matched, never computers. When two or more are waiting, others get a short while to
- * join (up to four), then the match starts and everyone in it is sent its code.
+ * join (up to eight), then the match starts and everyone in it is sent its code.
  */
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
@@ -11,7 +11,7 @@ import { PACKS } from "./room.js";
 
 /** How long others get to join once two people are waiting, and the most a quick match seats. */
 export const GATHER_MS = 15_000;
-export const MAX_PLAYERS = 4;
+export const MAX_PLAYERS = 8;
 
 interface Searcher {
   accountId: string;

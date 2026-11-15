@@ -1,4 +1,4 @@
-/** Match setup: who sits at the table (2 to 5 seats, human or computer), each party's name, colour, emblem and leader. */
+/** Match setup: who sits at the table (2 to 8 seats, human or computer), each party's name, colour, emblem and leader. */
 import { candidateParties, PARTY_COLORS, PARTY_EMBLEMS, PARTY_SHADES as SHADES, type AiLevel, type PlayerSetup } from "@majority-map/core";
 import type { CustomCandidate } from "@majority-map/core";
 import { map, type MapId } from "./model";
@@ -139,6 +139,9 @@ export function defaultConfig(mode: Mode, level: AiLevel = "normal"): MatchConfi
   return { mode, map: map.id, seats: isPresidential() ? withCandidateParties(seats) : seats };
 }
 
+/** The most seats at a table. Past five, each extra party lowers everyone's base income (core's baseIncomeFor). */
+export const MAX_SEATS = 8;
+
 export interface ConfigIssue {
   seatId?: string;
   message: string;
@@ -148,7 +151,7 @@ export interface ConfigIssue {
 export function checkConfig(config: MatchConfig): ConfigIssue[] {
   const issues: ConfigIssue[] = [];
   const humans = config.seats.filter((s) => s.kind === "human").length;
-  if (config.seats.length < 2 || config.seats.length > 5) issues.push({ message: "A match needs 2 to 5 seats." });
+  if (config.seats.length < 2 || config.seats.length > MAX_SEATS) issues.push({ message: `A match needs 2 to ${MAX_SEATS} seats.` });
   if (config.mode === "solo" && humans !== 1) issues.push({ message: "A solo match has exactly one human player." });
   if (config.mode === "hotseat" && humans < 2) issues.push({ message: "Pass and play needs at least two human players." });
   if (config.mode === "online" && humans < 2) issues.push({ message: "Leave at least one seat for a friend." });

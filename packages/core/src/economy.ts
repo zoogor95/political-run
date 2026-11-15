@@ -61,6 +61,20 @@ export function pay(pack: MapPack, player: PlayerState, trackId: string, amount:
   return paidFrom;
 }
 
+/** Tables up to this size get the pack's base income as written; every player beyond it takes a tenth off. */
+export const FULL_INCOME_PLAYERS = 5;
+export const MAX_PLAYERS = 8;
+
+/**
+ * The base income each party gets (and starts with) at a table of this many players. More parties share the same map
+ * and the same voters, so past five players each extra one cuts it by a tenth of the pack's figure: 90% at six, 80% at
+ * seven, 70% at eight. Two to five players get the pack's figure, which is what the maps are tuned for.
+ */
+export function baseIncomeFor(pack: MapPack, players: number): number {
+  const scale = 1 - 0.1 * Math.max(0, players - FULL_INCOME_PLAYERS);
+  return roundMoney(pack, pack.rules.baseIncome * scale);
+}
+
 /** Sum of the group's regions' campaign costs; control needs leads worth more than half of it. */
 export function groupCampaignCost(pack: MapPack, group: GroupDef): number {
   return pack.regions.filter((r) => group.regions.includes(r.id)).reduce((a, r) => a + r.baseCost, 0);
@@ -106,7 +120,7 @@ export function grantIncome(pack: MapPack, state: GameState, events: TurnEvent[]
   const ctrl = controllers(pack, state);
   for (const player of state.players) {
     if (player.eliminated !== undefined) continue;
-    player.money += pack.rules.baseIncome;
+    player.money += baseIncomeFor(pack, state.players.length);
     const groups: Record<string, number> = {};
     for (const g of pack.groups) {
       if (ctrl[g.id] !== player.id) continue;
@@ -114,7 +128,7 @@ export function grantIncome(pack: MapPack, state: GameState, events: TurnEvent[]
       player.wallets[g.id] = (player.wallets[g.id] ?? 0) + amount;
       groups[g.id] = amount;
     }
-    events.push({ type: "income", playerId: player.id, base: pack.rules.baseIncome, groups });
+    events.push({ type: "income", playerId: player.id, base: baseIncomeFor(pack, state.players.length), groups });
   }
 }
 
