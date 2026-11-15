@@ -213,3 +213,25 @@ test("pass and play seats up to eight players, and says so at the cap", async ({
   await page.getByTestId("start-match").click();
   await expect(page.getByTestId("handoff")).toContainText("Pass the device to Player 1");
 });
+
+test("a calm first turn is on by default at setup, can be turned off, and goes with the match", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-solo").click();
+  await expect(page.getByTestId("setup-calm")).toBeChecked();
+  await page.getByTestId("start-match").click();
+  await boardReady(page);
+  expect(await page.evaluate(() => (window as unknown as { __game: { game: { state: { calmStart?: boolean } } } }).__game.game.state.calmStart)).toBe(true);
+  await page.reload();
+  await page.getByTestId("continue-match").click();
+  await boardReady(page);
+  expect(await page.evaluate(() => (window as unknown as { __game: { game: { state: { calmStart?: boolean } } } }).__game.game.state.calmStart)).toBe(true);
+});
+
+test("turning the calm first turn off starts a match without it", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("new-solo").click();
+  await page.getByTestId("setup-calm").uncheck();
+  await page.getByTestId("start-match").click();
+  await boardReady(page);
+  expect(await page.evaluate(() => (window as unknown as { __game: { game: { state: { calmStart?: boolean } } } }).__game.game.state.calmStart ?? false)).toBe(false);
+});

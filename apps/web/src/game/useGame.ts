@@ -158,8 +158,8 @@ export interface GameApi {
 }
 
 function startState(start: GameStart, config: MatchConfig): GameState {
-  if (start.scenario) return { ...scenarioGame(start.scenario), ...(config.luck ? { luck: true } : {}) };
-  return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config), ...(config.luck ? { luck: true } : {}) });
+  if (start.scenario) return { ...scenarioGame(start.scenario), ...(config.luck ? { luck: true } : {}), ...(config.calmStart ? { calmStart: true } : {}) };
+  return createMatch(pack, { seed: start.seed ?? Date.now() % 1_000_000, players: playersOf(config), ...(config.luck ? { luck: true } : {}), ...(config.calmStart ? { calmStart: true } : {}) });
 }
 
 /** The computers' levels by seat, including seats whose person resigned (played at Normal). */
@@ -486,7 +486,7 @@ export function useGame(start: GameStart): GameApi {
     // A rematch starts afresh: anyone who resigned plays again.
     const base: MatchConfig = { ...config, seats: config.seats.map(({ resigned: _r, ...s }) => s) };
     const nextConfig: MatchConfig = next ? { ...base, seats: base.seats.map((s) => (s.kind === "ai" ? { ...s, level: next } : s)) } : base;
-    const fresh = createMatch(pack, { seed: Date.now() % 1_000_000, players: playersOf(nextConfig), ...(nextConfig.luck ? { luck: true } : {}) });
+    const fresh = createMatch(pack, { seed: Date.now() % 1_000_000, players: playersOf(nextConfig), ...(nextConfig.luck ? { luck: true } : {}), ...(nextConfig.calmStart ? { calmStart: true } : {}) });
     setConfig(nextConfig);
     setState(fresh);
     setPlans({});
