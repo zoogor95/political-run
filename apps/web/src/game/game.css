@@ -6848,6 +6848,11 @@
 }
 .board-wrap.replaying .replay-strip button { width: 28px; height: 28px; font-size: 12px; border-width: 2px; border-radius: 8px; }
 
+/* A star on a group your leader has a bonus in (a down arrow for a penalty). */
+.group-mod { margin-left: 6px; font-size: 15px; line-height: 1; vertical-align: 1px; }
+.group-mod.good { color: #2f8f4a; }
+.group-mod.bad { color: #c0392b; font-size: 12px; }
+.group-row.on .group-mod.good { color: #7ddc98; }
 /* The plan's own panel (wide screens) and the leaders list inside the Rivals tab. */
 .plan-card { max-height: calc(100dvh - 120px); overflow-y: auto; }
 .plan-card-body { padding: 4px 14px 12px; }
