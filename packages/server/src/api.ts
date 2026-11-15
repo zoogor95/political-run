@@ -359,7 +359,11 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     const { accountId } = await authed(req, env, now);
     const season = seasonOf(now);
     const rows = await env.DB.prepare("SELECT map_pack_id AS map, rating, games, wins FROM ratings WHERE account_id = ? AND season_id = ?").bind(accountId, season.id).all();
-    return json({ season, ratings: rows.results });
+    // Cup titles: the cups this player won (rank 1) or reached the final of (rank 2), newest first. Cancelled cups have none.
+    const titles = await env.DB.prepare(
+      "SELECT t.id, t.name, t.map_pack_id AS map, e.rank FROM tournament_entries e JOIN tournaments t ON t.id = e.tournament_id WHERE e.account_id = ? AND e.rank IN (1, 2) AND t.cancelled = 0 ORDER BY t.starts_at DESC",
+    ).bind(accountId).all();
+    return json({ season, ratings: rows.results, titles: titles.results });
   }
 
   // Sign in with a device key: a new account the first time, the same account every time after (on any device, which is
