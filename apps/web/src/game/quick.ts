@@ -83,9 +83,16 @@ export class QuickSearch {
 }
 
 /** This season's ratings for the signed-in player, by map (an empty list until they play ranked). */
-export async function myRatings(): Promise<{ season: { name: string }; ratings: { map: string; rating: number; games: number; wins: number }[]; titles?: { id: string; name: string; map: string; rank: 1 | 2 }[] }> {
+export async function myRatings(): Promise<{ season: { name: string }; ratings: { map: string; rating: number; games: number; wins: number }[]; titles?: { id: string; name: string; map: string; rank: 1 | 2 }[]; home?: Record<string, string> }> {
   await ensureAccount();
   const res = await fetch(`${API_URL}/api/ratings/me`, { headers: { authorization: `Bearer ${sessionToken()}` } });
   if (!res.ok) throw new Error(`ratings ${res.status}`);
   return (await res.json()) as Awaited<ReturnType<typeof myRatings>>;
+}
+
+/** Saves (or with null clears) the player's home region on a map, for the regional leaderboards. */
+export async function setHomeRegion(map: string, region: string | null): Promise<void> {
+  await ensureAccount();
+  const res = await fetch(`${API_URL}/api/me/home`, { method: "PUT", headers: { "content-type": "application/json", authorization: `Bearer ${sessionToken()}` }, body: JSON.stringify({ map, region }) });
+  if (!res.ok) throw new Error(`home ${res.status}`);
 }

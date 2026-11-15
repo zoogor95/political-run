@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "./achievements";
 import { play } from "./audio";
 import { backUp, CloudError, deleteBackup, restore, sessionToken, stopBackup, syncNow, useCloud } from "./cloud";
-import { myRatings } from "./quick";
+import { myRatings, setHomeRegion } from "./quick";
 import { MAPS } from "./model";
 import { onUnlock, setProfileName, useProfile } from "./profile";
 
@@ -63,6 +63,7 @@ export function ProfileScreen({ onBack, onParty }: { onBack: () => void; onParty
       )}
       <BackupPanel />
       <CupTitles />
+      <HomeRegions />
       <section className="stat-grid" aria-label="Your stats">
         {tiles.map(([k, v]) => (
           <div key={k} className="stat">
@@ -302,6 +303,60 @@ function CupTitles() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** Where you're from on each map: it puts you on that region's leaderboard. Saved to the online account. */
+function HomeRegions() {
+  const [home, setHome] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!sessionToken()) return;
+    let live = true;
+    myRatings()
+      .then((r) => live && setHome(r.home ?? {}))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  const choose = async (map: string, region: string) => {
+    setError("");
+    try {
+      await setHomeRegion(map, region || null);
+      setHome((h) => {
+        const next = { ...h };
+        if (region) next[map] = region;
+        else delete next[map];
+        return next;
+      });
+    } catch {
+      setError("Couldn't save your home region. Try again in a moment.");
+    }
+  };
+  return (
+    <section className="backup home-regions" data-testid="home-regions" aria-label="Home regions">
+      <h2>Home region</h2>
+      <p className="small">Pick where you're from on each map to appear on that region's leaderboard. This is shown only as a leaderboard filter, never next to your name.</p>
+      {Object.values(MAPS).map((m) => (
+        <label key={m.id} className="find">
+          <span>{m.name}</span>
+          <select value={home[m.id] ?? ""} onChange={(e) => void choose(m.id, e.target.value)} data-testid={`home-${m.id}`}>
+            <option value="">Not set</option>
+            {m.pack.regions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ))}
+      {error && (
+        <p className="backup-error" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

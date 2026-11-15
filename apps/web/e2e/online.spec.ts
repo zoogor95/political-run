@@ -309,3 +309,41 @@ test("tournaments: with no cup open the screen says when the next ones open", as
   await expect(page.getByTestId("cups-next")).toContainText("Winter Cups open for sign-up on");
   await expect(page.getByTestId("cups-next")).toContainText("2027");
 });
+
+test("leaderboards can be narrowed to a region", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  const asked: string[] = [];
+  await page.route("**/api/leaderboard?**", (r) => {
+    asked.push(r.request().url());
+    r.fulfill({ json: { season: "2026-Q4", map: "uk", board: "players", rows: [] } });
+  });
+  await page.goto("/");
+  await page.getByTestId("open-leaderboards").click();
+  await expect(page.getByTestId("lb-region")).toBeVisible();
+  await page.getByTestId("lb-region").selectOption("nw");
+  await expect(page.getByTestId("lb-empty")).toContainText("North West");
+  expect(asked.some((u) => u.includes("region=nw"))).toBe(true);
+  // A region belongs to one map: switching maps goes back to everywhere.
+  await page.getByTestId("lb-map-pk").click();
+  await expect(page.getByTestId("lb-region")).toHaveValue("");
+});
+
+test("the profile saves a home region for each map", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  const saved: unknown[] = [];
+  await page.route("**/api/me/home", (r) => {
+    saved.push(r.request().postDataJSON());
+    r.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/");
+  await page.getByTestId("open-profile").click();
+  await expect(page.getByTestId("home-regions")).toBeVisible();
+  await page.getByTestId("home-pk").selectOption("lahore");
+  await expect.poll(() => saved.length).toBe(1);
+  expect(saved[0]).toEqual({ map: "pk", region: "lahore" });
+  await page.getByTestId("home-pk").selectOption("");
+  await expect.poll(() => saved.length).toBe(2);
+  expect(saved[1]).toEqual({ map: "pk", region: null });
+});
