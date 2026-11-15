@@ -248,3 +248,15 @@ test("quick match: two people searching the same map are put in a match together
   await expect(ali.getByTestId("online-banner")).toContainText(/\d:\d\d left/);
   await expect(ali.getByTestId("turn")).toContainText("Turn 1");
 });
+
+test("leaderboards: open from the menu, pick a map and a board", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  await page.goto("/");
+  await page.getByTestId("open-leaderboards").click();
+  await expect(page.getByTestId("leaderboards")).toContainText("Leaderboards");
+  await expect(page.getByTestId("lb-empty")).toContainText("Nobody has played ranked");
+  await page.getByTestId("lb-map-us").click();
+  await page.getByTestId("lb-candidates").click();
+  await expect(page.getByTestId("lb-empty")).toBeVisible();
+});
