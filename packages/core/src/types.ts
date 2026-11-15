@@ -190,6 +190,8 @@ export interface GameState {
    * seat in a region is 2 x its pips - the fewest pips any party there has (see luckWeights).
    */
   luck?: boolean;
+  /** Calm first turn: on turn 1 parties that aim at the same step of the same track all get it, instead of clashing. */
+  calmStart?: boolean;
 }
 
 /** What a player submits for one turn. */

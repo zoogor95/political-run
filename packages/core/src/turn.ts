@@ -9,6 +9,8 @@ export interface MatchSetup {
   seed: number;
   /** Luck factor: seats are drawn at random at the count (see GameState.luck). */
   luck?: boolean;
+  /** Calm first turn: nobody clashes on turn 1 (see GameState.calmStart). */
+  calmStart?: boolean;
 }
 
 /** Starts a match on an empty board. Every player gets the first turn's base money. */
@@ -49,6 +51,7 @@ export function createMatch(pack: MapPack, setup: MatchSetup): GameState {
     rng: seedRng(setup.seed),
     seed: setup.seed,
     ...(setup.luck ? { luck: true } : {}),
+    ...(setup.calmStart ? { calmStart: true } : {}),
   };
 }
 
@@ -230,16 +233,19 @@ export function resolveTurn(pack: MapPack, before: GameState, plans: Record<stri
         costs[player.id] = cost;
         meter.entered = true;
       }
-      if (group.length > 1) {
+      // A calm first turn lets everyone who aimed at the same step have it, so no one's opening is wasted on a clash.
+      const calm = state.calmStart === true && turn === 1;
+      if (group.length > 1 && !calm) {
         events.push({ type: "conflict", regionId: region.id, step: target, playerIds: group.map((g) => g.player.id), costs });
         continue;
       }
-      const { player } = group[0]!;
-      const meter = meterOf(state, region.id, player.id);
-      const from = meter.steps;
-      for (let s = from + 1; s <= target; s++) meter.reached[s - 1] = paidStamp;
-      meter.steps = target;
-      events.push({ type: "moved", regionId: region.id, playerId: player.id, from, to: target, cost: costs[player.id]!, paidFrom: paid[player.id]! });
+      for (const { player } of group) {
+        const meter = meterOf(state, region.id, player.id);
+        const from = meter.steps;
+        for (let s = from + 1; s <= target; s++) meter.reached[s - 1] = paidStamp;
+        meter.steps = target;
+        events.push({ type: "moved", regionId: region.id, playerId: player.id, from, to: target, cost: costs[player.id]!, paidFrom: paid[player.id]! });
+      }
     }
     lockIfFull(pack, state, region.id, events);
   }
