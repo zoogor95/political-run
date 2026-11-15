@@ -47,3 +47,37 @@ test("create an account, then sign in from another browser; a taken username is 
   await a.ctx.close();
   await b.ctx.close();
 });
+
+test("a signed-in player changes their password: the wrong current one is refused and doesn't sign them out", async ({ browser }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  const name = unique();
+  const a = await openLogin(browser);
+  await a.page.getByTestId("login-tab-register").click();
+  await a.page.getByTestId("login-username").fill(name);
+  await a.page.getByTestId("login-password").fill("first password");
+  await a.page.getByTestId("login-password-again").fill("first password");
+  await a.page.getByTestId("login-go").click();
+  await expect(a.page.getByTestId("account-name")).toContainText(name);
+  await a.page.getByTestId("open-login").click();
+  await expect(a.page.getByTestId("change-password")).toBeVisible();
+  await a.page.getByTestId("pw-current").fill("not the password");
+  await a.page.getByTestId("pw-new").fill("second password");
+  await a.page.getByTestId("pw-again").fill("second password");
+  await a.page.getByTestId("pw-go").click();
+  await expect(a.page.getByTestId("pw-error")).toContainText("current password");
+  await expect(a.page.getByTestId("change-password")).toBeVisible(); // still signed in
+  await a.page.getByTestId("pw-current").fill("first password");
+  await a.page.getByTestId("pw-go").click();
+  await expect(a.page.getByTestId("pw-done")).toBeVisible();
+  // Another browser signs in with the new password only.
+  const b = await openLogin(browser);
+  await b.page.getByTestId("login-username").fill(name);
+  await b.page.getByTestId("login-password").fill("first password");
+  await b.page.getByTestId("login-go").click();
+  await expect(b.page.getByTestId("login-error")).toBeVisible();
+  await b.page.getByTestId("login-password").fill("second password");
+  await b.page.getByTestId("login-go").click();
+  await expect(b.page.getByTestId("account-name")).toContainText(name);
+  await a.ctx.close();
+  await b.ctx.close();
+});

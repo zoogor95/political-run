@@ -3,7 +3,7 @@
  * an account on a device that already backs up its profile adds the login to that profile, so nothing is lost.
  */
 import { useEffect, useState } from "react";
-import { CloudError, signIn, signUp, useCloud, usernameAvailable } from "./cloud";
+import { changePassword, CloudError, signIn, signUp, useCloud, usernameAvailable } from "./cloud";
 
 type Mode = "signin" | "register";
 
@@ -65,12 +65,15 @@ export function LoginScreen({ onBack }: { onBack: () => void }) {
         <h1>{signedInAs ? "Your account" : "Sign in"}</h1>
       </header>
       {signedInAs ? (
-        <section className="backup" data-testid="login-done">
-          <p>
-            You're signed in as <b>{signedInAs}</b>.
-          </p>
-          <p className="small">Sign in with this username and password on any device to get your profile back.</p>
-        </section>
+        <>
+          <section className="backup" data-testid="login-done">
+            <p>
+              You're signed in as <b>{signedInAs}</b>.
+            </p>
+            <p className="small">Sign in with this username and password on any device to get your profile back.</p>
+          </section>
+          <ChangePassword />
+        </>
       ) : (
         <form
           className="backup login-form"
@@ -120,5 +123,72 @@ export function LoginScreen({ onBack }: { onBack: () => void }) {
         </form>
       )}
     </main>
+  );
+}
+
+/** Change the password: needs the current one, and signs every other device out. */
+function ChangePassword() {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [again, setAgain] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const problem = next.length < 8 ? "The new password needs at least 8 characters." : next !== again ? "The two new passwords don't match." : null;
+  const submit = async () => {
+    setBusy(true);
+    setError("");
+    setDone(false);
+    try {
+      await changePassword(current, next);
+      setCurrent("");
+      setNext("");
+      setAgain("");
+      setDone(true);
+    } catch (e) {
+      setError(e instanceof CloudError ? e.message : "Something went wrong. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <form
+      className="backup login-form"
+      data-testid="change-password"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!problem && current && !busy) void submit();
+      }}
+    >
+      <h2>Change password</h2>
+      <label className="creator-field">
+        <span>Current password</span>
+        <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" maxLength={128} data-testid="pw-current" />
+      </label>
+      <label className="creator-field">
+        <span>New password</span>
+        <input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" maxLength={128} data-testid="pw-new" />
+      </label>
+      <label className="creator-field">
+        <span>New password again</span>
+        <input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" maxLength={128} data-testid="pw-again" />
+      </label>
+      <small className="muted">Changing it signs you out on every other device.</small>
+      {error && (
+        <p className="backup-error" role="alert" data-testid="pw-error">
+          {error}
+        </p>
+      )}
+      {done && (
+        <p role="status" data-testid="pw-done">
+          Password changed. Other devices were signed out.
+        </p>
+      )}
+      <div className="backup-actions">
+        <button type="submit" className="primary" disabled={!current || problem !== null || busy} data-testid="pw-go">
+          {busy ? "One moment…" : "Change password"}
+        </button>
+      </div>
+    </form>
   );
 }

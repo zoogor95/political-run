@@ -485,6 +485,37 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     return json({ token, created: false, ...(await profile(env, row.account_id)) });
   }
 
+  // Change the password: needs the current one (wrong guesses count toward the same lockout as signing in), and signs every
+  // other device out so a lost or shared one can't stay signed in.
+  if (at("PUT", "/api/me/password")) {
+    const { accountId, sessionId } = await authed(req, env, now);
+    const b = await body<{ current?: unknown; next?: unknown }>(req);
+    const next = cleanPassword(b.next);
+    const row = await env.DB.prepare("SELECT password_hash, salt, iterations, failed_attempts, locked_until FROM credentials WHERE account_id = ?").bind(accountId).first<{
+      password_hash: string;
+      salt: string;
+      iterations: number;
+      failed_attempts: number;
+      locked_until: number;
+    }>();
+    if (!row) throw new ApiError(400, "no_password", "This profile has no username and password yet");
+    if (row.locked_until > now) throw new ApiError(429, "locked", `Too many wrong passwords. Try again in ${Math.ceil((row.locked_until - now) / 60_000)} minutes`);
+    const attempt = await hashPassword(typeof b.current === "string" ? b.current : "", fromBase64url(row.salt), row.iterations);
+    if (!sameText(attempt, row.password_hash)) {
+      const fails = row.failed_attempts + 1;
+      await env.DB.prepare("UPDATE credentials SET failed_attempts = ?, locked_until = ? WHERE account_id = ?")
+        .bind(fails >= LOGIN_TRIES ? 0 : fails, fails >= LOGIN_TRIES ? now + LOCK_MINUTES * 60_000 : 0, accountId)
+        .run();
+      throw new ApiError(403, "bad_login", "That isn't your current password");
+    }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    await env.DB.batch([
+      env.DB.prepare("UPDATE credentials SET password_hash = ?, salt = ?, iterations = ?, failed_attempts = 0, locked_until = 0 WHERE account_id = ?").bind(await hashPassword(next, salt), base64url(salt), PASSWORD_ITERATIONS, accountId),
+      env.DB.prepare("UPDATE sessions SET revoked_at = ? WHERE account_id = ? AND id != ? AND revoked_at IS NULL").bind(now, accountId, sessionId),
+    ]);
+    return json({ ok: true });
+  }
+
   if (at("GET", "/api/me")) {
     const { accountId } = await authed(req, env, now);
     return json(await profile(env, accountId));
