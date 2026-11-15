@@ -31,7 +31,7 @@ describe("turn summary", () => {
     expect(a.seatsBefore).toBe(0);
     expect(a.seatsAfter).toBe(75);
     expect(a.groupsGained).toContain("capital");
-    expect(a.income?.groups.capital).toBe(55_000);
+    expect(a.income?.groups.capital).toBe(46_000);
     expect(b.conflicts).toEqual([{ regionId: "south", step: 1, rivals: ["c"], amount: 11_000 }]);
     expect(b.spent).toBe(11_000);
     expect(sum.changedRegions).toEqual(["north", "south", "city"]);

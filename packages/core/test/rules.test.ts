@@ -275,11 +275,11 @@ describe("contention and the final turn", () => {
 describe("money", () => {
   it("everyone starts with one turn of base money and gets it again every turn", () => {
     let s = newMatch();
-    expect(s.players.map((p) => p.money)).toEqual([200_000, 200_000, 200_000]); // three players: the pack's 250K, a fifth off
+    expect(s.players.map((p) => p.money)).toEqual([210_000, 210_000, 210_000]); // three players: the pack's 250K, 15% off
     s = resolveTurn(pack, s, { a: { steps: { north: 1 } } }).state;
-    expect(s.players[0]!.money).toBe(400_000 - 10_000);
+    expect(s.players[0]!.money).toBe(420_000 - 10_000);
     expect(s.players[0]!.spent).toBe(10_000);
-    expect(s.players[1]!.money).toBe(400_000);
+    expect(s.players[1]!.money).toBe(420_000);
   });
 
   it("resolveTurn refuses an invalid plan", () => {
@@ -295,13 +295,13 @@ describe("money", () => {
 });
 
 describe("base income by table size", () => {
-  it("falls by a fifth for each extra player, rounded to a round number: the UK's £175K goes 140K, 110K, 90K, 70K, 60K, 50K", async () => {
+  it("falls by 15% for each extra player, rounded to a round number: the UK's £175K goes 150K, 130K, 110K, 90K, 80K, 70K", async () => {
     const { baseIncomeFor, MAX_PLAYERS } = await import("../src/index.js");
     const uk = { ...pack, rules: { ...pack.rules, baseIncome: 175_000 } };
-    expect([2, 3, 4, 5, 6, 7, 8].map((n) => baseIncomeFor(uk, n))).toEqual([175_000, 140_000, 110_000, 90_000, 70_000, 60_000, 50_000]);
+    expect([2, 3, 4, 5, 6, 7, 8].map((n) => baseIncomeFor(uk, n))).toEqual([175_000, 150_000, 130_000, 110_000, 90_000, 80_000, 70_000]);
     // Pakistan's rupees round to the million; a table of two always gets the pack's figure.
     const pk = { ...pack, rules: { ...pack.rules, baseIncome: 17_500_000 } };
-    expect([2, 3, 4, 8].map((n) => baseIncomeFor(pk, n))).toEqual([17_500_000, 14_000_000, 11_000_000, 5_000_000]);
+    expect([2, 3, 4, 8].map((n) => baseIncomeFor(pk, n))).toEqual([17_500_000, 15_000_000, 13_000_000, 7_000_000]);
     expect(MAX_PLAYERS).toBe(8);
   });
 });

@@ -3,6 +3,7 @@ import {
   controllers,
   eligibleWallets,
   groupCampaignCost,
+  groupIncomeFor,
   groupModifier,
   incomeMultiplier,
   luckWeights,
@@ -263,7 +264,7 @@ export function TrackCard({ game, trackId, onClose }: { game: GameApi; trackId: 
       <div className="region-stats">
         <div>
           <small>{region ? (presidential() ? "ELECTORAL VOTES" : "SEATS") : "INCOME"}</small>
-          <b>{region ? region.seats : money(national?.income ?? 0)}</b>
+          <b>{region ? region.seats : money(national ? groupIncomeFor(pack, national, state.players.length) : 0)}</b>
         </div>
         <div>
           <small>YOUR STEP {nextStep} COST</small>
@@ -758,7 +759,7 @@ export function GroupsPanel({
               </span>
             )}
             <small>
-              {national ? "National" : `${g.regions.length} ${presidential() ? (g.regions.length === 1 ? "state" : "states") : g.regions.length === 1 ? "region" : "regions"}`} · {money(g.income)} a turn
+              {national ? "National" : `${g.regions.length} ${presidential() ? (g.regions.length === 1 ? "state" : "states") : g.regions.length === 1 ? "region" : "regions"}`} · {money(groupIncomeFor(pack, g, state.players.length))} a turn
             </small>
           </span>
           {wallet > 0 ? (
@@ -815,7 +816,8 @@ export function GroupDetail({ game, groupId, onClose }: { game: GameApi; groupId
   const order = Object.entries(led).sort((a, b) => b[1] - a[1]);
   const nobody = total - order.reduce((a, [, n]) => a + n, 0);
   const mod = groupModifier(pack, you, groupId);
-  const yours = Math.round(g.income * incomeMultiplier(pack, you, groupId));
+  const income = groupIncomeFor(pack, g, state.players.length);
+  const yours = Math.round(income * incomeMultiplier(pack, you, groupId));
   const mine = led[game.viewer] ?? 0;
   const need = Math.max(0, Math.floor(total / 2) + 1 - mine);
   const share = (n: number) => (total ? (100 * n) / total : 0);
@@ -826,7 +828,7 @@ export function GroupDetail({ game, groupId, onClose }: { game: GameApi; groupId
       <div className="group-detail-head">
         <h3>{g.name}</h3>
         <span>
-          {g.regions.length} {g.regions.length === 1 ? where.slice(0, -1) : where} · {money(g.income)} a turn to the controller
+          {g.regions.length} {g.regions.length === 1 ? where.slice(0, -1) : where} · {money(income)} a turn to the controller
         </span>
         {mod !== 0 && (
           <span className={mod > 0 ? "good" : "bad"}>
