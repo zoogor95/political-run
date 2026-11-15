@@ -12,7 +12,7 @@ import { LeaderboardsScreen } from "./game/Leaderboards";
 import { TournamentsScreen } from "./game/Tournaments";
 import { registerServiceWorker } from "./game/push";
 import { loadMatch, clearSave } from "./game/saves";
-import { defaultConfig, type Mode } from "./game/setup";
+import { aiSeat, defaultConfig, MAX_SEATS, type Mode } from "./game/setup";
 import { isMapId, preferredMap, selectMap } from "./game/model";
 import { restartTutorial, tutorialConfig } from "./game/tutorial";
 import { useSettings } from "./game/settings";
@@ -45,7 +45,7 @@ function joinCode(): { code: string; watch: boolean } | null {
   return code ? { code, watch: watch !== null } : null;
 }
 
-/** Links with ?seed=, ?ai=, ?map= or ?scenario= go straight into a solo match (used by tests and shared links); &luck turns on the luck factor. */
+/** Links with ?seed=, ?ai=, ?map= or ?scenario= go straight into a solo match (used by tests and shared links); &luck turns on the luck factor; &players=N seats N parties. */
 function directStart(): GameStart | null {
   const params = new URLSearchParams(location.search);
   if (!params.has("seed") && !params.has("ai") && !params.has("scenario") && !params.has("map")) return null;
@@ -56,6 +56,9 @@ function directStart(): GameStart | null {
   selectMap(scenario ? "uk" : (params.get("map") ?? "uk"));
   const config = defaultConfig("solo", level);
   if (params.has("luck")) config.luck = true;
+  // &players=N fills the table with computer parties up to N (3 to 8).
+  const players = Math.min(MAX_SEATS, Number(params.get("players")) || 0);
+  while (config.seats.length < players) config.seats.push(aiSeat(config.seats, config.seats.length, level));
   const start: GameStart = { config };
   const seed = Number(params.get("seed"));
   if (seed) start.seed = seed;
