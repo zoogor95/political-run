@@ -40,6 +40,9 @@ export function cupFor(map: string, now: number): Cup {
 }
 
 /** Where a cup is in its life, by the clock alone: not yet open, taking sign-ups, or started. */
+/** A cup is only made while people can still sign up for it: one whose window has already closed would just be cancelled. */
+export const cupCanBeCreated = (cup: Cup, now: number): boolean => phaseAt(cup, now) !== "started";
+
 export const phaseAt = (cup: Cup, now: number): "scheduled" | "open" | "started" => (now < cup.opensAt ? "scheduled" : now < cup.startsAt ? "open" : "started");
 
 /**
