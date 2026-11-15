@@ -6862,3 +6862,9 @@
 /* The seat map zooms like the board: its buttons sit over its corner, and the seat map is the positioned parent. */
 .seat-map .zoom-controls { right: 12px; bottom: 12px; }
 .seat-map svg { cursor: grab; }
+
+/* Tournament bracket and titles. */
+.bracket { margin-top: 10px; display: grid; gap: 8px; }
+.bracket-round h3 { margin: 0 0 4px; font: 900 13px "Nunito", sans-serif; letter-spacing: 0.05em; color: #6b6380; }
+.bracket-round p { margin: 2px 0; }
+.cup-titles ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }

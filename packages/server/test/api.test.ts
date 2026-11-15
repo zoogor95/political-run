@@ -367,5 +367,10 @@ describe("tournaments", () => {
     expect(done.champion).toMatch(/^P\d$/);
     const ranks = await env.DB.prepare("SELECT rank FROM tournament_entries WHERE tournament_id = 'uk-2027-winter' AND rank IS NOT NULL ORDER BY rank").all<{ rank: number }>();
     expect(ranks.results.map((r) => r.rank)).toEqual([1, 2]);
+
+    // Titles show on the profile: the champion's has rank 1, the finalist's rank 2, everyone else's is empty.
+    const mine = await Promise.all(people.map(async (p) => (await call("GET", "/api/ratings/me", { token: p.token, now: start })).data.titles as { id: string; rank: number }[]));
+    expect(mine.flat().map((t) => `${t.id}:${t.rank}`).sort()).toEqual(["uk-2027-winter:1", "uk-2027-winter:2"]);
+    expect(mine.filter((t) => t.length === 0)).toHaveLength(3);
   });
 });

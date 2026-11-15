@@ -270,3 +270,31 @@ test("tournaments: the menu box opens the screen that explains the cups", async 
   await expect(page.getByRole("heading", { name: "Tournaments" })).toBeVisible();
   await expect(page.getByText("24 hours a turn")).toBeVisible();
 });
+
+test("tournaments: a finished cup shows its champion and a bracket you can open and close", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough");
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  const cup = { id: "uk-2027-winter", name: "United Kingdom Winter Cup 2027", map: "uk", status: "finished", cancelled: false, startsAt: 0, endsBefore: 1, opensAt: 0, entrants: 5, champion: "P1", round: 2, yourRank: null, entered: false, yourTable: null };
+  await page.route("**/api/tournaments", (r) => r.fulfill({ json: { now: Date.now(), tournaments: [cup], maxEntrants: 256, minEntrants: 4 } }));
+  await page.route("**/api/tournaments/uk-2027-winter", (r) =>
+    r.fulfill({
+      json: {
+        rounds: [
+          { round: 1, tableNo: 0, code: "a", players: ["P0", "P1", "P2"], winner: "P1" },
+          { round: 1, tableNo: 1, code: "b", players: ["P3", "P4"], winner: "P3" },
+          { round: 2, tableNo: 0, code: "c", players: ["P1", "P3"], winner: "P1" },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  await page.locator('[data-testid="tournaments"]').first().click();
+  await expect(page.getByTestId("cup-uk-2027-winter")).toContainText("Champion: P1");
+  await page.getByTestId("cup-bracket-uk-2027-winter").click();
+  const bracket = page.getByTestId("bracket-uk-2027-winter");
+  await expect(bracket).toContainText("Round 1");
+  await expect(bracket).toContainText("Final");
+  await expect(bracket).toContainText("P1 ✓");
+  await page.getByTestId("cup-bracket-uk-2027-winter").click();
+  await expect(bracket).toHaveCount(0);
+});
