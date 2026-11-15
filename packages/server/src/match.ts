@@ -5,7 +5,8 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "./api.js";
 import { notifyAccounts } from "./push.js";
-import { join, leave, newRoom, packFor, pick, resign, RoomError, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
+import { recordRanked } from "./quick.js";
+import { join, leave, newQuickRoom, newRoom, packFor, pick, resign, RoomError, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type QuickPlayer, type RoomData, type ServerMessage, type SubmitOutcome } from "./room.js";
 
 /** A plan is small; anything bigger than this isn't one. */
 const MAX_MESSAGE = 32_000;
@@ -42,7 +43,10 @@ export class MatchRoom extends DurableObject<Env> {
     this.broadcastViews(room);
     if (out.turns.length) {
       await this.recordTurn(room, out.finished);
-      if (out.finished) this.notify(room, room.seats.filter((s) => s.kind === "human").map((s) => s.id), "The results are in. See who won!");
+      if (out.finished) {
+        this.notify(room, room.seats.filter((s) => s.kind === "human").map((s) => s.id), "The results are in. See who won!");
+        if (room.setup.mode === "ranked" && room.result) await recordRanked(this.env, room, room.result).catch((e) => console.error("recordRanked", e));
+      }
       else if (room.state) this.notify(room, waitingOn(room), `Turn ${room.state.turn} is in. Your move!`);
     }
   }
@@ -98,6 +102,13 @@ export class MatchRoom extends DurableObject<Env> {
       const b = (await req.json()) as { code: string; matchId: string; setup: MatchSetup; host: { accountId: string; name: string }; seed: number };
       this.room = newRoom(b.code, b.matchId, b.setup, b.host, b.seed, Date.now());
       await this.save();
+      return new Response(null, { status: 204 });
+    }
+    if (url.pathname === "/create-quick") {
+      const b = (await req.json()) as { code: string; matchId: string; setup: MatchSetup; players: QuickPlayer[]; seed: number };
+      this.room = newQuickRoom(b.code, b.matchId, b.setup, b.players, b.seed, Date.now());
+      await this.save();
+      await this.recordStart(this.room);
       return new Response(null, { status: 204 });
     }
     if (url.pathname === "/ws") {

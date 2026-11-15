@@ -2,6 +2,7 @@
 import { handle, type Env } from "./api.js";
 
 export { MatchRoom } from "./match.js";
+export { Matchmaker } from "./matchmaker.js";
 
 export default {
   fetch(req: Request, env: Env): Promise<Response> {

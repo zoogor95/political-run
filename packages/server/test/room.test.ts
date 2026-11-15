@@ -1,7 +1,7 @@
 import { createMatch, planAi, playTurn, type GameState } from "@majority-map/core";
 import { describe, expect, it } from "vitest";
 import { inviteCode } from "../src/api.js";
-import { checkSetup, join, leave, newRoom, packFor, pick, resign, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
+import { checkSetup, join, leave, newQuickRoom, newRoom, packFor, pick, quickSetup, resign, seated, setReady, start, submit, timeout, view, waitingOn, type MatchSetup, type RoomData } from "../src/room.js";
 
 const seat = (id: string, kind: "human" | "ai", leaderId: string, color: string, emblem: string) => ({
   id,
@@ -302,3 +302,47 @@ describe("picks in the lobby", () => {
     expect(room.seats[1]!.party.color).not.toBe(room.seats[0]!.party.color);
   });
 });
+
+describe("quick matches", () => {
+  const people = [
+    { accountId: "a1", name: "Ali", party: { name: "Zara Rising", color: "#d9a21b", emblem: "lighthouse" } },
+    { accountId: "a2", name: "Sam", party: { name: "Other Lot", color: "#D9A21B", emblem: "lighthouse" } },
+    { accountId: "a3", name: "Kim" },
+  ];
+
+  it("seats everyone found with a leader from a different real party and their own party where it's free", () => {
+    const setup = quickSetup("uk", people, true, 77);
+    expect(() => checkSetup(setup)).not.toThrow();
+    expect(setup).toMatchObject({ map: "uk", turnSeconds: 300, mode: "ranked" });
+    expect(setup.seats.map((s) => s.kind)).toEqual(["human", "human", "human"]);
+    expect(setup.seats[0]!.party).toEqual({ name: "Zara Rising", color: "#d9a21b", emblem: "lighthouse" });
+    // Sam's saved colour and emblem are taken by then: Sam's own name's party, in free ones.
+    expect(setup.seats[1]!.party.name).toBe("Sam Party");
+    expect(setup.seats[1]!.party.color).not.toBe("#d9a21b");
+    expect(setup.seats[2]!.party.name).toBe("Kim Party");
+    const pack = packFor(setup);
+    const parties = setup.seats.map((s) => pack.candidates.find((c) => c.id === s.leaderId)!.affiliation);
+    expect(new Set(parties).size).toBe(3);
+    // The same seed draws the same leaders; another seed may not.
+    expect(quickSetup("uk", people, true, 77).seats.map((s) => s.leaderId)).toEqual(setup.seats.map((s) => s.leaderId));
+  });
+
+  it("follows the candidates' parties on the Presidential map", () => {
+    const setup = quickSetup("us", people.slice(0, 2), false, 5);
+    expect(setup.mode).toBe("quick");
+    expect(() => checkSetup(setup)).not.toThrow();
+    const pack = packFor(setup);
+    expect(setup.seats[0]!.party.name).toBe(pack.candidates.find((c) => c.id === setup.seats[0]!.leaderId)!.name);
+  });
+
+  it("starts with everyone seated and ready, the clock running", () => {
+    const setup = quickSetup("pk", people, false, 9);
+    const room = newQuickRoom("QUICK1", "m-q", setup, people, 9, 1000);
+    expect(room.status).toBe("active");
+    expect(room.seats.map((s) => s.accountId)).toEqual(["a1", "a2", "a3"]);
+    expect(room.seats[0]!.party.name).toBe("Zara Rising");
+    expect(room.deadline).toBe(1000 + 300_000);
+    expect(view(room, "a3").you).toBe("p3");
+  });
+});
+

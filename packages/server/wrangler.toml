@@ -28,3 +28,12 @@ class_name = "MatchRoom"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["MatchRoom"]
+
+# Matchmaking for quick matches: one Durable Object holding everyone searching (src/matchmaker.ts).
+[[durable_objects.bindings]]
+name = "MATCHMAKER"
+class_name = "Matchmaker"
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Matchmaker"]

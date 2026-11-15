@@ -219,3 +219,32 @@ test("the game's service worker is installed, ready for push notifications", asy
   await page.goto("/");
   await expect.poll(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.active?.scriptURL ?? ""), { timeout: 15_000 }).toContain("/sw.js");
 });
+
+test("quick match: two people searching the same map are put in a match together, with five minutes a turn", async ({ browser }, info) => {
+  test.skip(info.project.name !== "desktop", "one run is enough: it waits out the matchmaker's 15-second gathering time");
+  test.setTimeout(120_000);
+  const ali = await device(browser);
+  const sam = await device(browser);
+  for (const page of [ali, sam]) {
+    await page.goto("/");
+    await page.getByTestId("quick-match").click();
+    await expect(page.getByTestId("quick-match")).toBeVisible();
+  }
+  // Someone searching another map isn't matched with them.
+  await ali.getByTestId("quick-map-pk").click();
+  await sam.getByTestId("quick-map-pk").click();
+  await ali.getByTestId("quick-ranked").click();
+  await expect(ali.getByTestId("quick-rating")).toContainText("1000, until your first ranked match");
+  await ali.getByTestId("quick-casual").click();
+  await ali.getByTestId("quick-find").click();
+  await expect(ali.getByTestId("quick-searching")).toContainText("You're the only one looking");
+  await sam.getByTestId("quick-find").click();
+  await expect(ali.getByTestId("quick-searching")).toContainText("2 people found");
+  // After the gathering time both land in the same match, already started.
+  for (const page of [ali, sam]) await page.waitForFunction(() => Boolean((window as unknown as HookWindow).__game?.ready), null, { timeout: 40_000 });
+  const codes = await Promise.all([ali, sam].map((p) => p.evaluate(() => new URLSearchParams(location.search).get("join"))));
+  expect(codes[0]).toMatch(/^[0-9A-Z]{6}$/);
+  expect(codes[1]).toBe(codes[0]);
+  await expect(ali.getByTestId("online-banner")).toContainText(/\d:\d\d left/);
+  await expect(ali.getByTestId("turn")).toContainText("Turn 1");
+});
