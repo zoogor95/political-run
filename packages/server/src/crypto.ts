@@ -32,3 +32,24 @@ export async function sha256(text: string): Promise<string> {
   const d = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
   return Array.from(d, (x) => HEX[x]).join("");
 }
+
+/** Cloudflare Workers allow at most 100,000 PBKDF2 iterations. */
+export const PASSWORD_ITERATIONS = 100_000;
+
+/** A salted PBKDF2-SHA256 hash of a password, base64url. */
+export async function hashPassword(password: string, salt: Uint8Array, iterations = PASSWORD_ITERATIONS): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  return base64url(new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256)));
+}
+
+/** Compares two strings without stopping at the first difference. */
+export function sameText(a: string, b: string): boolean {
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
+export function fromBase64url(s: string): Uint8Array {
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}

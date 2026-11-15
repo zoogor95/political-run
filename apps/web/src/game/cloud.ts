@@ -34,7 +34,10 @@ const KEY = "mm.cloud.v1";
 const DEBOUNCE_MS = 2000;
 
 interface Saved {
+  /** The recovery code, or empty on a device signed in with a username and password. */
   code: string;
+  /** The login name, once this profile has one. */
+  username?: string;
   token: string;
   /** What was last sent, part by part, so only changes go up and a name edited offline wins over the server's. */
   sent: { name?: string; settings?: string; stats?: string; unlocked?: string };
@@ -43,7 +46,7 @@ interface Saved {
 
 export type CloudStatus =
   | { state: "off" }
-  | { state: "syncing" | "synced" | "offline"; syncedAt: number | null; code: string };
+  | { state: "syncing" | "synced" | "offline"; syncedAt: number | null; code: string; username: string | null };
 
 let saved: Saved | null = readSaved();
 let busy = false;
@@ -73,7 +76,7 @@ function writeSaved(v: Saved | null) {
 
 function computeStatus(): CloudStatus {
   if (!saved) return { state: "off" };
-  return { state: busy ? "syncing" : failed ? "offline" : "synced", syncedAt: saved.syncedAt, code: saved.code };
+  return { state: busy ? "syncing" : failed ? "offline" : "synced", syncedAt: saved.syncedAt, code: saved.code, username: saved.username ?? null };
 }
 
 function changed() {
@@ -112,6 +115,8 @@ async function api<T>(method: string, path: string, body?: unknown, token = save
       writeSaved(null);
       throw new CloudError("This device was signed out of the online backup. Restore with your recovery code to turn it back on.");
     }
+    // Sign-in and registration errors are worded for the player by the server (taken name, wrong password, locked out…).
+    if (data?.error && ["username_taken", "bad_login", "locked", "bad_username", "bad_password", "already_registered"].includes(data.error.code)) throw new CloudError(data.error.message);
     throw new CloudError(data?.error?.code === "no_account" ? "No profile has that recovery code. Check it and try again." : "The game's server had a problem. Try again in a minute.");
   }
   return data as T;
@@ -119,7 +124,7 @@ async function api<T>(method: string, path: string, body?: unknown, token = save
 
 interface ServerProfile {
   token?: string;
-  account: { displayName: string };
+  account: { displayName: string; username?: string | null };
   settings: unknown;
   stats: unknown;
   achievements: { code: string; unlockedAt: number }[];
@@ -212,6 +217,44 @@ export async function backUp(): Promise<string> {
     await push();
     return code;
   });
+}
+
+/**
+ * Creates a username and password. On a device that already backs up (a guest profile) the login is added to that same
+ * profile, so nothing is lost; otherwise it makes a new online profile from what's on this device.
+ */
+export async function signUp(username: string, password: string): Promise<void> {
+  await run(async () => {
+    const had = saved !== null;
+    const res = await api<ServerProfile>("POST", "/api/accounts/register", { username, password, deviceLabel: deviceLabel() });
+    if (had && saved) {
+      writeSaved({ ...saved, username: res.account.username ?? username });
+      return;
+    }
+    writeSaved({ code: "", username: res.account.username ?? username, token: res.token!, sent: {}, syncedAt: null });
+    applyRemote(res, true);
+    await push();
+  });
+}
+
+/** Signs this device in to the online profile a username and password belong to, keeping anything earned here too. */
+export async function signIn(username: string, password: string): Promise<void> {
+  await run(async () => {
+    const res = await api<ServerProfile>("POST", "/api/accounts/login", { username, password, deviceLabel: deviceLabel() }, "");
+    writeSaved({ code: "", username: res.account.username ?? username, token: res.token!, sent: {}, syncedAt: null });
+    applyRemote(res, false);
+    await push();
+  });
+}
+
+/** Whether a username is free, as far as the server can tell (null when it can't be asked). */
+export async function usernameAvailable(name: string): Promise<{ valid: boolean; available: boolean } | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/accounts/username?name=${encodeURIComponent(name)}`);
+    return res.ok ? ((await res.json()) as { valid: boolean; available: boolean }) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Signs this device in to the online profile a code belongs to, keeping anything earned here too. */
