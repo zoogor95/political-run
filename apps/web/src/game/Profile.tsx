@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "./achievements";
 import { play } from "./audio";
-import { backUp, CloudError, deleteBackup, restore, stopBackup, syncNow, useCloud } from "./cloud";
+import { backUp, CloudError, deleteBackup, restore, sessionToken, stopBackup, syncNow, useCloud } from "./cloud";
+import { myRatings } from "./quick";
 import { MAPS } from "./model";
 import { onUnlock, setProfileName, useProfile } from "./profile";
 
@@ -61,6 +62,7 @@ export function ProfileScreen({ onBack, onParty }: { onBack: () => void; onParty
         </section>
       )}
       <BackupPanel />
+      <CupTitles />
       <section className="stat-grid" aria-label="Your stats">
         {tiles.map(([k, v]) => (
           <div key={k} className="stat">
@@ -273,5 +275,33 @@ export function AchievementToast() {
         <b>{a.name}</b>
       </span>
     </div>
+  );
+}
+
+/** Tournament titles: a crown for each cup won and a medal for each final reached. Nothing is shown (or asked of the server) until the player has an online account. */
+function CupTitles() {
+  const [titles, setTitles] = useState<{ id: string; name: string; rank: 1 | 2 }[]>([]);
+  useEffect(() => {
+    if (!sessionToken()) return;
+    let live = true;
+    myRatings()
+      .then((r) => live && setTitles(r.titles ?? []))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (titles.length === 0) return null;
+  return (
+    <section className="backup cup-titles" data-testid="cup-titles" aria-label="Tournament titles">
+      <h2>Tournament titles</h2>
+      <ul>
+        {titles.map((t) => (
+          <li key={t.id} data-testid={`title-${t.id}`}>
+            <span aria-hidden="true">{t.rank === 1 ? "🏆" : "🥈"}</span> {t.name} <small className="muted">{t.rank === 1 ? "Champion" : "Finalist"}</small>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

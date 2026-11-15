@@ -29,6 +29,13 @@ interface Listing {
   maxEntrants: number;
 }
 
+interface BracketTable {
+  round: number;
+  tableNo: number;
+  players: string[];
+  winner: string | null;
+}
+
 const day = (t: number) => new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 async function call(method: string, path: string) {
@@ -52,6 +59,21 @@ export function TournamentsScreen({ onBack, onOpenMatch }: { onBack: () => void;
   useEffect(() => {
     void load();
   }, [load]);
+  const [bracket, setBracket] = useState<Record<string, BracketTable[]>>({});
+  const toggleBracket = async (id: string) => {
+    if (bracket[id] !== undefined) {
+      setBracket(({ [id]: _gone, ...rest }) => rest);
+      return;
+    }
+    try {
+      const res = await call("GET", `/api/tournaments/${id}`);
+      if (!res.ok) throw new Error(String(res.status));
+      const { rounds } = (await res.json()) as { rounds: BracketTable[] };
+      setBracket((b) => ({ ...b, [id]: rounds }));
+    } catch {
+      setError("Couldn't load the bracket. Try again in a moment.");
+    }
+  };
   const act = async (method: "POST" | "DELETE", id: string) => {
     const res = await call(method, `/api/tournaments/${id}/join`);
     if (!res.ok) setError(((await res.json().catch(() => null)) as { error?: { message?: string } } | null)?.error?.message ?? "That didn't work.");
@@ -101,9 +123,43 @@ export function TournamentsScreen({ onBack, onOpenMatch }: { onBack: () => void;
               </button>
             )}
             {c.status === "running" && c.entered && !c.yourTable && <span>You're out of this cup, or waiting for the next round.</span>}
+            {(c.status === "running" || (c.status === "finished" && !c.cancelled)) && (
+              <button type="button" onClick={() => void toggleBracket(c.id)} aria-expanded={bracket[c.id] !== undefined} data-testid={`cup-bracket-${c.id}`}>
+                {bracket[c.id] !== undefined ? "Hide the bracket" : "See the bracket"}
+              </button>
+            )}
           </div>
+          {bracket[c.id] && <Bracket tables={bracket[c.id]!} id={c.id} />}
         </section>
       ))}
     </main>
+  );
+}
+
+/** The bracket: each round's tables with who sat at them, the winner who went on in bold. */
+function Bracket({ tables, id }: { tables: BracketTable[]; id: string }) {
+  const rounds = [...new Set(tables.map((t) => t.round))].sort((a, b) => a - b);
+  const last = rounds[rounds.length - 1];
+  return (
+    <div className="bracket" data-testid={`bracket-${id}`}>
+      {rounds.map((r) => (
+        <div key={r} className="bracket-round">
+          <h3>{r === last && tables.filter((t) => t.round === r).length === 1 ? "Final" : `Round ${r}`}</h3>
+          {tables
+            .filter((t) => t.round === r)
+            .map((t) => (
+              <p key={t.tableNo} className="small">
+                <small className="muted">Table {t.tableNo + 1}: </small>
+                {t.players.map((name, i) => (
+                  <span key={`${name}-${i}`}>
+                    {i > 0 && ", "}
+                    {t.winner === name ? <b>{name} ✓</b> : name}
+                  </span>
+                ))}
+              </p>
+            ))}
+        </div>
+      ))}
+    </div>
   );
 }
