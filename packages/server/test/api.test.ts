@@ -353,7 +353,7 @@ describe("tournaments", () => {
     const jan = Date.UTC(2027, 0, 3);
     await runTournaments(env, jan);
     const list = await call("GET", "/api/tournaments", { now: jan });
-    expect(list.data.tournaments.map((t: { id: string; status: string }) => `${t.id}:${t.status}`).sort()).toEqual(["pk-2027-winter:open", "uk-2027-winter:open", "us-2027-winter:open"]);
+    expect(list.data.tournaments.map((t: { id: string; status: string }) => `${t.id}:${t.status}`).sort()).toEqual(["my-2027-winter:open", "pk-2027-winter:open", "uk-2027-winter:open", "us-2027-winter:open"]);
 
     const people = [];
     for (let i = 0; i < 5; i++) people.push((await signIn(String(i).repeat(43), { displayName: `P${i}` })).data);

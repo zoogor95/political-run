@@ -101,5 +101,6 @@ export async function setHome(country: string | null, region: string | null): Pr
 export const HOME_COUNTRIES = [
   { code: "GB", map: "uk" },
   { code: "PK", map: "pk" },
+  { code: "MY", map: "my" },
   { code: "US", map: "us" },
 ] as const;

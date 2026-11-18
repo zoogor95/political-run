@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HEADLINE_KINDS, PLACEHOLDERS, fillTemplate, type NewsTemplates } from "@majority-map/core";
+import myNews from "../news/my.json" with { type: "json" };
 import pkNews from "../news/pk.json" with { type: "json" };
 import ukNews from "../news/uk.json" with { type: "json" };
 import usNews from "../news/us.json" with { type: "json" };
@@ -10,6 +11,7 @@ const BANNED = /\b(beer|wine|pub|pubs|pint|pints|drunk|booze|bar|bars|vodka|whis
 const PACKS: [string, NewsTemplates][] = [
   ["UK", ukNews as NewsTemplates],
   ["Pakistan", pkNews as NewsTemplates],
+  ["Malaysia", myNews as NewsTemplates],
   ["US", usNews as NewsTemplates],
 ];
 

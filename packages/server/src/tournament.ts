@@ -26,7 +26,7 @@ export interface Cup {
   endsBefore: number;
 }
 
-const MAP_NAME: Record<string, string> = { uk: "UK", pk: "Pakistan", us: "US" };
+const MAP_NAME: Record<string, string> = { uk: "UK", pk: "Pakistan", my: "Malaysia", us: "US" };
 
 /** The cup a map has in a given half-year, from the moment: Winter (Jan to Jun) or Summer (Jul to Dec). */
 export function cupFor(map: string, now: number): Cup {

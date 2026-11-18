@@ -52,5 +52,6 @@ jobs:
       - run: pnpm balance --out "$RUNNER_TEMP/uk.md"
       # 4,000 Pakistan matches, the size of the committed report.
       - run: pnpm balance --pack pk --games 4000 --out "$RUNNER_TEMP/pk.md"
-      - run: cat "$RUNNER_TEMP/uk.md" "$RUNNER_TEMP/pk.md" >> "$GITHUB_STEP_SUMMARY"
+      - run: pnpm balance --pack my --games 4000 --out "$RUNNER_TEMP/my.md"
+      - run: cat "$RUNNER_TEMP/uk.md" "$RUNNER_TEMP/pk.md" "$RUNNER_TEMP/my.md" >> "$GITHUB_STEP_SUMMARY"
         if: always()

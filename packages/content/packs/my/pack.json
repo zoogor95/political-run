@@ -1,0 +1,540 @@
+{
+  "id": "my",
+  "name": "Malaysia",
+  "gameType": "parliamentary",
+  "currency": "RM",
+  "rules": {
+    "steps": 15,
+    "contentionAt": 5,
+    "firstEntryMax": 2,
+    "costGrowth": 1.1,
+    "costClampMin": 0.5,
+    "costClampMax": 1.5,
+    "baseIncome": 2100000,
+    "memberPickEvery": 5,
+    "memberSharePct": 20,
+    "freePipEvery": 3,
+    "secondRoundPipLoss": 5,
+    "turnCap": 40,
+    "moneyStep": 1000
+  },
+  "regions": [
+    {
+      "id": "pls",
+      "name": "Perlis",
+      "seats": 3,
+      "baseCost": 209000,
+      "voters": 285000.0
+    },
+    {
+      "id": "kdh",
+      "name": "Kedah",
+      "seats": 15,
+      "baseCost": 245000,
+      "voters": 1426000.0
+    },
+    {
+      "id": "png",
+      "name": "Pulau Pinang",
+      "seats": 13,
+      "baseCost": 239000,
+      "voters": 1236000.0
+    },
+    {
+      "id": "prk",
+      "name": "Perak",
+      "seats": 24,
+      "baseCost": 272000,
+      "voters": 2281000.0
+    },
+    {
+      "id": "ktn",
+      "name": "Kelantan",
+      "seats": 14,
+      "baseCost": 242000,
+      "voters": 1331000.0
+    },
+    {
+      "id": "trg",
+      "name": "Terengganu",
+      "seats": 8,
+      "baseCost": 224000,
+      "voters": 760000.0
+    },
+    {
+      "id": "phg",
+      "name": "Pahang",
+      "seats": 14,
+      "baseCost": 242000,
+      "voters": 1331000.0
+    },
+    {
+      "id": "sgr",
+      "name": "Selangor",
+      "seats": 22,
+      "baseCost": 266000,
+      "voters": 2091000.0
+    },
+    {
+      "id": "kul",
+      "name": "Kuala Lumpur",
+      "seats": 11,
+      "baseCost": 233000,
+      "voters": 1045000.0
+    },
+    {
+      "id": "pjy",
+      "name": "Putrajaya",
+      "seats": 1,
+      "baseCost": 203000,
+      "voters": 95000.0
+    },
+    {
+      "id": "nsn",
+      "name": "Negeri Sembilan",
+      "seats": 8,
+      "baseCost": 224000,
+      "voters": 760000.0
+    },
+    {
+      "id": "mlk",
+      "name": "Melaka",
+      "seats": 6,
+      "baseCost": 218000,
+      "voters": 570000.0
+    },
+    {
+      "id": "jhr",
+      "name": "Johor",
+      "seats": 26,
+      "baseCost": 278000,
+      "voters": 2471000.0
+    },
+    {
+      "id": "sbh",
+      "name": "Sabah",
+      "seats": 25,
+      "baseCost": 275000,
+      "voters": 2376000.0
+    },
+    {
+      "id": "swk",
+      "name": "Sarawak",
+      "seats": 31,
+      "baseCost": 293000,
+      "voters": 2946000.0
+    },
+    {
+      "id": "lbn",
+      "name": "Labuan",
+      "seats": 1,
+      "baseCost": 203000,
+      "voters": 95000.0
+    }
+  ],
+  "groups": [
+    {
+      "id": "north",
+      "name": "Northern states",
+      "kind": "state",
+      "regions": [
+        "pls",
+        "kdh",
+        "png",
+        "prk"
+      ],
+      "income": 630000
+    },
+    {
+      "id": "east-coast",
+      "name": "East Coast",
+      "kind": "state",
+      "regions": [
+        "ktn",
+        "trg",
+        "phg"
+      ],
+      "income": 540000
+    },
+    {
+      "id": "klang-valley",
+      "name": "Klang Valley",
+      "kind": "state",
+      "regions": [
+        "sgr",
+        "kul",
+        "pjy"
+      ],
+      "income": 840000
+    },
+    {
+      "id": "south",
+      "name": "Southern states",
+      "kind": "state",
+      "regions": [
+        "nsn",
+        "mlk",
+        "jhr"
+      ],
+      "income": 630000
+    },
+    {
+      "id": "borneo",
+      "name": "Sabah and Sarawak",
+      "kind": "state",
+      "regions": [
+        "sbh",
+        "swk",
+        "lbn"
+      ],
+      "income": 720000
+    },
+    {
+      "id": "federal-territories",
+      "name": "Federal Territories",
+      "kind": "state",
+      "regions": [
+        "kul",
+        "pjy",
+        "lbn"
+      ],
+      "income": 450000
+    },
+    {
+      "id": "west-coast",
+      "name": "West Coast corridor",
+      "kind": "state",
+      "regions": [
+        "png",
+        "prk",
+        "sgr",
+        "nsn",
+        "mlk",
+        "jhr"
+      ],
+      "income": 900000
+    },
+    {
+      "id": "urban",
+      "name": "Urban voters",
+      "kind": "national",
+      "regions": [],
+      "income": 750000,
+      "baseCost": 330000
+    },
+    {
+      "id": "rural",
+      "name": "Rural voters",
+      "kind": "national",
+      "regions": [],
+      "income": 750000,
+      "baseCost": 330000
+    },
+    {
+      "id": "civil-servants",
+      "name": "Civil servants",
+      "kind": "national",
+      "regions": [],
+      "income": 570000,
+      "baseCost": 260000
+    },
+    {
+      "id": "youth",
+      "name": "Young voters",
+      "kind": "national",
+      "regions": [],
+      "income": 600000,
+      "baseCost": 280000
+    },
+    {
+      "id": "business",
+      "name": "Business owners",
+      "kind": "national",
+      "regions": [],
+      "income": 675000,
+      "baseCost": 300000
+    },
+    {
+      "id": "workers",
+      "name": "Factory and estate workers",
+      "kind": "national",
+      "regions": [],
+      "income": 570000,
+      "baseCost": 260000
+    }
+  ],
+  "candidates": [
+    {
+      "id": "anwar-ibrahim",
+      "name": "Anwar Ibrahim",
+      "affiliation": "PKR",
+      "modifiers": {
+        "klang-valley": 10,
+        "urban": 10,
+        "rural": -5
+      },
+      "notes": {
+        "klang-valley": "Pakatan Harapan won most Klang Valley seats in 2022",
+        "urban": "Strongest in urban seats",
+        "rural": "Weaker in rural seats in 2022"
+      }
+    },
+    {
+      "id": "muhyiddin-yassin",
+      "name": "Muhyiddin Yassin",
+      "affiliation": "Bersatu",
+      "modifiers": {
+        "south": 10,
+        "east-coast": 10,
+        "urban": -5
+      },
+      "notes": {
+        "south": "MP for Pagoh, Johor",
+        "east-coast": "Perikatan Nasional won most East Coast seats in 2022",
+        "urban": "Weaker in urban seats"
+      }
+    },
+    {
+      "id": "ahmad-zahid-hamidi",
+      "name": "Ahmad Zahid Hamidi",
+      "affiliation": "UMNO",
+      "modifiers": {
+        "rural": 10,
+        "civil-servants": 10,
+        "urban": -5
+      },
+      "notes": {
+        "rural": "UMNO's base is in rural seats",
+        "civil-servants": "Long-standing support among civil servants",
+        "urban": "Weaker in urban seats in 2022"
+      }
+    },
+    {
+      "id": "abdul-hadi-awang",
+      "name": "Abdul Hadi Awang",
+      "affiliation": "PAS",
+      "modifiers": {
+        "east-coast": 20,
+        "rural": 10,
+        "business": -5
+      },
+      "notes": {
+        "east-coast": "MP for Marang, Terengganu; PAS governs Kelantan and Terengganu",
+        "rural": "Strongest in rural seats",
+        "business": "Less support among business owners"
+      }
+    },
+    {
+      "id": "lim-guan-eng",
+      "name": "Lim Guan Eng",
+      "affiliation": "DAP",
+      "modifiers": {
+        "north": 10,
+        "urban": 15,
+        "rural": -10
+      },
+      "notes": {
+        "north": "Former Chief Minister of Penang",
+        "urban": "DAP is strongest in urban seats",
+        "rural": "Few rural seats won"
+      }
+    },
+    {
+      "id": "anthony-loke",
+      "name": "Anthony Loke",
+      "affiliation": "DAP",
+      "modifiers": {
+        "south": 10,
+        "urban": 10,
+        "east-coast": -10
+      },
+      "notes": {
+        "south": "MP for Seremban, Negeri Sembilan",
+        "urban": "DAP is strongest in urban seats",
+        "east-coast": "Few East Coast seats won"
+      }
+    },
+    {
+      "id": "mohamad-sabu",
+      "name": "Mohamad Sabu",
+      "affiliation": "Amanah",
+      "modifiers": {
+        "klang-valley": 10,
+        "workers": 10,
+        "business": -5
+      },
+      "notes": {
+        "klang-valley": "MP for Kota Raja, Selangor",
+        "workers": "Support among working families",
+        "business": "Less support among business owners"
+      }
+    },
+    {
+      "id": "hamzah-zainudin",
+      "name": "Hamzah Zainudin",
+      "affiliation": "Bersatu",
+      "modifiers": {
+        "north": 10,
+        "civil-servants": 10,
+        "urban": -5
+      },
+      "notes": {
+        "north": "MP for Larut, Perak",
+        "civil-servants": "Former Home Minister",
+        "urban": "Weaker in urban seats"
+      }
+    },
+    {
+      "id": "abang-johari-openg",
+      "name": "Abang Johari Openg",
+      "affiliation": "GPS",
+      "modifiers": {
+        "borneo": 20,
+        "rural": 10,
+        "urban": -5
+      },
+      "notes": {
+        "borneo": "Premier of Sarawak",
+        "rural": "GPS is strong in rural Sarawak",
+        "urban": "Fewer urban seats"
+      }
+    },
+    {
+      "id": "hajiji-noor",
+      "name": "Hajiji Noor",
+      "affiliation": "GRS",
+      "modifiers": {
+        "borneo": 15,
+        "rural": 10,
+        "klang-valley": -10
+      },
+      "notes": {
+        "borneo": "Chief Minister of Sabah",
+        "rural": "Strong in rural Sabah",
+        "klang-valley": "Little presence on the peninsula"
+      }
+    },
+    {
+      "id": "shafie-apdal",
+      "name": "Shafie Apdal",
+      "affiliation": "Warisan",
+      "modifiers": {
+        "borneo": 15,
+        "youth": 5,
+        "klang-valley": -10
+      },
+      "notes": {
+        "borneo": "MP for Semporna, Sabah",
+        "youth": "Appeal to younger voters in Sabah",
+        "klang-valley": "Little presence on the peninsula"
+      }
+    },
+    {
+      "id": "mahathir-mohamad",
+      "name": "Mahathir Mohamad",
+      "affiliation": "Pejuang",
+      "modifiers": {
+        "north": 10,
+        "business": 10,
+        "youth": -10
+      },
+      "notes": {
+        "north": "MP for Langkawi, Kedah",
+        "business": "Prime Minister during a long growth period",
+        "youth": "Older support base"
+      }
+    },
+    {
+      "id": "nurul-izzah-anwar",
+      "name": "Nurul Izzah Anwar",
+      "affiliation": "PKR",
+      "modifiers": {
+        "north": 10,
+        "youth": 10,
+        "rural": -5
+      },
+      "notes": {
+        "north": "MP for Permatang Pauh, Penang",
+        "youth": "Popular with younger voters",
+        "rural": "Weaker in rural seats in 2022"
+      }
+    },
+    {
+      "id": "syed-saddiq",
+      "name": "Syed Saddiq",
+      "affiliation": "MUDA",
+      "modifiers": {
+        "south": 10,
+        "youth": 20,
+        "civil-servants": -5
+      },
+      "notes": {
+        "south": "MP for Muar, Johor",
+        "youth": "Youngest cabinet minister and MUDA founder",
+        "civil-servants": "Less support among civil servants"
+      }
+    },
+    {
+      "id": "ismail-sabri-yaakob",
+      "name": "Ismail Sabri Yaakob",
+      "affiliation": "UMNO",
+      "modifiers": {
+        "east-coast": 10,
+        "civil-servants": 10,
+        "urban": -5
+      },
+      "notes": {
+        "east-coast": "MP for Bera, Pahang",
+        "civil-servants": "Former Prime Minister with a civil service base",
+        "urban": "Weaker in urban seats"
+      }
+    },
+    {
+      "id": "khairy-jamaluddin",
+      "name": "Khairy Jamaluddin",
+      "affiliation": "UMNO",
+      "modifiers": {
+        "south": 10,
+        "youth": 10,
+        "rural": -5
+      },
+      "notes": {
+        "south": "Former MP for Rembau, Negeri Sembilan",
+        "youth": "Former Youth and Sports Minister",
+        "rural": "Weaker in rural seats"
+      }
+    }
+  ],
+  "aiPartyNames": [
+    "Teh Tarik Party",
+    "Durian Lovers Alliance",
+    "Hornbill Club",
+    "Kinabalu Hikers",
+    "Nasi Lemak Alliance",
+    "Roti Canai Front",
+    "Kopitiam Society",
+    "Cendol Party"
+  ],
+  "callOrder": [
+    "pls",
+    "kdh",
+    "png",
+    "prk",
+    "ktn",
+    "trg",
+    "phg",
+    "sgr",
+    "kul",
+    "pjy",
+    "nsn",
+    "mlk",
+    "jhr",
+    "sbh",
+    "swk",
+    "lbn"
+  ],
+  "customBudget": 8,
+  "customPrices": {
+    "federal-territories": 3
+  }
+}

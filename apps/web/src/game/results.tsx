@@ -15,7 +15,7 @@ import type { GameApi } from "./useGame";
 
 const LEVEL_NAME: Record<AiLevel, string> = { easy: "Easy", normal: "Normal", hard: "Hard" };
 /** The chamber each parliamentary map elects. */
-const CHAMBER: Record<string, string> = { uk: "House of Commons", pk: "National Assembly" };
+const CHAMBER: Record<string, string> = { uk: "House of Commons", pk: "National Assembly", my: "Dewan Rakyat" };
 
 const partyName = (s: GameState, id: string) => playerOf(s, id).party.name;
 const partyColor = (s: GameState, id: string) => playerOf(s, id).party.color;

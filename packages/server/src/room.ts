@@ -28,11 +28,12 @@ import {
   type MapPack,
   type Plan,
 } from "@majority-map/core";
+import myPack from "@majority-map/content/packs/my/pack.json";
 import pkPack from "@majority-map/content/packs/pk/pack.json";
 import ukPack from "@majority-map/content/packs/uk/pack.json";
 import usPack from "@majority-map/content/packs/us/pack.json";
 
-export const PACKS: Record<string, MapPack> = { uk: ukPack as unknown as MapPack, pk: pkPack as unknown as MapPack, us: usPack as unknown as MapPack };
+export const PACKS: Record<string, MapPack> = { uk: ukPack as unknown as MapPack, pk: pkPack as unknown as MapPack, my: myPack as unknown as MapPack, us: usPack as unknown as MapPack };
 
 export interface SeatSetup {
   id: string;
