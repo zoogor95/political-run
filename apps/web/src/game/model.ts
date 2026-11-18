@@ -1,12 +1,15 @@
 /** The map in play and pure helpers for the play screen: board styles from the match state, money text. */
 import type { BoardData, RegionStyle } from "@majority-map/board";
 import { EMPTY, hexToNumber, shadeFor, tint } from "@majority-map/board";
+import myBoard from "@majority-map/content/maps/my.json";
 import pkBoard from "@majority-map/content/maps/pk.json";
 import ukBoard from "@majority-map/content/maps/uk.json";
 import usBoard from "@majority-map/content/maps/us.json";
+import myNews from "@majority-map/content/news/my.json";
 import pkNews from "@majority-map/content/news/pk.json";
 import ukNews from "@majority-map/content/news/uk.json";
 import usNews from "@majority-map/content/news/us.json";
+import myPack from "@majority-map/content/packs/my/pack.json";
 import pkPack from "@majority-map/content/packs/pk/pack.json";
 import ukPack from "@majority-map/content/packs/uk/pack.json";
 import usPack from "@majority-map/content/packs/us/pack.json";
@@ -27,7 +30,7 @@ import {
   type PlayerState,
 } from "@majority-map/core";
 
-export type MapId = "uk" | "pk" | "us";
+export type MapId = "uk" | "pk" | "my" | "us";
 
 export interface MapEntry {
   id: MapId;
@@ -42,10 +45,11 @@ export interface MapEntry {
 export const MAPS: Record<MapId, MapEntry> = {
   uk: { id: "uk", name: "United Kingdom", pack: ukPack as unknown as MapPack, board: ukBoard as unknown as BoardData, news: ukNews as NewsTemplates, defaultLeader: "keir-starmer" },
   pk: { id: "pk", name: "Pakistan", pack: pkPack as unknown as MapPack, board: pkBoard as unknown as BoardData, news: pkNews as NewsTemplates, defaultLeader: "shehbaz-sharif" },
+  my: { id: "my", name: "Malaysia", pack: myPack as unknown as MapPack, board: myBoard as unknown as BoardData, news: myNews as NewsTemplates, defaultLeader: "anwar-ibrahim" },
   us: { id: "us", name: "United States", pack: usPack as unknown as MapPack, board: usBoard as unknown as BoardData, news: usNews as NewsTemplates, defaultLeader: "george-washington" },
 };
 
-export const isMapId = (id: unknown): id is MapId => id === "uk" || id === "pk" || id === "us";
+export const isMapId = (id: unknown): id is MapId => id === "uk" || id === "pk" || id === "my" || id === "us";
 
 /**
  * The map in play. Screens import these and read them while rendering; selectMap switches them before a match or the

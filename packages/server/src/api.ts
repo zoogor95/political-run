@@ -96,7 +96,7 @@ function cleanPassword(password: unknown): string {
 }
 
 /** The country each map is about, as the two-letter code a profile keeps for where its player lives. */
-const HOME_COUNTRY: Record<string, string> = { uk: "GB", pk: "PK", us: "US" };
+const HOME_COUNTRY: Record<string, string> = { uk: "GB", pk: "PK", my: "MY", us: "US" };
 
 const LOGIN_TRIES = 5;
 const LOCK_MINUTES = 15;
