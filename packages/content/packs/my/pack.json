@@ -23,112 +23,112 @@
       "id": "pls",
       "name": "Perlis",
       "seats": 3,
-      "baseCost": 78000,
+      "baseCost": 209000,
       "voters": 285000.0
     },
     {
       "id": "kdh",
       "name": "Kedah",
       "seats": 15,
-      "baseCost": 150000,
+      "baseCost": 245000,
       "voters": 1426000.0
     },
     {
       "id": "png",
       "name": "Pulau Pinang",
       "seats": 13,
-      "baseCost": 138000,
+      "baseCost": 239000,
       "voters": 1236000.0
     },
     {
       "id": "prk",
       "name": "Perak",
       "seats": 24,
-      "baseCost": 204000,
+      "baseCost": 272000,
       "voters": 2281000.0
     },
     {
       "id": "ktn",
       "name": "Kelantan",
       "seats": 14,
-      "baseCost": 144000,
+      "baseCost": 242000,
       "voters": 1331000.0
     },
     {
       "id": "trg",
       "name": "Terengganu",
       "seats": 8,
-      "baseCost": 108000,
+      "baseCost": 224000,
       "voters": 760000.0
     },
     {
       "id": "phg",
       "name": "Pahang",
       "seats": 14,
-      "baseCost": 144000,
+      "baseCost": 242000,
       "voters": 1331000.0
     },
     {
       "id": "sgr",
       "name": "Selangor",
       "seats": 22,
-      "baseCost": 192000,
+      "baseCost": 266000,
       "voters": 2091000.0
     },
     {
       "id": "kul",
       "name": "Kuala Lumpur",
       "seats": 11,
-      "baseCost": 126000,
+      "baseCost": 233000,
       "voters": 1045000.0
     },
     {
       "id": "pjy",
       "name": "Putrajaya",
       "seats": 1,
-      "baseCost": 66000,
+      "baseCost": 203000,
       "voters": 95000.0
     },
     {
       "id": "nsn",
       "name": "Negeri Sembilan",
       "seats": 8,
-      "baseCost": 108000,
+      "baseCost": 224000,
       "voters": 760000.0
     },
     {
       "id": "mlk",
       "name": "Melaka",
       "seats": 6,
-      "baseCost": 96000,
+      "baseCost": 218000,
       "voters": 570000.0
     },
     {
       "id": "jhr",
       "name": "Johor",
       "seats": 26,
-      "baseCost": 216000,
+      "baseCost": 278000,
       "voters": 2471000.0
     },
     {
       "id": "sbh",
       "name": "Sabah",
       "seats": 25,
-      "baseCost": 210000,
+      "baseCost": 275000,
       "voters": 2376000.0
     },
     {
       "id": "swk",
       "name": "Sarawak",
       "seats": 31,
-      "baseCost": 246000,
+      "baseCost": 293000,
       "voters": 2946000.0
     },
     {
       "id": "lbn",
       "name": "Labuan",
       "seats": 1,
-      "baseCost": 66000,
+      "baseCost": 203000,
       "voters": 95000.0
     }
   ],
@@ -143,7 +143,7 @@
         "png",
         "prk"
       ],
-      "income": 420000
+      "income": 630000
     },
     {
       "id": "east-coast",
@@ -154,7 +154,7 @@
         "trg",
         "phg"
       ],
-      "income": 360000
+      "income": 540000
     },
     {
       "id": "klang-valley",
@@ -165,7 +165,7 @@
         "kul",
         "pjy"
       ],
-      "income": 560000
+      "income": 840000
     },
     {
       "id": "south",
@@ -176,7 +176,7 @@
         "mlk",
         "jhr"
       ],
-      "income": 420000
+      "income": 630000
     },
     {
       "id": "borneo",
@@ -187,7 +187,7 @@
         "swk",
         "lbn"
       ],
-      "income": 480000
+      "income": 720000
     },
     {
       "id": "federal-territories",
@@ -198,7 +198,7 @@
         "pjy",
         "lbn"
       ],
-      "income": 300000
+      "income": 450000
     },
     {
       "id": "west-coast",
@@ -212,14 +212,14 @@
         "mlk",
         "jhr"
       ],
-      "income": 600000
+      "income": 900000
     },
     {
       "id": "urban",
       "name": "Urban voters",
       "kind": "national",
       "regions": [],
-      "income": 500000,
+      "income": 750000,
       "baseCost": 330000
     },
     {
@@ -227,7 +227,7 @@
       "name": "Rural voters",
       "kind": "national",
       "regions": [],
-      "income": 500000,
+      "income": 750000,
       "baseCost": 330000
     },
     {
@@ -235,7 +235,7 @@
       "name": "Civil servants",
       "kind": "national",
       "regions": [],
-      "income": 380000,
+      "income": 570000,
       "baseCost": 260000
     },
     {
@@ -243,7 +243,7 @@
       "name": "Young voters",
       "kind": "national",
       "regions": [],
-      "income": 400000,
+      "income": 600000,
       "baseCost": 280000
     },
     {
@@ -251,7 +251,7 @@
       "name": "Business owners",
       "kind": "national",
       "regions": [],
-      "income": 450000,
+      "income": 675000,
       "baseCost": 300000
     },
     {
@@ -259,7 +259,7 @@
       "name": "Factory and estate workers",
       "kind": "national",
       "regions": [],
-      "income": 380000,
+      "income": 570000,
       "baseCost": 260000
     }
   ],

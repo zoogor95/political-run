@@ -14,7 +14,7 @@ About 21.1 million registered voters (the 2022 electorate, rounded), spread acro
 
 ## Money
 
-Amounts are in ringgit: base income RM 2.1M a turn for two players, cut 15% for each extra player like every pack. A state's first step costs RM 60K plus RM 6K per seat. Group incomes and national group costs are drafts, to be tuned with the balance simulator (`docs/balance/my.md`).
+Amounts are in ringgit: base income RM 2.1M a turn for two players, cut 15% for each extra player like every pack. A state's first step costs RM 200K plus RM 3K per seat. Group incomes and national group costs are drafts, to be tuned with the balance simulator (`docs/balance/my.md`).
 
 ## Groups
 
