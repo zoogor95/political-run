@@ -61,25 +61,25 @@ Flagged: Shafie Apdal, Abang Johari Openg.
 
 The strongest custom candidates a player can build within the 8-point budget, each leading a party against two or three of the map's own leaders. None should win more than 1.25×, the top of the leader band.
 
-**Fail:** custom-max-federal-territories win more than 1.25×.
+**Pass:** no custom build wins more than the top of the leader band.
 
 | Build | Bonuses and penalties | Points | Matches | Wins vs even share |
 | --- | --- | ---: | ---: | ---: |
-| max-north | +10% Northern states | 8 | 160 | 0.98× |
-| max-east-coast | +15% East Coast, +5% Klang Valley | 8 | 160 | 0.83× |
-| max-klang-valley | +15% Klang Valley, +5% East Coast | 8 | 160 | 1.21× |
-| max-south | +10% Southern states, +5% East Coast | 8 | 160 | 0.92× |
+| max-north | +10% Northern states | 8 | 160 | 0.90× |
+| max-east-coast | +15% East Coast, +5% Klang Valley | 8 | 160 | 0.85× |
+| max-klang-valley | +15% Klang Valley, +5% East Coast | 8 | 160 | 1.17× |
+| max-south | +10% Southern states, +5% East Coast | 8 | 160 | 0.88× |
 | max-borneo | +10% Sabah and Sarawak | 8 | 160 | 0.79× |
-| max-federal-territories | +15% Federal Territories, +5% Urban voters | 8 | 160 | 1.26× |
-| max-west-coast | +5% West Coast corridor, +5% Federal Territories | 8 | 160 | 1.04× |
+| max-federal-territories | +10% Federal Territories, +5% East Coast | 8 | 160 | 1.11× |
+| max-west-coast | +5% West Coast corridor | 7 | 160 | 0.90× |
 | max-urban | +5% Urban voters, +5% Southern states | 8 | 160 | 0.88× |
-| max-rural | +5% Rural voters, +5% Southern states | 8 | 160 | 0.71× |
+| max-rural | +5% Rural voters, +5% Southern states | 8 | 160 | 0.67× |
 | max-civil-servants | +10% Civil servants | 8 | 160 | 0.47× |
-| max-youth | +10% Young voters | 8 | 160 | 0.48× |
-| max-business | +5% Business owners, +5% Southern states | 8 | 160 | 0.73× |
+| max-youth | +10% Young voters | 8 | 160 | 0.41× |
+| max-business | +5% Business owners, +5% Southern states | 8 | 160 | 0.85× |
 | max-workers | +10% Factory and estate workers | 8 | 160 | 0.62× |
-| penalties-1 | −15% West Coast corridor, +15% Urban voters, +5% East Coast | 8 | 160 | 0.45× |
-| penalties-2 | −15% West Coast corridor, −15% Northern states, +15% Urban voters, +5% Rural voters | 5 | 160 | 0.45× |
+| penalties-1 | −15% West Coast corridor, +15% Urban voters, +5% East Coast | 8 | 160 | 0.50× |
+| penalties-2 | −15% West Coast corridor, −15% Northern states, +15% Urban voters, +5% Rural voters | 5 | 160 | 0.43× |
 
 ## Difficulty levels
 
