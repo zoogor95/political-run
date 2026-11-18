@@ -533,5 +533,8 @@
     "swk",
     "lbn"
   ],
-  "customBudget": 8
+  "customBudget": 8,
+  "customPrices": {
+    "federal-territories": 3
+  }
 }
