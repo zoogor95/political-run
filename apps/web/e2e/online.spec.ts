@@ -331,11 +331,11 @@ test("leaderboards: worldwide, your country, or a region, with your standing", a
   await page.getByTestId("lb-scope-country").click();
   await expect(page.getByTestId("lb-standing")).toContainText("#3");
   await expect(page.getByTestId("lb-standing")).toContainText("of 9");
-  expect(asked.some((u) => u.includes("country=RU"))).toBe(true);
+  await expect.poll(() => asked.some((u) => u.includes("country=RU"))).toBe(true);
   await page.getByTestId("lb-scope-region").click();
   await page.getByTestId("lb-region").selectOption("nw");
   await expect(page.getByTestId("lb-empty")).toContainText("North West");
-  expect(asked.some((u) => u.includes("region=nw"))).toBe(true);
+  await expect.poll(() => asked.some((u) => u.includes("region=nw"))).toBe(true);
   // A region belongs to one map: switching maps drops it.
   await page.getByTestId("lb-map-pk").click();
   await expect(page.getByTestId("lb-region")).toHaveValue("");
