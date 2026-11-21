@@ -6884,3 +6884,22 @@
 
 /* Roster politicians' characters on the results ranking cards. */
 .rank-portrait { display: flex; flex: none; }
+
+/* Leaderboard scope: worldwide, your country, a region */
+.lb-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.lb-scope select {
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 10px;
+  border: 3px solid var(--ink, #2b2440);
+  border-radius: 12px;
+}
+.lb-standing {
+  margin: 0;
+  font-weight: 800;
+}

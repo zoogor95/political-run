@@ -310,21 +310,32 @@ test("tournaments: with no cup open the screen says when the next ones open", as
   await expect(page.getByTestId("cups-next")).toContainText("2027");
 });
 
-test("leaderboards can be narrowed to a region", async ({ page }, info) => {
+test("leaderboards: worldwide, your country, or a region, with your standing", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "one run is enough");
-  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  await page.addInitScript((api) => {
+    localStorage.setItem("mm.apiUrl", api);
+    localStorage.setItem("mm.cloud.v1", JSON.stringify({ code: "", username: "tester", token: "t", sent: {}, syncedAt: null }));
+  }, API);
   const asked: string[] = [];
+  await page.route("**/api/me**", (r) => r.fulfill({ json: { account: { id: "a", displayName: "Tester", avatar: {}, locale: "en", createdAt: 0 }, settings: null, stats: null, unlocked: null } }));
+  await page.route("**/api/ratings/me", (r) => r.fulfill({ json: { season: { name: "2026 Q4" }, ratings: [], titles: [], home: { country: "RU", region: null } } }));
   await page.route("**/api/leaderboard?**", (r) => {
     asked.push(r.request().url());
-    r.fulfill({ json: { season: "2026-Q4", map: "uk", board: "players", rows: [] } });
+    const country = new URL(r.request().url()).searchParams.get("country");
+    r.fulfill({ json: { season: "2026-Q4", map: "uk", board: "players", standing: country ? { rank: 3, of: 9, rating: 1004, games: 5, wins: 2 } : null, rows: [] } });
   });
   await page.goto("/");
   await page.getByTestId("open-leaderboards").click();
-  await expect(page.getByTestId("lb-region")).toBeVisible();
+  await expect(page.getByTestId("lb-scope-country")).toContainText("Russia");
+  await page.getByTestId("lb-scope-country").click();
+  await expect(page.getByTestId("lb-standing")).toContainText("#3");
+  await expect(page.getByTestId("lb-standing")).toContainText("of 9");
+  expect(asked.some((u) => u.includes("country=RU"))).toBe(true);
+  await page.getByTestId("lb-scope-region").click();
   await page.getByTestId("lb-region").selectOption("nw");
   await expect(page.getByTestId("lb-empty")).toContainText("North West");
   expect(asked.some((u) => u.includes("region=nw"))).toBe(true);
-  // A region belongs to one map: switching maps goes back to everywhere.
+  // A region belongs to one map: switching maps drops it.
   await page.getByTestId("lb-map-pk").click();
   await expect(page.getByTestId("lb-region")).toHaveValue("");
 });
@@ -352,8 +363,13 @@ test("the profile saves one home region: the country you live in, then a region 
   await page.getByTestId("home-country").selectOption("GB");
   await expect.poll(() => saved.length).toBe(3);
   expect(saved[2]).toEqual({ country: "GB", region: null });
-  await page.getByTestId("home-country").selectOption("");
+  // Any country will do; those without a map have no regions to pick.
+  await page.getByTestId("home-country").selectOption("RU");
   await expect.poll(() => saved.length).toBe(4);
-  expect(saved[3]).toEqual({ country: null, region: null });
+  expect(saved[3]).toEqual({ country: "RU", region: null });
+  await expect(page.getByTestId("home-region")).toHaveCount(0);
+  await page.getByTestId("home-country").selectOption("");
+  await expect.poll(() => saved.length).toBe(5);
+  expect(saved[4]).toEqual({ country: null, region: null });
   await expect(page.getByTestId("home-region")).toHaveCount(0);
 });

@@ -4,6 +4,7 @@
  * Games and Game Center will link more identities to the same account. No emails, phone numbers, passwords or locations
  * are stored (design document, Database tab).
  */
+import { isCountryCode } from "@majority-map/core";
 import { base64url, fromBase64url, hashPassword, PASSWORD_ITERATIONS, randomToken, sameText, sha256, uuidv7 } from "./crypto.js";
 import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
 import { checkSubscription, vapidKeys } from "./push.js";
@@ -365,14 +366,29 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       ).bind(season, map).all();
       return json({ season, map, board: "candidates", rows: rows.results });
     }
-    // ?region= keeps only the players who live in that region of this map's country.
+    // ?country= keeps only the players who live in that country; ?region= only those in that region of this map's country.
+    const country = q.get("country")?.toUpperCase() ?? null;
+    if (country && !isCountryCode(country)) throw new ApiError(400, "bad_country", "Unknown country");
     const region = q.get("region");
     if (region && !PACKS[map]!.regions.some((r) => r.id === region)) throw new ApiError(400, "bad_region", "That isn't a region on this map");
+    if (region && country && country !== HOME_COUNTRY[map]) throw new ApiError(400, "bad_region", "That region isn't in that country");
+    const where = country || region ? `AND a.home_country = ?3 ${region ? "AND a.home_region = ?4" : ""}` : "";
+    const args: string[] = country || region ? [season, map, country ?? HOME_COUNTRY[map]!, ...(region ? [region] : [])] : [season, map];
+    const base = "FROM ratings r JOIN accounts a ON a.id = r.account_id WHERE r.season_id = ?1 AND r.map_pack_id = ?2 AND a.status = 'active'";
     const rows = await env.DB.prepare(
-      `SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins FROM ratings r JOIN accounts a ON a.id = r.account_id
-        WHERE r.season_id = ?1 AND r.map_pack_id = ?2 AND a.status = 'active' ${region ? "AND a.home_country = ?3 AND a.home_region = ?4" : ""} ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
-    ).bind(...(region ? [season, map, HOME_COUNTRY[map]!, region] : [season, map])).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
-    return json({ season, map, board: "players", ...(region ? { region } : {}), rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
+      `SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins ${base} ${where} ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
+    ).bind(...args).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
+    // Where the signed-in player stands on this board, even when they are past the top 50.
+    let standing: { rank: number; of: number; rating: number; games: number; wins: number } | null = null;
+    if (me) {
+      const mine = await env.DB.prepare(`SELECT r.rating AS rating, r.games AS games, r.wins AS wins ${base} ${where} AND a.id = ?${args.length + 1}`).bind(...args, me).first<{ rating: number; games: number; wins: number }>();
+      if (mine) {
+        const ahead = await env.DB.prepare(`SELECT COUNT(*) AS n ${base} ${where} AND (r.rating > ?${args.length + 1} OR (r.rating = ?${args.length + 1} AND r.games > ?${args.length + 2}))`).bind(...args, mine.rating, mine.games).first<{ n: number }>();
+        const all = await env.DB.prepare(`SELECT COUNT(*) AS n ${base} ${where}`).bind(...args).first<{ n: number }>();
+        standing = { rank: (ahead?.n ?? 0) + 1, of: all?.n ?? 1, ...mine };
+      }
+    }
+    return json({ season, map, board: "players", ...(country ? { country } : {}), ...(region ? { region } : {}), standing, rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
   }
 
   // This season's ratings for the signed-in player, by map.
@@ -560,12 +576,13 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
       await env.DB.prepare("UPDATE accounts SET home_country = NULL, home_region = NULL WHERE id = ?").bind(accountId).run();
       return json({ ok: true });
     }
+    if (!isCountryCode(b.country)) throw new ApiError(400, "bad_country", "Pick one of the countries on the list");
     const mapId = Object.keys(HOME_COUNTRY).find((m) => HOME_COUNTRY[m] === b.country);
     const pack = mapId ? PACKS[mapId] : undefined;
-    if (!pack) throw new ApiError(400, "bad_country", "Pick one of the countries on the list");
     let region: string | null = null;
     if (b.region !== null && b.region !== undefined) {
-      if (typeof b.region !== "string" || !pack.regions.some((r) => r.id === b.region)) throw new ApiError(400, "bad_region", "That isn't a region of that country");
+      // Regions exist only for the countries that have a map.
+      if (typeof b.region !== "string" || !pack?.regions.some((r) => r.id === b.region)) throw new ApiError(400, "bad_region", "That isn't a region of that country");
       region = b.region;
     }
     await env.DB.prepare("UPDATE accounts SET home_country = ?, home_region = ? WHERE id = ?").bind(b.country, region, accountId).run();

@@ -2,6 +2,7 @@
  * Quick match on this device: a connection to the game's matchmaker while searching. It reports how many people are
  * looking on the same map and mode, and the match's code once one is found. Only real people are matched.
  */
+import { COUNTRY_CODES } from "@majority-map/core";
 import { API_URL, ensureAccount, sessionToken } from "./cloud";
 
 export type SearchState = { status: "connecting" } | { status: "searching"; waiting: number } | { status: "matched"; code: string } | { status: "error"; message: string };
@@ -97,7 +98,19 @@ export async function setHome(country: string | null, region: string | null): Pr
   if (!res.ok) throw new Error(`home ${res.status}`);
 }
 
-/** The countries a home can be in: each is one of the game's maps, so its regions are that map's regions. */
+/** The country's name in the player's language (falls back to the code). */
+export function countryName(code: string): string {
+  try {
+    return new Intl.DisplayNames(undefined, { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/** Every country a player can live in, by name. */
+export const allCountries = (): { code: string; name: string }[] => COUNTRY_CODES.map((code) => ({ code, name: countryName(code) })).sort((a, b) => a.name.localeCompare(b.name));
+
+/** The countries that have a map, so a home there can also name a region (that map's regions). */
 export const HOME_COUNTRIES = [
   { code: "GB", map: "uk" },
   { code: "PK", map: "pk" },

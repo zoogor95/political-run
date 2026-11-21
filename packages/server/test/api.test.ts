@@ -324,6 +324,16 @@ describe("leaderboards", () => {
     expect((await put(a.token, { country: "GB" })).status).toBe(200);
     expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ country: "GB", region: null });
     expect((await call("GET", "/api/leaderboard?map=uk&region=nw", { now })).data.rows).toEqual([]);
+    // Country boards: players who live in that country, with your standing on the board. Any country will do, not only the maps'.
+    const gb = await call("GET", "/api/leaderboard?map=uk&country=gb", { token: a.token, now });
+    expect(gb.data).toMatchObject({ country: "GB", standing: { rank: 2, of: 2, rating: 1020 }, rows: [{ rank: 1, name: "Sam" }, { rank: 2, name: "Ali", you: true }] });
+    expect((await put(a.token, { country: "RU", region: "nw" })).status).toBe(400); // no regions outside the map countries
+    expect((await put(a.token, { country: "RU" })).status).toBe(200);
+    const ru = await call("GET", "/api/leaderboard?map=uk&country=RU", { token: a.token, now });
+    expect(ru.data).toMatchObject({ country: "RU", standing: { rank: 1, of: 1 }, rows: [{ rank: 1, name: "Ali", you: true }] });
+    expect((await call("GET", "/api/leaderboard?map=uk&country=GB", { token: a.token, now })).data).toMatchObject({ standing: null, rows: [{ name: "Sam" }] });
+    expect((await call("GET", "/api/leaderboard?map=uk&country=ZZ", { now })).status).toBe(400);
+    expect((await call("GET", "/api/leaderboard?map=uk&country=RU&region=nw", { now })).status).toBe(400);
     expect((await put(a.token, { country: null })).status).toBe(200);
     expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ country: null, region: null });
     const cands = await call("GET", "/api/leaderboard?map=uk&board=candidates", { now });
