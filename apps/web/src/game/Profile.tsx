@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ACHIEVEMENTS } from "./achievements";
 import { play } from "./audio";
 import { backUp, CloudError, deleteBackup, restore, sessionToken, stopBackup, syncNow, useCloud } from "./cloud";
-import { HOME_COUNTRIES, myRatings, setHome } from "./quick";
+import { allCountries, HOME_COUNTRIES, myRatings, setHome } from "./quick";
 import { MAPS } from "./model";
 import { onUnlock, setProfileName, useProfile } from "./profile";
 
@@ -336,14 +336,14 @@ function HomeRegions() {
   return (
     <section className="backup home-regions" data-testid="home-regions" aria-label="Home region">
       <h2>Where you live</h2>
-      <p className="small">Pick your country and region to appear on that region's leaderboard. It is only used as a leaderboard filter and is never shown next to your name.</p>
+      <p className="small">Pick your country to appear on its leaderboard (and a region too, where the game has a map of your country). It is only used as a leaderboard filter and is never shown next to your name.</p>
       <label className="find">
         <span>Country</span>
         <select value={home.country ?? ""} onChange={(e) => void save(e.target.value || null, null)} data-testid="home-country">
           <option value="">Not set</option>
-          {HOME_COUNTRIES.map((c) => (
+          {allCountries().map((c) => (
             <option key={c.code} value={c.code}>
-              {MAPS[c.map].name}
+              {c.name}
             </option>
           ))}
         </select>
