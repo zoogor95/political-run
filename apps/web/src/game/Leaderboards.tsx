@@ -33,6 +33,7 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
   const [kind, setKind] = useState<"players" | "candidates">("players");
   const [scope, setScope] = useState<"world" | "country" | "region">("world");
   const [region, setRegion] = useState("");
+  const [find, setFind] = useState("");
   const [home, setHome] = useState<{ country: string | null; region: string | null }>({ country: null, region: null });
   const [data, setData] = useState<Board | null>(null);
   const [error, setError] = useState("");
@@ -67,6 +68,19 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
       live = false;
     };
   }, [mapId, kind, query]);
+  const flag = (code: string) => String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
+  const mapFlag = (m: MapId) => flag(HOME_COUNTRIES.find((c) => c.map === m)?.code ?? "UN");
+  const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+  const Avatar = ({ name }: { name: string }) => (
+    <span className="lb-avatar" style={{ background: `hsl(${hue(name)} 55% 48%)` }} aria-hidden="true">
+      {name.replace(/[^\p{L}\p{N}]/gu, "").slice(0, 2).toUpperCase()}
+    </span>
+  );
+  const players = data?.board === "players" ? data : null;
+  const shown = players ? players.rows.filter((r) => r.name.toLowerCase().includes(find.trim().toLowerCase())) : [];
+  const podium = players && !find.trim() ? players.rows.slice(0, 3) : [];
+  const medals = ["🥇", "🥈", "🥉"];
+  const youListed = players?.rows.some((r) => r.you) ?? false;
   return (
     <main className="setup online leaderboards" data-testid="leaderboards">
       <header className="setup-head">
@@ -76,124 +90,164 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
         <h1>Leaderboards</h1>
         <span className="muted">{data ? `Season ${data.season.replace("-", " ")}` : ""}</span>
       </header>
-      <div className="map-pick" role="radiogroup" aria-label="Map">
-        {Object.values(MAPS).map((m) => (
-          <button key={m.id} type="button" role="radio" aria-checked={m.id === mapId} className="map-card" onClick={() => setMapId(m.id)} data-testid={`lb-map-${m.id}`}>
-            <b>{m.name}</b>
-          </button>
-        ))}
-      </div>
-      <div className="kind quick-mode" role="radiogroup" aria-label="Board">
-        <button type="button" role="radio" aria-checked={kind === "players"} onClick={() => setKind("players")} data-testid="lb-players">
-          Players
-        </button>
-        <button type="button" role="radio" aria-checked={kind === "candidates"} onClick={() => setKind("candidates")} data-testid="lb-candidates">
-          {MAPS[mapId].pack.gameType === "presidential" ? "Candidates" : "Leaders"}
-        </button>
-      </div>
-      {kind === "players" && (
-        <div className="lb-scope">
-          <div className="kind quick-mode" role="radiogroup" aria-label="Whose ranking">
-            <button type="button" role="radio" aria-checked={scope === "world"} onClick={() => setScope("world")} data-testid="lb-scope-world">
-              Worldwide
-            </button>
-            <button type="button" role="radio" aria-checked={scope === "country"} disabled={!home.country} onClick={() => setScope("country")} data-testid="lb-scope-country">
-              {home.country ? `Your country: ${countryName(home.country)}` : "Your country"}
-            </button>
-            <button type="button" role="radio" aria-checked={scope === "region"} onClick={() => setScope("region")} data-testid="lb-scope-region">
-              Region
-            </button>
+      <div className="lb-layout">
+        <div className="lb-main">
+          <div className="lb-controls">
+            <div className="kind quick-mode" role="radiogroup" aria-label="Board">
+              <button type="button" role="radio" aria-checked={kind === "players"} onClick={() => setKind("players")} data-testid="lb-players">
+                Players
+              </button>
+              <button type="button" role="radio" aria-checked={kind === "candidates"} onClick={() => setKind("candidates")} data-testid="lb-candidates">
+                {MAPS[mapId].pack.gameType === "presidential" ? "Candidates" : "Leaders"}
+              </button>
+            </div>
+            {kind === "players" && (
+              <>
+                <div className="kind quick-mode" role="radiogroup" aria-label="Whose ranking">
+                  <button type="button" role="radio" aria-checked={scope === "world"} onClick={() => setScope("world")} data-testid="lb-scope-world">
+                    Worldwide
+                  </button>
+                  <button type="button" role="radio" aria-checked={scope === "country"} disabled={!home.country} onClick={() => setScope("country")} data-testid="lb-scope-country">
+                    {home.country ? `${flag(home.country)} ${countryName(home.country)}` : "Your country"}
+                  </button>
+                  <button type="button" role="radio" aria-checked={scope === "region"} onClick={() => setScope("region")} data-testid="lb-scope-region">
+                    Region
+                  </button>
+                </div>
+                {scope === "region" && (
+                  <select aria-label="Region" value={regionId} onChange={(e) => setRegion(e.target.value)} data-testid="lb-region">
+                    <option value="">Pick a region of {MAPS[mapId].name}</option>
+                    {MAPS[mapId].pack.regions.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name}
+                        {homeOnThisMap && home.region === r.id ? " (your region)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <input className="lb-find" type="search" placeholder="Find a player" aria-label="Find a player" value={find} onChange={(e) => setFind(e.target.value)} data-testid="lb-find" />
+              </>
+            )}
           </div>
-          {scope === "region" && (
-            <select aria-label="Region" value={regionId} onChange={(e) => setRegion(e.target.value)} data-testid="lb-region">
-              <option value="">Pick a region of {MAPS[mapId].name}</option>
-              {MAPS[mapId].pack.regions.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                  {homeOnThisMap && home.region === r.id ? " (your region)" : ""}
-                </option>
-              ))}
-            </select>
-          )}
-          {!home.country && (
+          {kind === "players" && !home.country && (
             <p className="small muted" data-testid="lb-home-hint">
               Set where you live on your profile to see your ranking among players in your country.
             </p>
           )}
+          {error && (
+            <p className="backup-error" role="alert">
+              {error}
+            </p>
+          )}
+          {players?.standing && (
+            <p className="lb-standing" data-testid="lb-standing">
+              You are <b>#{players.standing.rank}</b> of {players.standing.of} here · rating {players.standing.rating}
+            </p>
+          )}
+          {players?.provisional && (
+            <p className="lb-standing" data-testid="lb-provisional">
+              Play {players.minGames ?? 10} ranked games on {MAPS[mapId].name} to be ranked. You have played {players.provisional.games}.
+            </p>
+          )}
+          {data && data.rows.length === 0 && <p data-testid="lb-empty">{kind === "players" && scope === "country" && home.country ? `Nobody from ${countryName(home.country)} has played ten ranked games on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.` : kind === "players" && regionId ? `Nobody from ${MAPS[mapId].pack.regions.find((r) => r.id === regionId)?.name ?? "that region"} has played ten ranked games on ${MAPS[mapId].name} this season yet. Set your home region on your profile to appear here.` : `Nobody has played ten ranked games on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.`}</p>}
+          {podium.length > 0 && (
+            <ol className="lb-podium" data-testid="lb-podium">
+              {podium.map((r, i) => (
+                <li key={r.rank} className={r.you ? "you" : ""}>
+                  <Avatar name={r.name} />
+                  <span>
+                    <b>
+                      {medals[i]} {r.name}
+                      {r.you ? " (you)" : ""}
+                    </b>
+                    <small>
+                      {r.rating} · {r.games ? Math.round((100 * r.wins) / r.games) : 0}% won
+                    </small>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {players && shown.length > 0 && (
+            <table className="list lb-table" data-testid="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Player</th>
+                  <th>Rating</th>
+                  <th>Games</th>
+                  <th>Win rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((r) => (
+                  <tr key={r.rank} className={r.you ? "you" : ""}>
+                    <td>{r.rank}</td>
+                    <td className="lb-name">
+                      <Avatar name={r.name} />
+                      {r.name}
+                      {r.you ? " (you)" : ""}
+                    </td>
+                    <td>
+                      <b>{r.rating}</b>
+                    </td>
+                    <td>{r.games}</td>
+                    <td>{r.games ? Math.round((100 * r.wins) / r.games) : 0}%</td>
+                  </tr>
+                ))}
+                {players.standing && !youListed && !find.trim() && (
+                  <tr className="you pinned" data-testid="lb-you-row">
+                    <td>{players.standing.rank}</td>
+                    <td className="lb-name">You</td>
+                    <td>
+                      <b>{players.standing.rating}</b>
+                    </td>
+                    <td>{players.standing.games}</td>
+                    <td>{players.standing.games ? Math.round((100 * players.standing.wins) / players.standing.games) : 0}%</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+          {players && players.rows.length > 0 && shown.length === 0 && <p data-testid="lb-no-match">No player here matches "{find}".</p>}
+          {data?.board === "candidates" && data.rows.length > 0 && (
+            <table className="list lb-table" data-testid="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{MAPS[mapId].pack.gameType === "presidential" ? "Candidate" : "Leader"}</th>
+                  <th>Score</th>
+                  <th>Won</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.map((r, i) => (
+                  <tr key={r.candidate}>
+                    <td>{i + 1}</td>
+                    <td>{MAPS[mapId].pack.candidates.find((c) => c.id === r.candidate)?.name ?? candidateName(r.candidate)}</td>
+                    <td>
+                      <b>{r.score}</b>
+                    </td>
+                    <td>
+                      {r.wins} of {r.games}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <p className="small muted">Ranked matches only. Players are ranked after 10 ranked games on the map. A leader scores a point for each player they finish above.</p>
         </div>
-      )}
-      {error && (
-        <p className="backup-error" role="alert">
-          {error}
-        </p>
-      )}
-      {data && data.rows.length === 0 && <p data-testid="lb-empty">{kind === "players" && scope === "country" && home.country ? `Nobody from ${countryName(home.country)} has played ten ranked games on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.` : kind === "players" && regionId ? `Nobody from ${MAPS[mapId].pack.regions.find((r) => r.id === regionId)?.name ?? "that region"} has played ten ranked games on ${MAPS[mapId].name} this season yet. Set your home region on your profile to appear here.` : `Nobody has played ten ranked games on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.`}</p>}
-      {data?.board === "players" && data.standing && (
-        <p className="lb-standing" data-testid="lb-standing">
-          You are <b>#{data.standing.rank}</b> of {data.standing.of} here · rating {data.standing.rating}
-        </p>
-      )}
-      {data?.board === "players" && data.provisional && (
-        <p className="lb-standing" data-testid="lb-provisional">
-          Play {data.minGames ?? 10} ranked games on {MAPS[mapId].name} to be ranked. You have played {data.provisional.games}.
-        </p>
-      )}
-      {data?.board === "players" && data.rows.length > 0 && (
-        <table className="list lb-table" data-testid="lb-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Player</th>
-              <th>Rating</th>
-              <th>Won</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rows.map((r) => (
-              <tr key={r.rank} className={r.you ? "you" : ""}>
-                <td>{r.rank}</td>
-                <td>
-                  {r.name}
-                  {r.you ? " (you)" : ""}
-                </td>
-                <td>
-                  <b>{r.rating}</b>
-                </td>
-                <td>
-                  {r.wins} of {r.games}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {data?.board === "candidates" && data.rows.length > 0 && (
-        <table className="list lb-table" data-testid="lb-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>{MAPS[mapId].pack.gameType === "presidential" ? "Candidate" : "Leader"}</th>
-              <th>Score</th>
-              <th>Won</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rows.map((r, i) => (
-              <tr key={r.candidate}>
-                <td>{i + 1}</td>
-                <td>{MAPS[mapId].pack.candidates.find((c) => c.id === r.candidate)?.name ?? candidateName(r.candidate)}</td>
-                <td>
-                  <b>{r.score}</b>
-                </td>
-                <td>
-                  {r.wins} of {r.games}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      <p className="small muted">Ranked matches only. Players are ranked after 10 ranked games on the map. A leader scores a point for each player they finish above.</p>
+        <div className="lb-maps" role="radiogroup" aria-label="Map">
+          <span className="lb-maps-title">Map</span>
+          {Object.values(MAPS).map((m) => (
+            <button key={m.id} type="button" role="radio" aria-checked={m.id === mapId} className="lb-map" onClick={() => setMapId(m.id)} data-testid={`lb-map-${m.id}`}>
+              <span aria-hidden="true">{mapFlag(m.id)}</span>
+              <b>{m.name}</b>
+            </button>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }

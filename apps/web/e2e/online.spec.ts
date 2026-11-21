@@ -331,14 +331,33 @@ test("leaderboards: worldwide, your country, or a region, with your standing", a
   await page.getByTestId("lb-scope-country").click();
   await expect(page.getByTestId("lb-standing")).toContainText("#3");
   await expect(page.getByTestId("lb-standing")).toContainText("of 9");
-  expect(asked.some((u) => u.includes("country=RU"))).toBe(true);
+  await expect.poll(() => asked.some((u) => u.includes("country=RU"))).toBe(true);
   await page.getByTestId("lb-scope-region").click();
   await page.getByTestId("lb-region").selectOption("nw");
   await expect(page.getByTestId("lb-empty")).toContainText("North West");
-  expect(asked.some((u) => u.includes("region=nw"))).toBe(true);
+  await expect.poll(() => asked.some((u) => u.includes("region=nw"))).toBe(true);
   // A region belongs to one map: switching maps drops it.
   await page.getByTestId("lb-map-pk").click();
   await expect(page.getByTestId("lb-region")).toHaveValue("");
+});
+
+test("leaderboards: podium, table, find a player, and your row pinned when you are past the list", async ({ page }) => {
+  await page.addInitScript((api) => localStorage.setItem("mm.apiUrl", api), API);
+  const rows = ["Sam_Rivers", "Ayesha_K", "Tea_Break", "Mersey_Mike"].map((name, i) => ({ rank: i + 1, name, rating: 1080 - i * 20, games: 12 + i, wins: 8 - i, you: false }));
+  await page.route("**/api/leaderboard?**", (r) => r.fulfill({ json: { season: "2026-Q4", map: "uk", board: "players", minGames: 10, provisional: null, standing: { rank: 31, of: 60, rating: 960, games: 14, wins: 5 }, rows } }));
+  await page.goto("/");
+  await page.getByTestId("open-leaderboards").click();
+  await expect(page.getByTestId("lb-podium")).toContainText("Sam_Rivers");
+  await expect(page.getByTestId("lb-podium").locator("li")).toHaveCount(3);
+  await expect(page.getByTestId("lb-table").locator("tbody tr")).toHaveCount(5);
+  await expect(page.getByTestId("lb-you-row")).toContainText("31");
+  await page.getByTestId("lb-find").fill("tea");
+  await expect(page.getByTestId("lb-table").locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByTestId("lb-podium")).toHaveCount(0);
+  await page.getByTestId("lb-find").fill("zzz");
+  await expect(page.getByTestId("lb-no-match")).toBeVisible();
+  // Nothing sticks out sideways at any width.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("the profile saves one home region: the country you live in, then a region of it", async ({ page }, info) => {
