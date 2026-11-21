@@ -297,13 +297,13 @@ describe("leaderboards", () => {
     const now = Date.UTC(2026, 10, 14);
     await env.DB.prepare("INSERT INTO seasons (id, name, starts_at, ends_at) VALUES ('2026-Q4','Season 2026 Q4',0,1)").run();
     for (const [acc, r, w] of [[a.account.id, 1020, 3], [b.account.id, 1050, 5]] as const) {
-      await env.DB.prepare("INSERT INTO ratings (account_id, season_id, map_pack_id, rating, games, wins, updated_at) VALUES (?, '2026-Q4', 'uk', ?, 6, ?, 0)").bind(acc, r, w).run();
+      await env.DB.prepare("INSERT INTO ratings (account_id, season_id, map_pack_id, rating, games, wins, updated_at) VALUES (?, '2026-Q4', 'uk', ?, 12, ?, 0)").bind(acc, r, w).run();
       await env.DB.prepare("INSERT INTO candidate_stats (account_id, season_id, map_pack_id, candidate_ref, games, wins, score) VALUES (?, '2026-Q4', 'uk', 'keir-starmer', 6, ?, ?)").bind(acc, w, w * 2).run();
     }
     const board = await call("GET", "/api/leaderboard?map=uk", { token: a.token, now });
     expect(board.data.rows).toEqual([
-      { rank: 1, name: "Sam", rating: 1050, games: 6, wins: 5, you: false },
-      { rank: 2, name: "Ali", rating: 1020, games: 6, wins: 3, you: true },
+      { rank: 1, name: "Sam", rating: 1050, games: 12, wins: 5, you: false },
+      { rank: 2, name: "Ali", rating: 1020, games: 12, wins: 3, you: true },
     ]);
     expect((await call("GET", "/api/leaderboard?map=xx", { now })).status).toBe(400);
     expect((await call("GET", "/api/leaderboard?map=pk", { now })).data.rows).toEqual([]);
@@ -336,6 +336,11 @@ describe("leaderboards", () => {
     expect((await call("GET", "/api/leaderboard?map=uk&country=RU&region=nw", { now })).status).toBe(400);
     expect((await put(a.token, { country: null })).status).toBe(200);
     expect((await call("GET", "/api/ratings/me", { token: a.token, now })).data.home).toEqual({ country: null, region: null });
+    // Ten ranked games on the map before a player is ranked: with fewer they are off the board and told how many they have.
+    await env.DB.prepare("UPDATE ratings SET games = 9 WHERE account_id = ?").bind(a.account.id).run();
+    const few = await call("GET", "/api/leaderboard?map=uk", { token: a.token, now });
+    expect(few.data).toMatchObject({ minGames: 10, standing: null, provisional: { games: 9 }, rows: [{ rank: 1, name: "Sam" }] });
+    expect(few.data.rows).toHaveLength(1);
     const cands = await call("GET", "/api/leaderboard?map=uk&board=candidates", { now });
     expect(cands.data.rows).toEqual([{ candidate: "keir-starmer", games: 12, wins: 8, score: 16, players: 2 }]);
   });

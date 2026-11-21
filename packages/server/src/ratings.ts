@@ -45,3 +45,6 @@ export function ratingChanges(ranking: string[], ratings: Record<string, number>
   }
   return out;
 }
+
+/** Ranked games a player needs on a map in a season before they appear on its leaderboards. */
+export const MIN_RANKED_GAMES = 10;

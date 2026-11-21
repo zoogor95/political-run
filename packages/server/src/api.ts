@@ -8,7 +8,7 @@ import { isCountryCode } from "@majority-map/core";
 import { base64url, fromBase64url, hashPassword, PASSWORD_ITERATIONS, randomToken, sameText, sha256, uuidv7 } from "./crypto.js";
 import { checkSetup, PACKS, RoomError, type MatchSetup } from "./room.js";
 import { checkSubscription, vapidKeys } from "./push.js";
-import { seasonOf } from "./ratings.js";
+import { MIN_RANKED_GAMES, seasonOf } from "./ratings.js";
 import { MAX_ENTRANTS, MIN_ENTRANTS } from "./tournament.js";
 
 export interface Env {
@@ -375,20 +375,24 @@ async function route(req: Request, env: Env, now: number): Promise<Response> {
     const where = country || region ? `AND a.home_country = ?3 ${region ? "AND a.home_region = ?4" : ""}` : "";
     const args: string[] = country || region ? [season, map, country ?? HOME_COUNTRY[map]!, ...(region ? [region] : [])] : [season, map];
     const base = "FROM ratings r JOIN accounts a ON a.id = r.account_id WHERE r.season_id = ?1 AND r.map_pack_id = ?2 AND a.status = 'active'";
+    // Only players with enough ranked games on the map are ranked: fewer than that and the rating isn't settled yet.
+    const ranked = `AND r.games >= ${MIN_RANKED_GAMES}`;
     const rows = await env.DB.prepare(
-      `SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins ${base} ${where} ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
+      `SELECT a.id AS id, a.display_name AS name, r.rating AS rating, r.games AS games, r.wins AS wins ${base} ${ranked} ${where} ORDER BY r.rating DESC, r.games DESC LIMIT 50`,
     ).bind(...args).all<{ id: string; name: string; rating: number; games: number; wins: number }>();
     // Where the signed-in player stands on this board, even when they are past the top 50.
     let standing: { rank: number; of: number; rating: number; games: number; wins: number } | null = null;
+    let provisional: { games: number } | null = null;
     if (me) {
       const mine = await env.DB.prepare(`SELECT r.rating AS rating, r.games AS games, r.wins AS wins ${base} ${where} AND a.id = ?${args.length + 1}`).bind(...args, me).first<{ rating: number; games: number; wins: number }>();
-      if (mine) {
-        const ahead = await env.DB.prepare(`SELECT COUNT(*) AS n ${base} ${where} AND (r.rating > ?${args.length + 1} OR (r.rating = ?${args.length + 1} AND r.games > ?${args.length + 2}))`).bind(...args, mine.rating, mine.games).first<{ n: number }>();
-        const all = await env.DB.prepare(`SELECT COUNT(*) AS n ${base} ${where}`).bind(...args).first<{ n: number }>();
+      if (mine && mine.games < MIN_RANKED_GAMES) provisional = { games: mine.games };
+      else if (mine) {
+        const ahead = await env.DB.prepare(`SELECT COUNT(*) AS n ${base} ${where} ${ranked} AND (r.rating > ?${args.length + 1} OR (r.rating = ?${args.length + 1} AND r.games > ?${args.length + 2}))`).bind(...args, mine.rating, mine.games).first<{ n: number }>();
+        const all = await env.DB.prepare(`SELECT COUNT(*) AS n ${base} ${ranked} ${where}`).bind(...args).first<{ n: number }>();
         standing = { rank: (ahead?.n ?? 0) + 1, of: all?.n ?? 1, ...mine };
       }
     }
-    return json({ season, map, board: "players", ...(country ? { country } : {}), ...(region ? { region } : {}), standing, rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
+    return json({ season, map, board: "players", ...(country ? { country } : {}), ...(region ? { region } : {}), standing, minGames: MIN_RANKED_GAMES, provisional, rows: rows.results.map(({ id, ...r }, i) => ({ rank: i + 1, ...r, you: id === me })) });
   }
 
   // This season's ratings for the signed-in player, by map.

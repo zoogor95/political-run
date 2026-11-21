@@ -26,7 +26,7 @@ interface Standing {
   games: number;
   wins: number;
 }
-type Board = { season: string; board: "players"; rows: PlayerRow[]; standing?: Standing | null } | { season: string; board: "candidates"; rows: CandidateRow[] };
+type Board = { season: string; board: "players"; rows: PlayerRow[]; standing?: Standing | null; minGames?: number; provisional?: { games: number } | null } | { season: string; board: "candidates"; rows: CandidateRow[] };
 
 export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
   const [mapId, setMapId] = useState<MapId>(preferredMap);
@@ -127,10 +127,15 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
           {error}
         </p>
       )}
-      {data && data.rows.length === 0 && <p data-testid="lb-empty">{kind === "players" && scope === "country" && home.country ? `Nobody from ${countryName(home.country)} has played ranked on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.` : kind === "players" && regionId ? `Nobody from ${MAPS[mapId].pack.regions.find((r) => r.id === regionId)?.name ?? "that region"} has played ranked on ${MAPS[mapId].name} this season yet. Set your home region on your profile to appear here.` : `Nobody has played ranked on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.`}</p>}
+      {data && data.rows.length === 0 && <p data-testid="lb-empty">{kind === "players" && scope === "country" && home.country ? `Nobody from ${countryName(home.country)} has played ten ranked games on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.` : kind === "players" && regionId ? `Nobody from ${MAPS[mapId].pack.regions.find((r) => r.id === regionId)?.name ?? "that region"} has played ten ranked games on ${MAPS[mapId].name} this season yet. Set your home region on your profile to appear here.` : `Nobody has played ten ranked games on ${MAPS[mapId].name} this season yet. Be the first: Quick match, then Ranked.`}</p>}
       {data?.board === "players" && data.standing && (
         <p className="lb-standing" data-testid="lb-standing">
           You are <b>#{data.standing.rank}</b> of {data.standing.of} here · rating {data.standing.rating}
+        </p>
+      )}
+      {data?.board === "players" && data.provisional && (
+        <p className="lb-standing" data-testid="lb-provisional">
+          Play {data.minGames ?? 10} ranked games on {MAPS[mapId].name} to be ranked. You have played {data.provisional.games}.
         </p>
       )}
       {data?.board === "players" && data.rows.length > 0 && (
@@ -188,7 +193,7 @@ export function LeaderboardsScreen({ onBack }: { onBack: () => void }) {
           </tbody>
         </table>
       )}
-      <p className="small muted">Ranked matches only. A leader scores a point for each player they finish above.</p>
+      <p className="small muted">Ranked matches only. Players are ranked after 10 ranked games on the map. A leader scores a point for each player they finish above.</p>
     </main>
   );
 }

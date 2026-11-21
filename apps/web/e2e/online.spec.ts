@@ -255,7 +255,7 @@ test("leaderboards: open from the menu, pick a map and a board", async ({ page }
   await page.goto("/");
   await page.getByTestId("open-leaderboards").click();
   await expect(page.getByTestId("leaderboards")).toContainText("Leaderboards");
-  await expect(page.getByTestId("lb-empty")).toContainText("Nobody has played ranked");
+  await expect(page.getByTestId("lb-empty")).toContainText("Nobody has played ten ranked games");
   await page.getByTestId("lb-map-us").click();
   await page.getByTestId("lb-candidates").click();
   await expect(page.getByTestId("lb-empty")).toBeVisible();
@@ -322,11 +322,12 @@ test("leaderboards: worldwide, your country, or a region, with your standing", a
   await page.route("**/api/leaderboard?**", (r) => {
     asked.push(r.request().url());
     const country = new URL(r.request().url()).searchParams.get("country");
-    r.fulfill({ json: { season: "2026-Q4", map: "uk", board: "players", standing: country ? { rank: 3, of: 9, rating: 1004, games: 5, wins: 2 } : null, rows: [] } });
+    r.fulfill({ json: { season: "2026-Q4", map: "uk", board: "players", standing: country ? { rank: 3, of: 9, rating: 1004, games: 15, wins: 2 } : null, minGames: 10, provisional: country ? null : { games: 4 }, rows: [] } });
   });
   await page.goto("/");
   await page.getByTestId("open-leaderboards").click();
   await expect(page.getByTestId("lb-scope-country")).toContainText("Russia");
+  await expect(page.getByTestId("lb-provisional")).toContainText("Play 10 ranked games");
   await page.getByTestId("lb-scope-country").click();
   await expect(page.getByTestId("lb-standing")).toContainText("#3");
   await expect(page.getByTestId("lb-standing")).toContainText("of 9");
